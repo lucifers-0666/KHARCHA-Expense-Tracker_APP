@@ -4,6 +4,8 @@ class Expense {
   final double amount;
   final String category;
   final DateTime date;
+  final String? description;
+  final String? receiptUrl;
 
   Expense({
     required this.id,
@@ -11,6 +13,8 @@ class Expense {
     required this.amount,
     required this.category,
     required this.date,
+    this.description,
+    this.receiptUrl,
   });
 
   factory Expense.fromFirestore(Map<String, dynamic> data, String Id) {
@@ -22,6 +26,8 @@ class Expense {
       date: data['date'] != null
           ? DateTime.parse(data['date'])
           : DateTime.now(),
+      description: data['description'],
+      receiptUrl: data['receiptUrl'],
     );
   }
   Map<String, dynamic> toFirestore() {
@@ -30,6 +36,8 @@ class Expense {
       'amount': amount,
       'category': category,
       'date': date.toIso8601String(),
+      if (description != null) 'description': description,
+      if (receiptUrl != null) 'receiptUrl': receiptUrl,
     };
   }
 
@@ -39,6 +47,8 @@ class Expense {
     double? amount,
     String? category,
     DateTime? date,
+    String? description,
+    String? receiptUrl,
   }) {
     return Expense(
       id: id ?? this.id,
@@ -46,6 +56,20 @@ class Expense {
       amount: amount ?? this.amount,
       category: category ?? this.category,
       date: date ?? this.date,
+      description: description ?? this.description,
+      receiptUrl: receiptUrl ?? this.receiptUrl,
     );
   }
+
+  // Category icons mapping
+  static const Map<String, String> categoryIcons = {
+    'Food': '🍔',
+    'Transport': '🚗',
+    'Entertainment': '🎬',
+    'Shopping': '🛍️',
+    'Utilities': '💡',
+    'Health': '🏥',
+    'Education': '📚',
+    'Other': '💰',
+  };
 }

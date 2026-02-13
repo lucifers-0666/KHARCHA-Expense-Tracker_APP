@@ -89,7 +89,7 @@ class _ExpenseCardState extends State<ExpenseCard>
             borderRadius: BorderRadius.circular(20),
             boxShadow: [
               BoxShadow(
-                color: color.withOpacity(0.1),
+                color: color.withValues(alpha: 0.1),
                 blurRadius: 15,
                 offset: const Offset(0, 5),
               ),
@@ -100,8 +100,8 @@ class _ExpenseCardState extends State<ExpenseCard>
             child: InkWell(
               onTap: widget.onEdit,
               borderRadius: BorderRadius.circular(20),
-              splashColor: color.withOpacity(0.1),
-              highlightColor: color.withOpacity(0.05),
+              splashColor: color.withValues(alpha: 0.1),
+              highlightColor: color.withValues(alpha: 0.05),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Row(
@@ -111,7 +111,7 @@ class _ExpenseCardState extends State<ExpenseCard>
                       child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
+                          color: color.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(15),
                         ),
                         child: Icon(icon, color: color, size: 28),
@@ -141,7 +141,7 @@ class _ExpenseCardState extends State<ExpenseCard>
                                   vertical: 4,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.15),
+                                  color: color.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: Text(
@@ -164,12 +164,12 @@ class _ExpenseCardState extends State<ExpenseCard>
                                 DateFormat(
                                   'MMM dd, yyyy',
                                 ).format(widget.expense.date),
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: AppColors.textSecondary,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textSecondary,
+                                ),
                               ),
-                            ),
-                          ],
+                            ],
                           ),
                         ],
                       ),
@@ -195,7 +195,7 @@ class _ExpenseCardState extends State<ExpenseCard>
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: AppColors.info.withOpacity(0.15),
+                                  color: AppColors.info.withValues(alpha: 0.15),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(
@@ -212,7 +212,9 @@ class _ExpenseCardState extends State<ExpenseCard>
                               child: Container(
                                 padding: const EdgeInsets.all(6),
                                 decoration: BoxDecoration(
-                                  color: AppColors.danger.withOpacity(0.15),
+                                  color: AppColors.danger.withValues(
+                                    alpha: 0.15,
+                                  ),
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                                 child: const Icon(

@@ -61,7 +61,11 @@ class SplaceScreenState extends State<SplaceScreen>
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [AppColors.primaryDark, AppColors.primary, AppColors.accent],
+            colors: [
+              AppColors.primaryDark,
+              AppColors.primary,
+              AppColors.accent,
+            ],
           ),
         ),
         child: Center(
@@ -74,11 +78,11 @@ class SplaceScreenState extends State<SplaceScreen>
                   height: 200,
                   width: 200,
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.white.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                     boxShadow: [
                       BoxShadow(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         blurRadius: 30,
                         spreadRadius: 5,
                       ),
@@ -99,7 +103,7 @@ class SplaceScreenState extends State<SplaceScreen>
                   child: Column(
                     children: [
                       const Text(
-                        'Expense Tracker',
+                        'KHARCHA',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 42,
@@ -109,9 +113,9 @@ class SplaceScreenState extends State<SplaceScreen>
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Manage your money wisely',
+                        'Manage expenses with KHARCHA',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
+                          color: Colors.white.withValues(alpha: 0.9),
                           fontSize: 18,
                           fontWeight: FontWeight.w300,
                           letterSpacing: 0.5,
