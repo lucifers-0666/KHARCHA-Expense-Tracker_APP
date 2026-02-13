@@ -15,13 +15,24 @@ import 'package:flutter/foundation.dart'
 /// );
 /// ```
 class DefaultFirebaseOptions {
+  static String _env(String key) {
+    final value = String.fromEnvironment(key, defaultValue: '');
+    if (value.isEmpty) {
+      throw StateError(
+        'Missing Firebase config for $key. '
+        'Pass it via --dart-define or --dart-define-from-file.',
+      );
+    }
+    return value;
+  }
+
   static FirebaseOptions get currentPlatform {
     if (kIsWeb) {
-      return web;
+      return _webFromEnv();
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return android;
+        return _androidFromEnv();
       case TargetPlatform.iOS:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for ios - '
@@ -33,7 +44,7 @@ class DefaultFirebaseOptions {
           'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.windows:
-        return windows;
+        return _windowsFromEnv();
       case TargetPlatform.linux:
         throw UnsupportedError(
           'DefaultFirebaseOptions have not been configured for linux - '
@@ -46,32 +57,31 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBQg7brtMjuSX4yyJQpMxvdymKv9vRiY4c',
-    appId: '1:358899618997:web:24a938ed5c321fb0f81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    authDomain: 'expenses-db-afbea.firebaseapp.com',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
-    measurementId: 'G-S6ML5RF7L0',
+  static FirebaseOptions _webFromEnv() => FirebaseOptions(
+    apiKey: _env('FIREBASE_API_KEY_WEB'),
+    appId: _env('FIREBASE_APP_ID_WEB'),
+    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: _env('FIREBASE_PROJECT_ID'),
+    authDomain: _env('FIREBASE_AUTH_DOMAIN'),
+    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+    measurementId: _env('FIREBASE_MEASUREMENT_ID_WEB'),
   );
 
-  static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
-    appId: '1:358899618997:android:baac7a8682a43e95f81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+  static FirebaseOptions _androidFromEnv() => FirebaseOptions(
+    apiKey: _env('FIREBASE_API_KEY_ANDROID'),
+    appId: _env('FIREBASE_APP_ID_ANDROID'),
+    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: _env('FIREBASE_PROJECT_ID'),
+    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
   );
 
-  static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyBQg7brtMjuSX4yyJQpMxvdymKv9vRiY4c',
-    appId: '1:358899618997:web:60e8deb8d081538cf81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    authDomain: 'expenses-db-afbea.firebaseapp.com',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
-    measurementId: 'G-YYPD14Q4NC',
+  static FirebaseOptions _windowsFromEnv() => FirebaseOptions(
+    apiKey: _env('FIREBASE_API_KEY_WINDOWS'),
+    appId: _env('FIREBASE_APP_ID_WINDOWS'),
+    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+    projectId: _env('FIREBASE_PROJECT_ID'),
+    authDomain: _env('FIREBASE_AUTH_DOMAIN'),
+    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+    measurementId: _env('FIREBASE_MEASUREMENT_ID_WINDOWS'),
   );
-
 }

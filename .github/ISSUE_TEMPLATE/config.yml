@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 💬 Discussion & Ideas
+    url: https://github.com/lucifers-0666/KHARCHA-Expense-Tracker_APP/discussions
+    about: Share ideas, ask questions, or discuss features
+  - name: 📚 Documentation
+    url: https://github.com/lucifers-0666/KHARCHA-Expense-Tracker_APP#readme
+    about: Read documentation and setup guides
+  - name: 📧 Email Support
+    url: mailto:your.email@example.com
+    about: Contact maintainers via email
