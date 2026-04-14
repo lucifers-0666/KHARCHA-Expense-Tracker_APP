@@ -47,9 +47,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
       await _scanSms();
     }
     await _refreshLists();
-    if (mounted) {
-      setState(() => _isLoading = false);
-    }
+    if (mounted) setState(() => _isLoading = false);
   }
 
   Future<void> _requestPermission() async {
@@ -85,9 +83,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
       if (!mounted) return;
       _showSnack('Failed to read SMS: $e', true);
     } finally {
-      if (mounted) {
-        setState(() => _isImporting = false);
-      }
+      if (mounted) setState(() => _isImporting = false);
     }
   }
 
@@ -97,7 +93,6 @@ class _SmsImportScreenState extends State<SmsImportScreen>
       _importService.getSuggestionsByStatus(SmsSuggestionStatus.imported),
       _importService.getSuggestionsByStatus(SmsSuggestionStatus.ignored),
     ]);
-
     if (!mounted) return;
     setState(() {
       _newSuggestions = results[0];
@@ -138,7 +133,8 @@ class _SmsImportScreenState extends State<SmsImportScreen>
           curve: Curves.easeOut,
           padding: EdgeInsets.only(bottom: viewInsets.bottom),
           child: ClipRRect(
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius:
+                const BorderRadius.vertical(top: Radius.circular(28)),
             child: Material(
               color: Theme.of(context).colorScheme.surface,
               child: AddExpenseScreen(
@@ -159,10 +155,12 @@ class _SmsImportScreenState extends State<SmsImportScreen>
   }
 
   void _showSnack(String message, [bool isError = false]) {
+    if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: isError ? AppColors.danger : AppColors.success,
+        backgroundColor:
+            isError ? AppColors.danger : AppColors.success,
       ),
     );
   }
@@ -208,22 +206,20 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         child: _isLoading
             ? _buildLoadingView()
             : !_permissionStatus.isGranted
-            ? _buildPermissionView()
-            : TabBarView(
-                controller: _tabController,
-                children: [
-                  _buildSuggestionList(_newSuggestions, isNewTab: true),
-                  _buildSuggestionList(_imported),
-                  _buildSuggestionList(_ignored),
-                ],
-              ),
+                ? _buildPermissionView()
+                : TabBarView(
+                    controller: _tabController,
+                    children: [
+                      _buildSuggestionList(_newSuggestions, isNewTab: true),
+                      _buildSuggestionList(_imported),
+                      _buildSuggestionList(_ignored),
+                    ],
+                  ),
       ),
     );
   }
 
   Widget _buildPermissionView() {
-    final permanentlyDenied = _permissionStatus.isPermanentlyDenied;
-
     return SafeArea(
       child: Center(
         child: SingleChildScrollView(
@@ -253,11 +249,15 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                 ),
                 const SizedBox(height: 14),
                 const Text(
-                  'KHARCHA reads only transactional SMS alerts (bank/UPI/card debit) to suggest expenses. We never auto-submit entries without your review.',
-                  style: TextStyle(color: AppColors.textSecondary, height: 1.4),
+                  'KHARCHA reads only transactional SMS alerts '
+                  '(bank/UPI/card debit) to suggest expenses. '
+                  'We never auto-submit entries without your review.',
+                  style: TextStyle(
+                    color: AppColors.textSecondary, height: 1.4,
+                  ),
                 ),
                 const SizedBox(height: 18),
-                if (permanentlyDenied)
+                if (_permissionStatus.isPermanentlyDenied)
                   ElevatedButton.icon(
                     onPressed: openAppSettings,
                     icon: const Icon(Icons.settings),
@@ -296,8 +296,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
             Container(height: 14, width: 100, color: Colors.grey.shade300),
             const SizedBox(height: 10),
             Container(
-              height: 12,
-              width: double.infinity,
+              height: 12, width: double.infinity,
               color: Colors.grey.shade300,
             ),
           ],
@@ -333,13 +332,12 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         itemBuilder: (context, index) => _SuggestionCard(
           suggestion: suggestions[index],
           confidenceThreshold: SmsParserService.defaultConfidenceThreshold,
-          onConfirm: isNewTab
-              ? () => _confirmSuggestion(suggestions[index])
-              : null,
-          onEdit: isNewTab ? () => _openEditPrefill(suggestions[index]) : null,
-          onIgnore: isNewTab
-              ? () => _ignoreSuggestion(suggestions[index])
-              : null,
+          onConfirm:
+              isNewTab ? () => _confirmSuggestion(suggestions[index]) : null,
+          onEdit:
+              isNewTab ? () => _openEditPrefill(suggestions[index]) : null,
+          onIgnore:
+              isNewTab ? () => _ignoreSuggestion(suggestions[index]) : null,
         ),
       ),
     );
@@ -392,7 +390,7 @@ class _SuggestionCard extends StatelessWidget {
                 ),
               ),
               Text(
-                '₹${(suggestion.parsedAmount ?? 0).toStringAsFixed(2)}',
+                '\u20b9${(suggestion.parsedAmount ?? 0).toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontWeight: FontWeight.w700,
                   color: AppColors.primary,

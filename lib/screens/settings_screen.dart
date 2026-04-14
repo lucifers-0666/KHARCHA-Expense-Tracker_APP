@@ -85,9 +85,13 @@ class SettingsScreen extends StatelessWidget {
     ThemeProvider themeProvider,
     bool isDark,
   ) {
+    // Use surface color (card was removed — surface is the correct token)
+    final cardColor = isDark ? AppColorsDark.surface : AppColors.surface;
+    final accentColor = isDark ? AppColorsDark.accent : AppColors.accent;
+
     return Card(
       elevation: 2,
-      color: isDark ? AppColorsDark.card : AppColors.card,
+      color: cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -99,15 +103,10 @@ class SettingsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (isDark ? AppColorsDark.accent : AppColors.accent)
-                        .withValues(alpha: 0.1),
+                    color: accentColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.palette,
-                    color: isDark ? AppColorsDark.accent : AppColors.accent,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.palette, color: accentColor, size: 24),
                 ),
                 const SizedBox(width: 12),
                 const Text(
@@ -118,33 +117,13 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
           const Divider(height: 1),
-          _buildThemeOption(
-            context,
-            themeProvider,
-            isDark,
-            ThemePreference.light,
-            'Light Mode',
-            'Use light theme',
-            Icons.light_mode,
-          ),
-          _buildThemeOption(
-            context,
-            themeProvider,
-            isDark,
-            ThemePreference.dark,
-            'Dark Mode',
-            'Use dark theme',
-            Icons.dark_mode,
-          ),
-          _buildThemeOption(
-            context,
-            themeProvider,
-            isDark,
-            ThemePreference.system,
-            'System Default',
-            'Follow system settings',
-            Icons.brightness_auto,
-          ),
+          _buildThemeOption(context, themeProvider, isDark,
+              ThemePreference.light, 'Light Mode', 'Use light theme', Icons.light_mode),
+          _buildThemeOption(context, themeProvider, isDark,
+              ThemePreference.dark, 'Dark Mode', 'Use dark theme', Icons.dark_mode),
+          _buildThemeOption(context, themeProvider, isDark,
+              ThemePreference.system, 'System Default', 'Follow system settings',
+              Icons.brightness_auto),
         ],
       ),
     );
@@ -160,27 +139,22 @@ class SettingsScreen extends StatelessWidget {
     IconData icon,
   ) {
     final bool isSelected = themeProvider.themePreference == preference;
+    final accentColor = isDark ? AppColorsDark.accent : AppColors.accent;
+    final secondaryTextColor =
+        isDark ? AppColorsDark.textSecondary : AppColors.textSecondary;
 
     return InkWell(
       onTap: () => themeProvider.setThemePreference(preference),
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected
-              ? (isDark ? AppColorsDark.accent : AppColors.accent).withValues(
-                  alpha: 0.1,
-                )
-              : null,
+          color: isSelected ? accentColor.withValues(alpha: 0.1) : null,
         ),
         child: Row(
           children: [
             Icon(
               icon,
-              color: isSelected
-                  ? (isDark ? AppColorsDark.accent : AppColors.accent)
-                  : (isDark
-                        ? AppColorsDark.textSecondary
-                        : AppColors.textSecondary),
+              color: isSelected ? accentColor : secondaryTextColor,
               size: 28,
             ),
             const SizedBox(width: 16),
@@ -192,33 +166,21 @@ class SettingsScreen extends StatelessWidget {
                     title,
                     style: TextStyle(
                       fontSize: 16,
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.normal,
-                      color: isSelected
-                          ? (isDark ? AppColorsDark.accent : AppColors.accent)
-                          : null,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.normal,
+                      color: isSelected ? accentColor : null,
                     ),
                   ),
                   const SizedBox(height: 2),
                   Text(
                     subtitle,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark
-                          ? AppColorsDark.textSecondary
-                          : AppColors.textSecondary,
-                    ),
+                    style: TextStyle(fontSize: 13, color: secondaryTextColor),
                   ),
                 ],
               ),
             ),
             if (isSelected)
-              Icon(
-                Icons.check_circle,
-                color: isDark ? AppColorsDark.accent : AppColors.accent,
-                size: 24,
-              ),
+              Icon(Icons.check_circle, color: accentColor, size: 24),
           ],
         ),
       ),
@@ -226,9 +188,13 @@ class SettingsScreen extends StatelessWidget {
   }
 
   Widget _buildAppInfoSection(BuildContext context, bool isDark) {
+    final cardColor = isDark ? AppColorsDark.surface : AppColors.surface;
+    final infoColor = isDark ? AppColorsDark.info : AppColors.info;
+    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+
     return Card(
       elevation: 2,
-      color: isDark ? AppColorsDark.card : AppColors.card,
+      color: cardColor,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
       child: Column(
         children: [
@@ -239,15 +205,10 @@ class SettingsScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: (isDark ? AppColorsDark.info : AppColors.info)
-                        .withValues(alpha: 0.1),
+                    color: infoColor.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Icon(
-                    Icons.info,
-                    color: isDark ? AppColorsDark.info : AppColors.info,
-                    size: 24,
-                  ),
+                  child: Icon(Icons.info, color: infoColor, size: 24),
                 ),
                 const SizedBox(width: 12),
                 const Text(
@@ -263,26 +224,26 @@ class SettingsScreen extends StatelessWidget {
             title: const Text('Version'),
             subtitle: const Text('1.0.0'),
             trailing: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: (isDark ? AppColorsDark.success : AppColors.success)
-                    .withValues(alpha: 0.1),
+                color: successColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 'Latest',
                 style: TextStyle(
-                  color: isDark ? AppColorsDark.success : AppColors.success,
+                  color: successColor,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          ListTile(
-            leading: const Icon(Icons.business),
-            title: const Text('Developer'),
-            subtitle: const Text('KHARCHA Team'),
+          const ListTile(
+            leading: Icon(Icons.business),
+            title: Text('Developer'),
+            subtitle: Text('KHARCHA Team'),
           ),
           ListTile(
             leading: const Icon(Icons.description),
@@ -295,7 +256,8 @@ class SettingsScreen extends StatelessWidget {
                   title: const Text('License Information'),
                   content: const Text(
                     'This app is licensed under the MIT License.\n\n'
-                    'Permission is hereby granted, free of charge, to any person obtaining a copy of this software.',
+                    'Permission is hereby granted, free of charge, to any '
+                    'person obtaining a copy of this software.',
                   ),
                   actions: [
                     TextButton(

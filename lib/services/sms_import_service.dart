@@ -11,10 +11,10 @@ class SmsImportService {
     LocalDatabaseHelper? localDb,
     FirestoreServices? firestoreServices,
     SmsParserService? parser,
-  }) : _smsQuery = smsQuery ?? SmsQuery(),
-       _localDb = localDb ?? LocalDatabaseHelper.instance,
-       _firestoreServices = firestoreServices ?? FirestoreServices(),
-       _parser = parser ?? SmsParserService();
+  })  : _smsQuery = smsQuery ?? SmsQuery(),
+        _localDb = localDb ?? LocalDatabaseHelper.instance,
+        _firestoreServices = firestoreServices ?? FirestoreServices(),
+        _parser = parser ?? SmsParserService();
 
   final SmsQuery _smsQuery;
   final LocalDatabaseHelper _localDb;
@@ -33,12 +33,11 @@ class SmsImportService {
       if (body == null || body.isEmpty) continue;
       if (!_parser.isLikelyDebitMessage(body)) continue;
 
+      // message.date is DateTime? in flutter_sms_inbox
       final smsDate = message.date;
       final uniqueId = _buildSuggestionId(message);
       final existing = await _localDb.getSmsSuggestionById(uniqueId);
-      if (existing != null) {
-        continue;
-      }
+      if (existing != null) continue;
 
       final suggestion = _parser.parse(
         rawSms: body,
@@ -76,11 +75,11 @@ class SmsImportService {
   }) async {
     final expense = Expense(
       id: '',
-      title: (titleOverride ?? suggestion.parsedMerchant ?? 'SMS Import')
-          .trim(),
+      title: (titleOverride ?? suggestion.parsedMerchant ?? 'SMS Import').trim(),
       amount: amountOverride ?? suggestion.parsedAmount ?? 0,
       category: (categoryOverride ?? 'Other').trim(),
       date: dateOverride ?? suggestion.parsedDate ?? DateTime.now(),
+      // Store raw SMS as description for reference
       description: suggestion.rawSms,
     );
 
@@ -89,6 +88,7 @@ class SmsImportService {
   }
 
   String _buildSuggestionId(SmsMessage message) {
+    // message.date is DateTime? — use millisecondsSinceEpoch safely
     final datePart = message.date?.millisecondsSinceEpoch ?? 0;
     final senderPart = (message.address ?? 'unknown').replaceAll(' ', '_');
     final hash = (message.body ?? '').hashCode;

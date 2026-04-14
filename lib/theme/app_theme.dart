@@ -23,6 +23,7 @@ class AppColors {
   static const background     = Color(0xFFF5F6FA);
   static const surface        = Color(0xFFFFFFFF);
   static const surfaceOffset  = Color(0xFFEEF0F8);
+  static const card           = Color(0xFFFFFFFF); // alias for surface
 
   // Semantic
   static const income         = Color(0xFF2E9E6F);  // green
@@ -30,9 +31,9 @@ class AppColors {
   static const warning        = Color(0xFFF59E0B);  // amber
   static const info           = Color(0xFF3B82F6);  // blue
 
-  // ── Aliases kept for backward-compat (used across many screens) ──
-  static const danger  = expense;   // AppColors.danger  → expense red
-  static const success = income;    // AppColors.success → income green
+  // Backward-compat aliases
+  static const danger  = expense;
+  static const success = income;
 
   // Text
   static const textPrimary    = Color(0xFF1C2230);
@@ -56,13 +57,14 @@ class AppColorsDark {
   static const background     = Color(0xFF0F1117);
   static const surface        = Color(0xFF181B27);
   static const surfaceOffset  = Color(0xFF1E2235);
+  static const card           = Color(0xFF181B27); // alias for surface
 
   static const income         = Color(0xFF3FAF7C);
   static const expense        = Color(0xFFEF6B6B);
   static const warning        = Color(0xFFFBBF24);
   static const info           = Color(0xFF60A5FA);
 
-  // Aliases
+  // Backward-compat aliases
   static const danger  = expense;
   static const success = income;
 
@@ -97,7 +99,7 @@ class AppRadius {
 class AppShadows {
   static List<BoxShadow> get sm => [
     BoxShadow(
-      color: const Color(0xFF1B2B5E).withOpacity(0.06),
+      color: Color.fromRGBO(27, 43, 94, 0.06),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -105,12 +107,12 @@ class AppShadows {
 
   static List<BoxShadow> get md => [
     BoxShadow(
-      color: const Color(0xFF1B2B5E).withOpacity(0.08),
+      color: Color.fromRGBO(27, 43, 94, 0.08),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),
     BoxShadow(
-      color: const Color(0xFF1B2B5E).withOpacity(0.04),
+      color: Color.fromRGBO(27, 43, 94, 0.04),
       blurRadius: 4,
       offset: const Offset(0, 1),
     ),
@@ -118,12 +120,12 @@ class AppShadows {
 
   static List<BoxShadow> get lg => [
     BoxShadow(
-      color: const Color(0xFF1B2B5E).withOpacity(0.14),
+      color: Color.fromRGBO(27, 43, 94, 0.14),
       blurRadius: 32,
       offset: const Offset(0, 8),
     ),
     BoxShadow(
-      color: const Color(0xFF1B2B5E).withOpacity(0.06),
+      color: Color.fromRGBO(27, 43, 94, 0.06),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -131,7 +133,7 @@ class AppShadows {
 
   static List<BoxShadow> get darkSm => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.2),
+      color: Color.fromRGBO(0, 0, 0, 0.2),
       blurRadius: 8,
       offset: const Offset(0, 2),
     ),
@@ -139,7 +141,7 @@ class AppShadows {
 
   static List<BoxShadow> get darkMd => [
     BoxShadow(
-      color: Colors.black.withOpacity(0.3),
+      color: Color.fromRGBO(0, 0, 0, 0.3),
       blurRadius: 16,
       offset: const Offset(0, 4),
     ),
@@ -151,100 +153,52 @@ class AppTextStyles {
   static const _font = 'Roboto';
 
   static const displayLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 32,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.5,
-    height: 1.2,
+    fontFamily: _font, fontSize: 32, fontWeight: FontWeight.w700,
+    letterSpacing: -0.5, height: 1.2,
   );
-
   static const displayMedium = TextStyle(
-    fontFamily: _font,
-    fontSize: 26,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -0.3,
-    height: 1.25,
+    fontFamily: _font, fontSize: 26, fontWeight: FontWeight.w700,
+    letterSpacing: -0.3, height: 1.25,
   );
-
   static const headlineLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 22,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.2,
-    height: 1.3,
+    fontFamily: _font, fontSize: 22, fontWeight: FontWeight.w600,
+    letterSpacing: -0.2, height: 1.3,
   );
-
   static const headlineMedium = TextStyle(
-    fontFamily: _font,
-    fontSize: 18,
-    fontWeight: FontWeight.w600,
-    height: 1.35,
+    fontFamily: _font, fontSize: 18, fontWeight: FontWeight.w600, height: 1.35,
   );
-
   static const titleLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    height: 1.4,
+    fontFamily: _font, fontSize: 16, fontWeight: FontWeight.w600, height: 1.4,
   );
-
   static const bodyLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 16,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
+    fontFamily: _font, fontSize: 16, fontWeight: FontWeight.w400, height: 1.5,
   );
-
   static const bodyMedium = TextStyle(
-    fontFamily: _font,
-    fontSize: 14,
-    fontWeight: FontWeight.w400,
-    height: 1.5,
+    fontFamily: _font, fontSize: 14, fontWeight: FontWeight.w400, height: 1.5,
   );
-
   static const labelLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 14,
-    fontWeight: FontWeight.w500,
+    fontFamily: _font, fontSize: 14, fontWeight: FontWeight.w500,
     letterSpacing: 0.1,
   );
-
   static const labelMedium = TextStyle(
-    fontFamily: _font,
-    fontSize: 12,
-    fontWeight: FontWeight.w500,
+    fontFamily: _font, fontSize: 12, fontWeight: FontWeight.w500,
     letterSpacing: 0.5,
   );
-
   static const labelSmall = TextStyle(
-    fontFamily: _font,
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
+    fontFamily: _font, fontSize: 11, fontWeight: FontWeight.w500,
     letterSpacing: 0.8,
   );
-
-  // Amount styles
   static const amountLarge = TextStyle(
-    fontFamily: _font,
-    fontSize: 36,
-    fontWeight: FontWeight.w700,
-    letterSpacing: -1,
-    height: 1.1,
+    fontFamily: _font, fontSize: 36, fontWeight: FontWeight.w700,
+    letterSpacing: -1, height: 1.1,
     fontFeatures: [FontFeature.tabularFigures()],
   );
-
   static const amountMedium = TextStyle(
-    fontFamily: _font,
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    letterSpacing: -0.5,
-    fontFeatures: [FontFeature.tabularFigures()],
+    fontFamily: _font, fontSize: 20, fontWeight: FontWeight.w600,
+    letterSpacing: -0.5, fontFeatures: [FontFeature.tabularFigures()],
   );
-
   static const amountSmall = TextStyle(
-    fontFamily: _font,
-    fontSize: 15,
-    fontWeight: FontWeight.w600,
+    fontFamily: _font, fontSize: 15, fontWeight: FontWeight.w600,
     fontFeatures: [FontFeature.tabularFigures()],
   );
 }
@@ -291,15 +245,13 @@ class AppTheme {
           statusBarIconBrightness: Brightness.dark,
         ),
         titleTextStyle: TextStyle(
-          fontFamily: 'Roboto',
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimary,
-          letterSpacing: -0.3,
+          fontFamily: 'Roboto', fontSize: 20, fontWeight: FontWeight.w600,
+          color: AppColors.textPrimary, letterSpacing: -0.3,
         ),
       ),
 
-      cardTheme: CardTheme(
+      // ── Material 3: use cardTheme with CardThemeData ──
+      cardTheme: CardThemeData(
         elevation: 0,
         color: AppColors.surface,
         shape: RoundedRectangleBorder(
@@ -313,8 +265,7 @@ class AppTheme {
         filled: true,
         fillColor: AppColors.surfaceOffset,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
+          horizontal: AppSpacing.md, vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -333,14 +284,9 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.expense, width: 1.5),
         ),
         labelStyle: const TextStyle(
-          color: AppColors.textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+          color: AppColors.textSecondary, fontSize: 14, fontWeight: FontWeight.w500,
         ),
-        hintStyle: const TextStyle(
-          color: AppColors.textHint,
-          fontSize: 14,
-        ),
+        hintStyle: const TextStyle(color: AppColors.textHint, fontSize: 14),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -349,8 +295,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
+            horizontal: AppSpacing.xl, vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -364,8 +309,7 @@ class AppTheme {
           foregroundColor: AppColors.primary,
           side: const BorderSide(color: AppColors.primary, width: 1.5),
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
+            horizontal: AppSpacing.xl, vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -414,29 +358,23 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceOffset,
         selectedColor: const Color(0xFFD0F5F3),
-        labelStyle: AppTextStyles.labelMedium.copyWith(
-          color: AppColors.textSecondary,
-        ),
+        labelStyle: AppTextStyles.labelMedium.copyWith(color: AppColors.textSecondary),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          horizontal: AppSpacing.md, vertical: AppSpacing.xs,
         ),
       ),
 
       dividerTheme: const DividerThemeData(
-        color: AppColors.divider,
-        thickness: 1,
-        space: 0,
+        color: AppColors.divider, thickness: 1, space: 0,
       ),
 
       listTileTheme: const ListTileThemeData(
         contentPadding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          horizontal: AppSpacing.md, vertical: AppSpacing.xs,
         ),
         minLeadingWidth: 0,
       ),
@@ -446,22 +384,19 @@ class AppTheme {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
         ),
-        contentTextStyle: AppTextStyles.bodyMedium.copyWith(
-          color: Colors.white,
-        ),
+        contentTextStyle: AppTextStyles.bodyMedium.copyWith(color: Colors.white),
       ),
 
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.surface,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
-          ),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
         ),
         showDragHandle: true,
       ),
 
-      dialogTheme: DialogTheme(
+      // ── Material 3: use DialogThemeData ──
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColors.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
@@ -517,20 +452,17 @@ class AppTheme {
           statusBarIconBrightness: Brightness.light,
         ),
         titleTextStyle: TextStyle(
-          fontFamily: 'Roboto',
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColorsDark.textPrimary,
-          letterSpacing: -0.3,
+          fontFamily: 'Roboto', fontSize: 20, fontWeight: FontWeight.w600,
+          color: AppColorsDark.textPrimary, letterSpacing: -0.3,
         ),
       ),
 
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         color: AppColorsDark.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
-          side: BorderSide(color: AppColorsDark.border, width: 1),
+          side: const BorderSide(color: AppColorsDark.border, width: 1),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -539,8 +471,7 @@ class AppTheme {
         filled: true,
         fillColor: AppColorsDark.surfaceOffset,
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.md,
+          horizontal: AppSpacing.md, vertical: AppSpacing.md,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -558,15 +489,10 @@ class AppTheme {
           borderRadius: BorderRadius.circular(AppRadius.md),
           borderSide: const BorderSide(color: AppColorsDark.expense, width: 1.5),
         ),
-        labelStyle: TextStyle(
-          color: AppColorsDark.textSecondary,
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
+        labelStyle: const TextStyle(
+          color: AppColorsDark.textSecondary, fontSize: 14, fontWeight: FontWeight.w500,
         ),
-        hintStyle: TextStyle(
-          color: AppColorsDark.textHint,
-          fontSize: 14,
-        ),
+        hintStyle: const TextStyle(color: AppColorsDark.textHint, fontSize: 14),
       ),
 
       elevatedButtonTheme: ElevatedButtonThemeData(
@@ -575,8 +501,7 @@ class AppTheme {
           foregroundColor: Colors.white,
           elevation: 0,
           padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.xl,
-            vertical: AppSpacing.md,
+            horizontal: AppSpacing.xl, vertical: AppSpacing.md,
           ),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -599,19 +524,15 @@ class AppTheme {
         indicatorColor: const Color(0xFF003D38),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppTextStyles.labelSmall.copyWith(
-              color: AppColorsDark.accentLight,
-            );
+            return AppTextStyles.labelSmall.copyWith(color: AppColorsDark.accentLight);
           }
-          return AppTextStyles.labelSmall.copyWith(
-            color: AppColorsDark.textHint,
-          );
+          return AppTextStyles.labelSmall.copyWith(color: AppColorsDark.textHint);
         }),
         iconTheme: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return IconThemeData(color: AppColorsDark.accentLight, size: 24);
+            return const IconThemeData(color: AppColorsDark.accentLight, size: 24);
           }
-          return IconThemeData(color: AppColorsDark.textHint, size: 24);
+          return const IconThemeData(color: AppColorsDark.textHint, size: 24);
         }),
         elevation: 0,
         shadowColor: Colors.transparent,
@@ -621,29 +542,23 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: AppColorsDark.surfaceOffset,
         selectedColor: const Color(0xFF003D38),
-        labelStyle: AppTextStyles.labelMedium.copyWith(
-          color: AppColorsDark.textSecondary,
-        ),
+        labelStyle: AppTextStyles.labelMedium.copyWith(color: AppColorsDark.textSecondary),
         side: BorderSide.none,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.full),
         ),
         padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          horizontal: AppSpacing.md, vertical: AppSpacing.xs,
         ),
       ),
 
-      dividerTheme: DividerThemeData(
-        color: AppColorsDark.divider,
-        thickness: 1,
-        space: 0,
+      dividerTheme: const DividerThemeData(
+        color: AppColorsDark.divider, thickness: 1, space: 0,
       ),
 
       listTileTheme: const ListTileThemeData(
         contentPadding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+          horizontal: AppSpacing.md, vertical: AppSpacing.xs,
         ),
         minLeadingWidth: 0,
       ),
@@ -659,17 +574,15 @@ class AppTheme {
         ),
       ),
 
-      bottomSheetTheme: BottomSheetThemeData(
+      bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColorsDark.surface,
-        shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppRadius.xl),
-          ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
         ),
         showDragHandle: true,
       ),
 
-      dialogTheme: DialogTheme(
+      dialogTheme: DialogThemeData(
         backgroundColor: AppColorsDark.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
