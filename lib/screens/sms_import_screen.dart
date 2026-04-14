@@ -21,11 +21,12 @@ class _SmsImportScreenState extends State<SmsImportScreen>
 
   bool _isLoading = true;
   bool _isImporting = false;
+  // Default to denied; updated once we check the real status
   PermissionStatus _permissionStatus = PermissionStatus.denied;
 
   List<SmsSuggestion> _newSuggestions = [];
   List<SmsSuggestion> _imported = [];
-  List<SmsSuggestion> _ignored = [];
+  List<SmsSuggestion> _ignored  = [];
 
   @override
   void initState() {
@@ -40,6 +41,8 @@ class _SmsImportScreenState extends State<SmsImportScreen>
     super.dispose();
   }
 
+  // ── init ──────────────────────────────────────────────────
+
   Future<void> _initialize() async {
     setState(() => _isLoading = true);
     _permissionStatus = await Permission.sms.status;
@@ -52,6 +55,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
 
   Future<void> _requestPermission() async {
     final status = await Permission.sms.request();
+    if (!mounted) return;
     setState(() => _permissionStatus = status);
 
     if (status.isGranted) {
@@ -62,8 +66,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
       return;
     }
 
-    if (status.isPermanentlyDenied) {
-      if (!mounted) return;
+    if (status.isPermanentlyDenied && mounted) {
       _showSnack(
         'Permission permanently denied. Open settings to enable SMS.',
         true,
@@ -72,12 +75,13 @@ class _SmsImportScreenState extends State<SmsImportScreen>
   }
 
   Future<void> _scanSms() async {
+    if (!mounted) return;
     setState(() => _isImporting = true);
     try {
       final inserted = await _importService.pullAndParseRecentSms();
       if (!mounted) return;
       _showSnack(
-        'Imported $inserted new SMS suggestion${inserted == 1 ? '' : 's'}.',
+        'Imported $inserted new suggestion${inserted == 1 ? '' : 's'}.',
       );
     } catch (e) {
       if (!mounted) return;
@@ -96,8 +100,8 @@ class _SmsImportScreenState extends State<SmsImportScreen>
     if (!mounted) return;
     setState(() {
       _newSuggestions = results[0];
-      _imported = results[1];
-      _ignored = results[2];
+      _imported       = results[1];
+      _ignored        = results[2];
     });
   }
 
@@ -121,30 +125,30 @@ class _SmsImportScreenState extends State<SmsImportScreen>
   }
 
   Future<void> _openEditPrefill(SmsSuggestion suggestion) async {
-    await showModalBottomSheet(
+    await showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        final viewInsets = MediaQuery.of(context).viewInsets;
+      builder: (ctx) {
         return AnimatedPadding(
           duration: const Duration(milliseconds: 200),
           curve: Curves.easeOut,
-          padding: EdgeInsets.only(bottom: viewInsets.bottom),
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(ctx).viewInsets.bottom,
+          ),
           child: ClipRRect(
-            borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(28)),
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
             child: Material(
-              color: Theme.of(context).colorScheme.surface,
+              color: Theme.of(ctx).colorScheme.surface,
               child: AddExpenseScreen(
                 onSave: () async {
                   await _importService.markAsImported(suggestion.id);
                   await _refreshLists();
                 },
-                initialTitle: suggestion.parsedMerchant ?? 'SMS Import',
-                initialAmount: suggestion.parsedAmount,
-                initialDate: suggestion.parsedDate,
+                initialTitle   : suggestion.parsedMerchant ?? 'SMS Import',
+                initialAmount  : suggestion.parsedAmount,
+                initialDate    : suggestion.parsedDate,
                 initialCategory: 'Other',
               ),
             ),
@@ -159,11 +163,12 @@ class _SmsImportScreenState extends State<SmsImportScreen>
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor:
-            isError ? AppColors.danger : AppColors.success,
+        backgroundColor: isError ? AppColors.danger : AppColors.success,
       ),
     );
   }
+
+  // ── build ─────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -171,23 +176,33 @@ class _SmsImportScreenState extends State<SmsImportScreen>
       appBar: AppBar(
         title: const Text('SMS Import'),
         actions: [
-          IconButton(
-            onPressed: _isImporting || !_permissionStatus.isGranted
-                ? null
-                : () async {
-                    await _scanSms();
-                    await _refreshLists();
-                  },
-            icon: const Icon(Icons.refresh),
-            tooltip: 'Refresh Suggestions',
-          ),
+          if (_isImporting)
+            const Padding(
+              padding: EdgeInsets.all(14),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            IconButton(
+              onPressed: _permissionStatus.isGranted
+                  ? () async {
+                      await _scanSms();
+                      await _refreshLists();
+                    }
+                  : null,
+              icon: const Icon(Icons.refresh),
+              tooltip: 'Refresh Suggestions',
+            ),
         ],
         bottom: TabBar(
           controller: _tabController,
-          tabs: const [
-            Tab(text: 'New Suggestions'),
-            Tab(text: 'Imported'),
-            Tab(text: 'Ignored'),
+          tabs: [
+            Tab(text: 'New (${_newSuggestions.length})'),
+            Tab(text: 'Imported (${_imported.length})'),
+            Tab(text: 'Ignored (${_ignored.length})'),
           ],
         ),
       ),
@@ -204,20 +219,22 @@ class _SmsImportScreenState extends State<SmsImportScreen>
           ),
         ),
         child: _isLoading
-            ? _buildLoadingView()
+            ? _buildShimmerList()
             : !_permissionStatus.isGranted
                 ? _buildPermissionView()
                 : TabBarView(
                     controller: _tabController,
                     children: [
-                      _buildSuggestionList(_newSuggestions, isNewTab: true),
-                      _buildSuggestionList(_imported),
-                      _buildSuggestionList(_ignored),
+                      _buildList(_newSuggestions, isNewTab: true),
+                      _buildList(_imported),
+                      _buildList(_ignored),
                     ],
                   ),
       ),
     );
   }
+
+  // ── permission view ───────────────────────────────────────
 
   Widget _buildPermissionView() {
     return SafeArea(
@@ -237,12 +254,13 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                   children: [
                     Icon(Icons.sms_rounded, color: AppColors.primary),
                     SizedBox(width: 10),
-                    Text(
-                      'Why we need SMS access',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                    Expanded(
+                      child: Text(
+                        'SMS access needed',
+                        style: TextStyle(
+                          fontSize: 18, fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
                     ),
                   ],
@@ -257,18 +275,21 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                   ),
                 ),
                 const SizedBox(height: 18),
-                if (_permissionStatus.isPermanentlyDenied)
-                  ElevatedButton.icon(
-                    onPressed: openAppSettings,
-                    icon: const Icon(Icons.settings),
-                    label: const Text('Open App Settings'),
-                  )
-                else
-                  ElevatedButton.icon(
-                    onPressed: _requestPermission,
-                    icon: const Icon(Icons.lock_open_rounded),
-                    label: const Text('Allow SMS Access'),
-                  ),
+                SizedBox(
+                  width: double.infinity,
+                  child: _permissionStatus.isPermanentlyDenied
+                      ? ElevatedButton.icon(
+                          // openAppSettings is from permission_handler
+                          onPressed: openAppSettings,
+                          icon: const Icon(Icons.settings),
+                          label: const Text('Open App Settings'),
+                        )
+                      : ElevatedButton.icon(
+                          onPressed: _requestPermission,
+                          icon: const Icon(Icons.lock_open_rounded),
+                          label: const Text('Allow SMS Access'),
+                        ),
+                ),
               ],
             ),
           ),
@@ -277,7 +298,9 @@ class _SmsImportScreenState extends State<SmsImportScreen>
     );
   }
 
-  Widget _buildLoadingView() {
+  // ── shimmer loading list ──────────────────────────────────
+
+  Widget _buildShimmerList() {
     return ListView.builder(
       padding: const EdgeInsets.all(16),
       itemCount: 6,
@@ -295,30 +318,37 @@ class _SmsImportScreenState extends State<SmsImportScreen>
             const SizedBox(height: 10),
             Container(height: 14, width: 100, color: Colors.grey.shade300),
             const SizedBox(height: 10),
-            Container(
-              height: 12, width: double.infinity,
-              color: Colors.grey.shade300,
-            ),
+            Container(height: 12, width: double.infinity, color: Colors.grey.shade300),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildSuggestionList(
-    List<SmsSuggestion> suggestions, {
-    bool isNewTab = false,
-  }) {
+  // ── suggestion list ───────────────────────────────────────
+
+  Widget _buildList(List<SmsSuggestion> suggestions, {bool isNewTab = false}) {
     if (suggestions.isEmpty) {
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(24),
-          child: Text(
-            isNewTab
-                ? 'No suggestions yet. Tap refresh to scan recent transactional SMS.'
-                : 'Nothing here yet.',
-            style: const TextStyle(color: Colors.white, fontSize: 15),
-            textAlign: TextAlign.center,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isNewTab ? Icons.inbox_rounded : Icons.check_circle_outline,
+                size: 48,
+                color: Colors.white.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                isNewTab
+                    ? 'No suggestions yet.\nTap ↻ to scan recent transactional SMS.'
+                    : 'Nothing here yet.',
+                style: const TextStyle(color: Colors.white, fontSize: 15),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ),
         ),
       );
@@ -330,53 +360,60 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         padding: const EdgeInsets.all(16),
         itemCount: suggestions.length,
         itemBuilder: (context, index) => _SuggestionCard(
-          suggestion: suggestions[index],
-          confidenceThreshold: SmsParserService.defaultConfidenceThreshold,
-          onConfirm:
-              isNewTab ? () => _confirmSuggestion(suggestions[index]) : null,
-          onEdit:
-              isNewTab ? () => _openEditPrefill(suggestions[index]) : null,
-          onIgnore:
-              isNewTab ? () => _ignoreSuggestion(suggestions[index]) : null,
+          suggestion  : suggestions[index],
+          threshold   : SmsParserService.defaultConfidenceThreshold,
+          onConfirm   : isNewTab ? () => _confirmSuggestion(suggestions[index]) : null,
+          onEdit      : isNewTab ? () => _openEditPrefill(suggestions[index])  : null,
+          onIgnore    : isNewTab ? () => _ignoreSuggestion(suggestions[index])  : null,
         ),
       ),
     );
   }
 }
 
+// ── suggestion card ───────────────────────────────────────────────────────────
+
 class _SuggestionCard extends StatelessWidget {
   const _SuggestionCard({
     required this.suggestion,
-    required this.confidenceThreshold,
+    required this.threshold,
     this.onConfirm,
     this.onEdit,
     this.onIgnore,
   });
 
   final SmsSuggestion suggestion;
-  final double confidenceThreshold;
+  final double        threshold;
   final VoidCallback? onConfirm;
   final VoidCallback? onEdit;
   final VoidCallback? onIgnore;
 
   @override
   Widget build(BuildContext context) {
-    final confidencePct = (suggestion.confidence * 100).toStringAsFixed(0);
-    final lowConfidence = suggestion.confidence < confidenceThreshold;
-    final dateText = suggestion.parsedDate == null
+    final pct          = (suggestion.confidence * 100).toStringAsFixed(0);
+    final lowConfidence= suggestion.confidence < threshold;
+    final dateText     = suggestion.parsedDate == null
         ? 'Unknown date'
         : DateFormat('dd MMM yyyy, hh:mm a').format(suggestion.parsedDate!);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(14),
+      margin   : const EdgeInsets.only(bottom: 12),
+      padding  : const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // ── header row ──
           Row(
             children: [
               Expanded(
@@ -400,19 +437,37 @@ class _SuggestionCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text('Date: $dateText'),
-          const SizedBox(height: 4),
-          Text('Confidence: $confidencePct%'),
-          const SizedBox(height: 4),
-          Text('Account: ${suggestion.detectedAccount ?? 'Not detected'}'),
+          _InfoRow(icon: Icons.calendar_today_outlined, label: dateText),
+          _InfoRow(
+            icon : Icons.verified_outlined,
+            label: 'Confidence: $pct%',
+            color: lowConfidence ? AppColors.warning : AppColors.income,
+          ),
+          if (suggestion.detectedAccount != null)
+            _InfoRow(
+              icon : Icons.account_balance_outlined,
+              label: suggestion.detectedAccount!,
+            ),
           if (lowConfidence)
-            const Padding(
-              padding: EdgeInsets.only(top: 8),
-              child: Text(
-                'Low confidence parse. Please review/edit before confirming.',
-                style: TextStyle(color: AppColors.warning, fontSize: 12),
+            Padding(
+              padding: const EdgeInsets.only(top: 6),
+              child: Row(
+                children: [
+                  const Icon(Icons.warning_amber_rounded,
+                      size: 14, color: AppColors.warning),
+                  const SizedBox(width: 4),
+                  const Expanded(
+                    child: Text(
+                      'Low confidence — review before confirming.',
+                      style: TextStyle(
+                        color: AppColors.warning, fontSize: 12,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
+          // ── action buttons ──
           if (onConfirm != null || onEdit != null || onIgnore != null)
             Padding(
               padding: const EdgeInsets.only(top: 12),
@@ -423,24 +478,65 @@ class _SuggestionCard extends StatelessWidget {
                   if (onConfirm != null)
                     ElevatedButton.icon(
                       onPressed: onConfirm,
-                      icon: const Icon(Icons.check_circle_outline),
+                      icon : const Icon(Icons.check_circle_outline, size: 16),
                       label: const Text('Confirm'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.income,
+                        foregroundColor: Colors.white,
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                   if (onEdit != null)
                     OutlinedButton.icon(
                       onPressed: onEdit,
-                      icon: const Icon(Icons.edit_outlined),
+                      icon : const Icon(Icons.edit_outlined, size: 16),
                       label: const Text('Edit'),
+                      style: OutlinedButton.styleFrom(
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                   if (onIgnore != null)
                     TextButton.icon(
                       onPressed: onIgnore,
-                      icon: const Icon(Icons.block_outlined),
+                      icon : const Icon(Icons.block_outlined, size: 16),
                       label: const Text('Ignore'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.expense,
+                        visualDensity: VisualDensity.compact,
+                      ),
                     ),
                 ],
               ),
             ),
+        ],
+      ),
+    );
+  }
+}
+
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({required this.icon, required this.label, this.color});
+  final IconData icon;
+  final String   label;
+  final Color?   color;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = color ?? AppColors.textSecondary;
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Row(
+        children: [
+          Icon(icon, size: 13, color: c),
+          const SizedBox(width: 5),
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(fontSize: 13, color: c),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ],
       ),
     );
