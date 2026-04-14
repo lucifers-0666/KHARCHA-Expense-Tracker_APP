@@ -5,7 +5,7 @@ import 'package:flutter/services.dart';
 // KHARCHA Design System
 // Art direction: Personal finance → calm, trustworthy, modern
 // Palette: Deep navy primary + teal accent (money/growth feel)
-// Typography: Inter (clean, readable at all sizes)
+// Typography: Roboto (clean, readable at all sizes)
 // ─────────────────────────────────────────────────────────────────────────────
 
 class AppColors {
@@ -29,6 +29,10 @@ class AppColors {
   static const expense        = Color(0xFFE25555);  // red
   static const warning        = Color(0xFFF59E0B);  // amber
   static const info           = Color(0xFF3B82F6);  // blue
+
+  // ── Aliases kept for backward-compat (used across many screens) ──
+  static const danger  = expense;   // AppColors.danger  → expense red
+  static const success = income;    // AppColors.success → income green
 
   // Text
   static const textPrimary    = Color(0xFF1C2230);
@@ -57,6 +61,10 @@ class AppColorsDark {
   static const expense        = Color(0xFFEF6B6B);
   static const warning        = Color(0xFFFBBF24);
   static const info           = Color(0xFF60A5FA);
+
+  // Aliases
+  static const danger  = expense;
+  static const success = income;
 
   static const textPrimary    = Color(0xFFE8EAF4);
   static const textSecondary  = Color(0xFF9AA3BC);

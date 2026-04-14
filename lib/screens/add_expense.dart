@@ -9,8 +9,21 @@ class AddExpenseScreen extends StatefulWidget {
   final VoidCallback onSave;
   final Expense? expenseToEdit;
 
-  const AddExpenseScreen({Key? key, required this.onSave, this.expenseToEdit})
-    : super(key: key);
+  // Prefill params used by SMS Import screen
+  final String? initialTitle;
+  final double? initialAmount;
+  final DateTime? initialDate;
+  final String? initialCategory;
+
+  const AddExpenseScreen({
+    Key? key,
+    required this.onSave,
+    this.expenseToEdit,
+    this.initialTitle,
+    this.initialAmount,
+    this.initialDate,
+    this.initialCategory,
+  }) : super(key: key);
 
   @override
   State<AddExpenseScreen> createState() => _AddExpenseScreenState();
@@ -27,8 +40,8 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
   late Animation<double> _fadeAnimation;
   late Animation<Offset> _slideAnimation;
 
-  String selectedCategory = 'Food';
-  DateTime selectedDate = DateTime.now();
+  late String selectedCategory;
+  late DateTime selectedDate;
 
   final List<Map<String, dynamic>> categories = [
     {
@@ -85,6 +98,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
     _animController.forward();
 
     if (widget.expenseToEdit != null) {
+      // Editing an existing expense — populate from the expense object
       titleController = TextEditingController(
         text: widget.expenseToEdit!.title,
       );
@@ -94,8 +108,17 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
       selectedCategory = widget.expenseToEdit!.category;
       selectedDate = widget.expenseToEdit!.date;
     } else {
-      titleController = TextEditingController();
-      amountController = TextEditingController();
+      // New expense — use prefill values from SMS import (or empty defaults)
+      titleController = TextEditingController(
+        text: widget.initialTitle ?? '',
+      );
+      amountController = TextEditingController(
+        text: widget.initialAmount != null
+            ? widget.initialAmount!.toStringAsFixed(2)
+            : '',
+      );
+      selectedCategory = widget.initialCategory ?? 'Food';
+      selectedDate = widget.initialDate ?? DateTime.now();
     }
   }
 
@@ -277,143 +300,132 @@ class _AddExpenseScreenState extends State<AddExpenseScreen>
                     ),
                   ),
                   const SizedBox(height: 12),
-                  SizedBox(
-                    height: 100,
-                    child: ListView.builder(
-                      scrollDirection: Axis.horizontal,
-                      itemCount: categories.length,
-                      itemBuilder: (context, index) {
-                        final category = categories[index];
-                        final isSelected = selectedCategory == category['name'];
-                        return GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              selectedCategory = category['name'];
-                            });
-                          },
-                          child: Container(
-                            width: 80,
-                            margin: const EdgeInsets.only(right: 12),
-                            decoration: BoxDecoration(
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: categories.map((cat) {
+                      final isSelected = selectedCategory == cat['name'];
+                      final catColor = cat['color'] as Color;
+                      return GestureDetector(
+                        onTap: () => setState(
+                          () => selectedCategory = cat['name'] as String,
+                        ),
+                        child: AnimatedContainer(
+                          duration: const Duration(milliseconds: 200),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isSelected
+                                ? catColor
+                                : catColor.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(20),
+                            border: Border.all(
                               color: isSelected
-                                  ? category['color'].withOpacity(0.2)
-                                  : const Color(0xFFF1F3F7),
-                              borderRadius: BorderRadius.circular(15),
-                              border: Border.all(
-                                color: isSelected
-                                    ? category['color']
-                                    : Colors.transparent,
-                                width: 2,
-                              ),
-                            ),
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  category['icon'],
-                                  size: 32,
-                                  color: category['color'],
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  category['name'],
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    fontWeight: isSelected
-                                        ? FontWeight.bold
-                                        : FontWeight.normal,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                ),
-                              ],
+                                  ? catColor
+                                  : catColor.withValues(alpha: 0.3),
+                              width: 1.5,
                             ),
                           ),
-                        );
-                      },
-                    ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                cat['icon'] as IconData,
+                                size: 16,
+                                color: isSelected ? Colors.white : catColor,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                cat['name'] as String,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: isSelected
+                                      ? FontWeight.bold
+                                      : FontWeight.w500,
+                                  color:
+                                      isSelected ? Colors.white : catColor,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }).toList(),
                   ),
                   const SizedBox(height: 20),
-                  InkWell(
+                  const Text(
+                    'Date',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  GestureDetector(
                     onTap: openDatePicker,
-                    borderRadius: BorderRadius.circular(15),
                     child: Container(
-                      padding: const EdgeInsets.all(16),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 14,
+                      ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF1F3F7),
-                        borderRadius: BorderRadius.circular(15),
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: Colors.grey[300]!,
+                          width: 1,
+                        ),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.calendar_today_rounded,
                             color: AppColors.primary,
+                            size: 20,
                           ),
                           const SizedBox(width: 12),
                           Text(
-                            DateFormat('MMM dd, yyyy').format(selectedDate),
+                            DateFormat('MMMM dd, yyyy').format(selectedDate),
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w500,
                               color: AppColors.textPrimary,
                             ),
                           ),
                           const Spacer(),
                           const Icon(
-                            Icons.arrow_forward_ios_rounded,
-                            size: 16,
-                            color: Colors.grey,
+                            Icons.chevron_right_rounded,
+                            color: AppColors.textSecondary,
                           ),
                         ],
                       ),
                     ),
                   ),
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            side: const BorderSide(color: AppColors.border),
-                          ),
-                          child: const Text(
-                            'Cancel',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.textSecondary,
-                            ),
-                          ),
+                  const SizedBox(height: 28),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton(
+                      onPressed: saveExpense,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: Text(
+                        isEditing ? 'Update Expense' : 'Save Expense',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        flex: 2,
-                        child: ElevatedButton(
-                          onPressed: saveExpense,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.accent,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(15),
-                            ),
-                            elevation: 0,
-                          ),
-                          child: Text(
-                            isEditing ? 'Update' : 'Save',
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                   const SizedBox(height: 16),
                 ],
