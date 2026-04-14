@@ -2,44 +2,42 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper: check authenticated
     function isAuth() {
       return request.auth != null;
     }
 
-    // Users can only access their own data
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
-    // Expenses collection - user scoped
+    // Expenses
     match /users/{userId}/expenses/{expenseId} {
       allow read, write: if isAuth() && isOwner(userId);
     }
 
-    // Income collection - user scoped
+    // Income
     match /users/{userId}/income/{incomeId} {
       allow read, write: if isAuth() && isOwner(userId);
     }
 
-    // Budget collection - user scoped
+    // Budgets
     match /users/{userId}/budgets/{budgetId} {
       allow read, write: if isAuth() && isOwner(userId);
     }
 
-    // Recurring expenses - user scoped
+    // Recurring expenses
     match /users/{userId}/recurring/{recurringId} {
       allow read, write: if isAuth() && isOwner(userId);
     }
 
-    // Groups - members can read, creator can write
+    // Groups
     match /groups/{groupId} {
       allow read: if isAuth() && request.auth.uid in resource.data.memberIds;
       allow create: if isAuth();
       allow update, delete: if isAuth() && request.auth.uid == resource.data.createdBy;
     }
 
-    // Fallback: allow authenticated users to read/write their own top-level docs
+    // Top-level user docs
     match /{collection}/{docId} {
       allow read, write: if isAuth() && request.auth.uid == docId;
     }
