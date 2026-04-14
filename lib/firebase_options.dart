@@ -15,27 +15,35 @@ import 'package:flutter/foundation.dart'
 ///
 /// See .env.example for the required keys.
 class DefaultFirebaseOptions {
-  /// Reads a --dart-define value. Returns empty string if missing (no crash).
-  static String _env(String key, {String fallback = ''}) {
-    return String.fromEnvironment(key, defaultValue: fallback);
-  }
+  static const String _apiKeyWeb = String.fromEnvironment('FIREBASE_API_KEY_WEB');
+  static const String _appIdWeb = String.fromEnvironment('FIREBASE_APP_ID_WEB');
+  static const String _messagingSenderId = String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
+  static const String _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
+  static const String _authDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
+  static const String _storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
+  static const String _measurementIdWeb = String.fromEnvironment('FIREBASE_MEASUREMENT_ID_WEB');
+  static const String _apiKeyAndroid = String.fromEnvironment('FIREBASE_API_KEY_ANDROID');
+  static const String _appIdAndroid = String.fromEnvironment('FIREBASE_APP_ID_ANDROID');
+  static const String _apiKeyWindows = String.fromEnvironment('FIREBASE_API_KEY_WINDOWS');
+  static const String _appIdWindows = String.fromEnvironment('FIREBASE_APP_ID_WINDOWS');
+  static const String _measurementIdWindows = String.fromEnvironment('FIREBASE_MEASUREMENT_ID_WINDOWS');
 
   /// Returns true if all required keys for the given platform are present.
   static bool get isConfigured {
     if (kIsWeb) {
-      return _env('FIREBASE_API_KEY_WEB').isNotEmpty &&
-          _env('FIREBASE_APP_ID_WEB').isNotEmpty &&
-          _env('FIREBASE_PROJECT_ID').isNotEmpty;
+      return _apiKeyWeb.isNotEmpty &&
+          _appIdWeb.isNotEmpty &&
+          _projectId.isNotEmpty;
     }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return _env('FIREBASE_API_KEY_ANDROID').isNotEmpty &&
-            _env('FIREBASE_APP_ID_ANDROID').isNotEmpty &&
-            _env('FIREBASE_PROJECT_ID').isNotEmpty;
+        return _apiKeyAndroid.isNotEmpty &&
+            _appIdAndroid.isNotEmpty &&
+            _projectId.isNotEmpty;
       case TargetPlatform.windows:
-        return _env('FIREBASE_API_KEY_WINDOWS').isNotEmpty &&
-            _env('FIREBASE_APP_ID_WINDOWS').isNotEmpty &&
-            _env('FIREBASE_PROJECT_ID').isNotEmpty;
+        return _apiKeyWindows.isNotEmpty &&
+            _appIdWindows.isNotEmpty &&
+            _projectId.isNotEmpty;
       default:
         return false;
     }
@@ -76,30 +84,30 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions _webFromEnv() => FirebaseOptions(
-        apiKey: _env('FIREBASE_API_KEY_WEB'),
-        appId: _env('FIREBASE_APP_ID_WEB'),
-        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-        projectId: _env('FIREBASE_PROJECT_ID'),
-        authDomain: _env('FIREBASE_AUTH_DOMAIN'),
-        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
-        measurementId: _env('FIREBASE_MEASUREMENT_ID_WEB'),
+        apiKey: _apiKeyWeb,
+        appId: _appIdWeb,
+        messagingSenderId: _messagingSenderId,
+        projectId: _projectId,
+        authDomain: _authDomain,
+        storageBucket: _storageBucket,
+        measurementId: _measurementIdWeb,
       );
 
   static FirebaseOptions _androidFromEnv() => FirebaseOptions(
-        apiKey: _env('FIREBASE_API_KEY_ANDROID'),
-        appId: _env('FIREBASE_APP_ID_ANDROID'),
-        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-        projectId: _env('FIREBASE_PROJECT_ID'),
-        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+        apiKey: _apiKeyAndroid,
+        appId: _appIdAndroid,
+        messagingSenderId: _messagingSenderId,
+        projectId: _projectId,
+        storageBucket: _storageBucket,
       );
 
   static FirebaseOptions _windowsFromEnv() => FirebaseOptions(
-        apiKey: _env('FIREBASE_API_KEY_WINDOWS'),
-        appId: _env('FIREBASE_APP_ID_WINDOWS'),
-        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-        projectId: _env('FIREBASE_PROJECT_ID'),
-        authDomain: _env('FIREBASE_AUTH_DOMAIN'),
-        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
-        measurementId: _env('FIREBASE_MEASUREMENT_ID_WINDOWS'),
+        apiKey: _apiKeyWindows,
+        appId: _appIdWindows,
+        messagingSenderId: _messagingSenderId,
+        projectId: _projectId,
+        authDomain: _authDomain,
+        storageBucket: _storageBucket,
+        measurementId: _measurementIdWindows,
       );
 }
