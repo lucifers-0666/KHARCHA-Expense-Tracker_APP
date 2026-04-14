@@ -6,49 +6,67 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
-/// Example:
-/// ```dart
-/// import 'firebase_options.dart';
-/// // ...
-/// await Firebase.initializeApp(
-///   options: DefaultFirebaseOptions.currentPlatform,
-/// );
-/// ```
+/// ⚠️  Firebase config is loaded from --dart-define at build/run time.
+///
+/// HOW TO RUN:
+///   1. Create a `firebase_config.json` file (DO NOT COMMIT IT — add to .gitignore)
+///   2. Run: flutter run --dart-define-from-file=firebase_config.json
+///   3. Build: flutter build apk --dart-define-from-file=firebase_config.json
+///
+/// See .env.example for the required keys.
 class DefaultFirebaseOptions {
-  static String _env(String key) {
-    final value = String.fromEnvironment(key, defaultValue: '');
-    if (value.isEmpty) {
-      throw StateError(
-        'Missing Firebase config for $key. '
-        'Pass it via --dart-define or --dart-define-from-file.',
-      );
+  /// Reads a --dart-define value. Returns empty string if missing (no crash).
+  static String _env(String key, {String fallback = ''}) {
+    return String.fromEnvironment(key, defaultValue: fallback);
+  }
+
+  /// Returns true if all required keys for the given platform are present.
+  static bool get isConfigured {
+    if (kIsWeb) {
+      return _env('FIREBASE_API_KEY_WEB').isNotEmpty &&
+          _env('FIREBASE_APP_ID_WEB').isNotEmpty &&
+          _env('FIREBASE_PROJECT_ID').isNotEmpty;
     }
-    return value;
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return _env('FIREBASE_API_KEY_ANDROID').isNotEmpty &&
+            _env('FIREBASE_APP_ID_ANDROID').isNotEmpty &&
+            _env('FIREBASE_PROJECT_ID').isNotEmpty;
+      case TargetPlatform.windows:
+        return _env('FIREBASE_API_KEY_WINDOWS').isNotEmpty &&
+            _env('FIREBASE_APP_ID_WINDOWS').isNotEmpty &&
+            _env('FIREBASE_PROJECT_ID').isNotEmpty;
+      default:
+        return false;
+    }
+  }
+
+  /// Returns null if config is missing instead of throwing.
+  static FirebaseOptions? get currentPlatformOrNull {
+    if (!isConfigured) return null;
+    return currentPlatform;
   }
 
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) {
-      return _webFromEnv();
-    }
+    if (kIsWeb) return _webFromEnv();
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return _androidFromEnv();
       case TargetPlatform.iOS:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for ios - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions have not been configured for iOS. '
+          'Run the FlutterFire CLI again to add iOS support.',
         );
       case TargetPlatform.macOS:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macos - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions have not been configured for macOS. '
+          'Run the FlutterFire CLI again to add macOS support.',
         );
       case TargetPlatform.windows:
         return _windowsFromEnv();
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for linux - '
-          'you can reconfigure this by running the FlutterFire CLI again.',
+          'DefaultFirebaseOptions have not been configured for Linux.',
         );
       default:
         throw UnsupportedError(
@@ -58,30 +76,30 @@ class DefaultFirebaseOptions {
   }
 
   static FirebaseOptions _webFromEnv() => FirebaseOptions(
-    apiKey: _env('FIREBASE_API_KEY_WEB'),
-    appId: _env('FIREBASE_APP_ID_WEB'),
-    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-    projectId: _env('FIREBASE_PROJECT_ID'),
-    authDomain: _env('FIREBASE_AUTH_DOMAIN'),
-    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
-    measurementId: _env('FIREBASE_MEASUREMENT_ID_WEB'),
-  );
+        apiKey: _env('FIREBASE_API_KEY_WEB'),
+        appId: _env('FIREBASE_APP_ID_WEB'),
+        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _env('FIREBASE_PROJECT_ID'),
+        authDomain: _env('FIREBASE_AUTH_DOMAIN'),
+        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+        measurementId: _env('FIREBASE_MEASUREMENT_ID_WEB'),
+      );
 
   static FirebaseOptions _androidFromEnv() => FirebaseOptions(
-    apiKey: _env('FIREBASE_API_KEY_ANDROID'),
-    appId: _env('FIREBASE_APP_ID_ANDROID'),
-    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-    projectId: _env('FIREBASE_PROJECT_ID'),
-    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
-  );
+        apiKey: _env('FIREBASE_API_KEY_ANDROID'),
+        appId: _env('FIREBASE_APP_ID_ANDROID'),
+        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _env('FIREBASE_PROJECT_ID'),
+        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+      );
 
   static FirebaseOptions _windowsFromEnv() => FirebaseOptions(
-    apiKey: _env('FIREBASE_API_KEY_WINDOWS'),
-    appId: _env('FIREBASE_APP_ID_WINDOWS'),
-    messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
-    projectId: _env('FIREBASE_PROJECT_ID'),
-    authDomain: _env('FIREBASE_AUTH_DOMAIN'),
-    storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
-    measurementId: _env('FIREBASE_MEASUREMENT_ID_WINDOWS'),
-  );
+        apiKey: _env('FIREBASE_API_KEY_WINDOWS'),
+        appId: _env('FIREBASE_APP_ID_WINDOWS'),
+        messagingSenderId: _env('FIREBASE_MESSAGING_SENDER_ID'),
+        projectId: _env('FIREBASE_PROJECT_ID'),
+        authDomain: _env('FIREBASE_AUTH_DOMAIN'),
+        storageBucket: _env('FIREBASE_STORAGE_BUCKET'),
+        measurementId: _env('FIREBASE_MEASUREMENT_ID_WINDOWS'),
+      );
 }
