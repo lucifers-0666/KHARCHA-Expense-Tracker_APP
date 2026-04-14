@@ -32,12 +32,11 @@ class _ExpenseCardState extends State<ExpenseCard>
       duration: const Duration(milliseconds: 300),
       vsync: this,
     );
-    _scaleAnimation = Tween<double>(
-      begin: 0.95,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
+    _scaleAnimation = Tween<double>(begin: 0.95, end: 1.0).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
     _slideAnimation = Tween<Offset>(
-      begin: const Offset(0.3, 0),
+      begin: const Offset(0.05, 0),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeOut));
     _controller.forward();
@@ -56,6 +55,8 @@ class _ExpenseCardState extends State<ExpenseCard>
           'Shopping': Icons.shopping_bag_rounded,
           'Entertainment': Icons.movie_rounded,
           'Bills': Icons.receipt_long_rounded,
+          'Health': Icons.local_hospital_rounded,
+          'Education': Icons.school_rounded,
           'Other': Icons.more_horiz_rounded,
         }[category] ??
         Icons.category_rounded;
@@ -68,6 +69,8 @@ class _ExpenseCardState extends State<ExpenseCard>
           'Shopping': const Color(0xFFF1A24A),
           'Entertainment': const Color(0xFF7A6FF0),
           'Bills': const Color(0xFF2BB3A6),
+          'Health': const Color(0xFF43A047),
+          'Education': const Color(0xFF039BE5),
           'Other': const Color(0xFF7B8794),
         }[category] ??
         Colors.grey;
@@ -83,15 +86,15 @@ class _ExpenseCardState extends State<ExpenseCard>
       child: ScaleTransition(
         scale: _scaleAnimation,
         child: Container(
-          margin: const EdgeInsets.only(bottom: 12),
+          margin: const EdgeInsets.only(bottom: 10),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: color.withValues(alpha: 0.1),
-                blurRadius: 15,
-                offset: const Offset(0, 5),
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -99,25 +102,23 @@ class _ExpenseCardState extends State<ExpenseCard>
             color: Colors.transparent,
             child: InkWell(
               onTap: widget.onEdit,
-              borderRadius: BorderRadius.circular(20),
-              splashColor: color.withValues(alpha: 0.1),
-              highlightColor: color.withValues(alpha: 0.05),
+              borderRadius: BorderRadius.circular(16),
+              splashColor: color.withValues(alpha: 0.08),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                 child: Row(
                   children: [
-                    Hero(
-                      tag: 'expense_${widget.expense.id}',
-                      child: Container(
-                        padding: const EdgeInsets.all(12),
-                        decoration: BoxDecoration(
-                          color: color.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: Icon(icon, color: color, size: 28),
+                    // Category icon
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(12),
                       ),
+                      child: Icon(icon, color: color, size: 22),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 12),
+                    // Title + meta
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -125,47 +126,42 @@ class _ExpenseCardState extends State<ExpenseCard>
                           Text(
                             widget.expense.title,
                             style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.bold,
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 4),
-                          Row(
+                          // Category badge + date in a Wrap to avoid overflow
+                          Wrap(
+                            spacing: 6,
+                            runSpacing: 2,
+                            crossAxisAlignment: WrapCrossAlignment.center,
                             children: [
                               Container(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 4,
+                                  horizontal: 7,
+                                  vertical: 3,
                                 ),
                                 decoration: BoxDecoration(
-                                  color: color.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
+                                  color: color.withValues(alpha: 0.12),
+                                  borderRadius: BorderRadius.circular(6),
                                 ),
                                 child: Text(
                                   widget.expense.category,
                                   style: TextStyle(
-                                    fontSize: 12,
+                                    fontSize: 11,
                                     color: color,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
                               ),
-                              const SizedBox(width: 8),
-                              Icon(
-                                Icons.calendar_today_rounded,
-                                size: 12,
-                                color: AppColors.textSecondary,
-                              ),
-                              const SizedBox(width: 4),
                               Text(
-                                DateFormat(
-                                  'MMM dd, yyyy',
-                                ).format(widget.expense.date),
-                                style: TextStyle(
-                                  fontSize: 12,
+                                DateFormat('dd MMM').format(widget.expense.date),
+                                style: const TextStyle(
+                                  fontSize: 11,
                                   color: AppColors.textSecondary,
                                 ),
                               ),
@@ -174,55 +170,34 @@ class _ExpenseCardState extends State<ExpenseCard>
                         ],
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
+                    // Amount + actions
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '₹${widget.expense.amount.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontSize: 18,
+                          '₹${NumberFormat('#,##,###.##').format(widget.expense.amount)}',
+                          style: TextStyle(
+                            fontSize: 16,
                             fontWeight: FontWeight.bold,
-                            color: AppColors.primary,
+                            color: color,
                           ),
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Row(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
-                            InkWell(
+                            _ActionButton(
+                              icon: Icons.edit_rounded,
+                              color: AppColors.info,
                               onTap: widget.onEdit,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.info.withValues(alpha: 0.15),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.edit_rounded,
-                                  size: 18,
-                                  color: AppColors.info,
-                                ),
-                              ),
                             ),
-                            const SizedBox(width: 8),
-                            InkWell(
+                            const SizedBox(width: 6),
+                            _ActionButton(
+                              icon: Icons.delete_rounded,
+                              color: AppColors.danger,
                               onTap: widget.onDelete,
-                              borderRadius: BorderRadius.circular(8),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: AppColors.danger.withValues(
-                                    alpha: 0.15,
-                                  ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Icon(
-                                  Icons.delete_rounded,
-                                  size: 18,
-                                  color: AppColors.danger,
-                                ),
-                              ),
                             ),
                           ],
                         ),
@@ -234,6 +209,34 @@ class _ExpenseCardState extends State<ExpenseCard>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _ActionButton extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final VoidCallback? onTap;
+
+  const _ActionButton({
+    required this.icon,
+    required this.color,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(8),
+      child: Container(
+        padding: const EdgeInsets.all(5),
+        decoration: BoxDecoration(
+          color: color.withValues(alpha: 0.12),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: Icon(icon, size: 16, color: color),
       ),
     );
   }

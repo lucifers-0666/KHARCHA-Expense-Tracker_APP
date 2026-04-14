@@ -44,44 +44,27 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
     });
   }
 
-  Future<void> _saveTemplate(
-    String category,
-    String description,
-    double amount,
-  ) async {
-    final template = {
-      'category': category,
-      'description': description,
-      'amount': amount,
-    };
-
+  Future<void> _saveTemplate(String category, String description, double amount) async {
+    final template = {'category': category, 'description': description, 'amount': amount};
     _templates.add(template);
-    if (_templates.length > 10) {
-      _templates.removeAt(0); // Keep only last 10 templates
-    }
-
+    if (_templates.length > 10) _templates.removeAt(0);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('expense_templates', json.encode(_templates));
   }
 
   Future<void> _addExpense() async {
     if (_amountController.text.isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Please enter an amount')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter an amount')));
       return;
     }
-
     final amount = double.tryParse(_amountController.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')),
-      );
+        const SnackBar(content: Text('Please enter a valid amount')));
       return;
     }
-
     setState(() => _isLoading = true);
-
     try {
       final newExpense = Expense(
         id: '',
@@ -93,32 +76,21 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
         date: DateTime.now(),
         description: _descriptionController.text,
       );
-
       await _service.addExpense(newExpense);
-
-      // Save as template if description is not empty
       if (_descriptionController.text.isNotEmpty) {
-        await _saveTemplate(
-          _selectedCategory,
-          _descriptionController.text,
-          amount,
-        );
+        await _saveTemplate(_selectedCategory, _descriptionController.text, amount);
       }
-
       if (mounted) {
         Navigator.of(context).pop(true);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Expense added successfully!'),
+            content: Text('Expense added!'),
             backgroundColor: AppColors.success,
-          ),
-        );
+          ));
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text('Error: $e')));
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     } finally {
       setState(() => _isLoading = false);
@@ -136,39 +108,39 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
   @override
   Widget build(BuildContext context) {
     return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 600),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(20),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    if (_templates.isNotEmpty) ...[
-                      _buildTemplatesSection(),
-                      const SizedBox(height: 20),
-                      const Divider(),
-                      const SizedBox(height: 20),
-                    ],
-                    _buildAmountField(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildHeader(),
+          ConstrainedBox(
+            constraints: BoxConstraints(
+              maxHeight: MediaQuery.of(context).size.height * 0.65,
+            ),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (_templates.isNotEmpty) ...[
+                    _buildTemplatesSection(),
                     const SizedBox(height: 16),
-                    _buildCategoryGrid(),
+                    const Divider(height: 1),
                     const SizedBox(height: 16),
-                    _buildDescriptionField(),
-                    const SizedBox(height: 24),
-                    _buildActionButtons(),
                   ],
-                ),
+                  _buildAmountField(),
+                  const SizedBox(height: 16),
+                  _buildCategoryGrid(),
+                  const SizedBox(height: 16),
+                  _buildDescriptionField(),
+                  const SizedBox(height: 20),
+                  _buildActionButtons(),
+                ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -178,27 +150,30 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
       decoration: const BoxDecoration(
         gradient: LinearGradient(colors: [AppColors.primary, AppColors.accent]),
         borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(20),
-          topRight: Radius.circular(20),
+          topLeft: Radius.circular(24),
+          topRight: Radius.circular(24),
         ),
       ),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
       child: Row(
         children: [
-          const Icon(Icons.flash_on, color: Colors.white),
+          const Icon(Icons.flash_on, color: Colors.white, size: 20),
           const SizedBox(width: 8),
-          const Text(
-            'Quick Add Expense',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
+          const Expanded(
+            child: Text(
+              'Quick Add Expense',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 17,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
-          const Spacer(),
           IconButton(
             onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: Colors.white),
+            icon: const Icon(Icons.close, color: Colors.white, size: 20),
+            padding: const EdgeInsets.all(8),
+            constraints: const BoxConstraints(),
           ),
         ],
       ),
@@ -209,61 +184,44 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            const Icon(Icons.history, size: 18, color: AppColors.textSecondary),
-            const SizedBox(width: 4),
-            Text(
-              'Recent Templates',
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey[600],
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+        const Text(
+          'Recent Templates',
+          style: TextStyle(
+            fontSize: 12,
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+          ),
         ),
         const SizedBox(height: 8),
         Wrap(
           spacing: 8,
           runSpacing: 8,
           children: _templates.reversed.take(5).map((template) {
-            return InkWell(
+            return GestureDetector(
               onTap: () => _applyTemplate(template),
               child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 12,
-                  vertical: 8,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                 decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.1),
+                  color: AppColors.primary.withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppColors.primary.withValues(alpha: 0.3),
-                  ),
+                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       Expense.categoryIcons[template['category']] ?? '💰',
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 13),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Text(
                       template['description'],
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w500,
-                      ),
+                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                     ),
-                    const SizedBox(width: 6),
+                    const SizedBox(width: 5),
                     Text(
                       '₹${NumberFormat('#,##,###').format(template['amount'])}',
-                      style: const TextStyle(
-                        fontSize: 11,
-                        color: AppColors.textSecondary,
-                      ),
+                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
                     ),
                   ],
                 ),
@@ -282,24 +240,25 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
       inputFormatters: [
         FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
       ],
-      style: const TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
       textAlign: TextAlign.center,
       decoration: InputDecoration(
         prefixText: '₹ ',
         prefixStyle: const TextStyle(
-          fontSize: 32,
+          fontSize: 28,
           fontWeight: FontWeight.bold,
           color: AppColors.primary,
         ),
         hintText: '0',
-        hintStyle: TextStyle(color: Colors.grey[400]),
+        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 28),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.primary, width: 2),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!, width: 2),
+          borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
@@ -317,7 +276,7 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
         const Text(
           'Category',
           style: TextStyle(
-            fontSize: 14,
+            fontSize: 13,
             fontWeight: FontWeight.w600,
             color: AppColors.textSecondary,
           ),
@@ -330,44 +289,43 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
             crossAxisCount: 4,
             crossAxisSpacing: 8,
             mainAxisSpacing: 8,
-            childAspectRatio: 1,
+            childAspectRatio: 0.95, // slightly taller to prevent overflow
           ),
           itemCount: Expense.categoryIcons.length,
           itemBuilder: (context, index) {
             final category = Expense.categoryIcons.keys.elementAt(index);
             final icon = Expense.categoryIcons[category]!;
             final isSelected = _selectedCategory == category;
-
             return InkWell(
               onTap: () => setState(() => _selectedCategory = category),
+              borderRadius: BorderRadius.circular(12),
               child: Container(
                 decoration: BoxDecoration(
                   color: isSelected ? AppColors.primary : Colors.grey[100],
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
                     color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                    width: 2,
+                    width: 1.5,
                   ),
                 ),
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    Text(
-                      icon,
-                      style: TextStyle(fontSize: isSelected ? 28 : 24),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      category,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected ? Colors.white : Colors.black87,
+                    Text(icon, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(height: 3),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 2),
+                      child: Text(
+                        category,
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                          color: isSelected ? Colors.white : Colors.black87,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.center,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
@@ -384,11 +342,20 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
       controller: _descriptionController,
       decoration: InputDecoration(
         labelText: 'Description (Optional)',
-        hintText: 'What did you buy?',
-        prefixIcon: const Icon(Icons.notes),
+        hintText: 'What did you spend on?',
+        prefixIcon: const Icon(Icons.notes_rounded, size: 20),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: const BorderSide(color: AppColors.primary, width: 2),
+        ),
       ),
-      maxLines: 2,
+      maxLines: 1,
     );
   }
 
@@ -399,10 +366,9 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
           child: OutlinedButton(
             onPressed: () => Navigator.pop(context),
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              side: BorderSide(color: Colors.grey[400]!),
             ),
             child: const Text('Cancel'),
           ),
@@ -414,10 +380,9 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
             onPressed: _isLoading ? null : _addExpense,
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 0,
             ),
             child: _isLoading
                 ? const SizedBox(
@@ -431,7 +396,7 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
                 : const Text(
                     'Add Expense',
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: Colors.white,
                     ),

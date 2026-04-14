@@ -1,9 +1,47 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Allow read and write access to expenses collection without authentication
-    match /expenses/{expenseId} {
-      allow read, write: if true;
+
+    // Helper: check authenticated
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    // Users can only access their own data
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // Expenses collection - user scoped
+    match /users/{userId}/expenses/{expenseId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // Income collection - user scoped
+    match /users/{userId}/income/{incomeId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // Budget collection - user scoped
+    match /users/{userId}/budgets/{budgetId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // Recurring expenses - user scoped
+    match /users/{userId}/recurring/{recurringId} {
+      allow read, write: if isAuth() && isOwner(userId);
+    }
+
+    // Groups - members can read, creator can write
+    match /groups/{groupId} {
+      allow read: if isAuth() && request.auth.uid in resource.data.memberIds;
+      allow create: if isAuth();
+      allow update, delete: if isAuth() && request.auth.uid == resource.data.createdBy;
+    }
+
+    // Fallback: allow authenticated users to read/write their own top-level docs
+    match /{collection}/{docId} {
+      allow read, write: if isAuth() && request.auth.uid == docId;
     }
   }
 }
