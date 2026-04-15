@@ -38,6 +38,9 @@ migrate_working_dir/
 .env.*
 !.env.example
 
+# Local Firebase config generated from environment values
+/firebase_config.json
+
 # Firebase platform config (fetch in CI or provide locally)
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist

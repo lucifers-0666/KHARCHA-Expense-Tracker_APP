@@ -51,15 +51,13 @@ class SplaceScreenState extends State<SplaceScreen>
     );
 
     // Title: slide up
-    _textSlide = Tween<Offset>(
-      begin: const Offset(0, 0.4),
-      end: Offset.zero,
-    ).animate(
-      CurvedAnimation(
-        parent: _controller,
-        curve: const Interval(0.4, 0.75, curve: Curves.easeOutCubic),
-      ),
-    );
+    _textSlide = Tween<Offset>(begin: const Offset(0, 0.4), end: Offset.zero)
+        .animate(
+          CurvedAnimation(
+            parent: _controller,
+            curve: const Interval(0.4, 0.75, curve: Curves.easeOutCubic),
+          ),
+        );
 
     _textFade = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
@@ -120,7 +118,7 @@ class SplaceScreenState extends State<SplaceScreen>
                 height: 280,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: Colors.white.withOpacity(0.04),
+                  color: Colors.white.withValues(alpha: 0.04),
                 ),
               ),
             ),
@@ -132,7 +130,7 @@ class SplaceScreenState extends State<SplaceScreen>
                 height: 200,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: AppColors.accent.withOpacity(0.08),
+                  color: AppColors.accent.withValues(alpha: 0.08),
                 ),
               ),
             ),
@@ -150,19 +148,16 @@ class SplaceScreenState extends State<SplaceScreen>
                       animation: _controller,
                       builder: (context, child) => FadeTransition(
                         opacity: _logoFade,
-                        child: ScaleTransition(
-                          scale: _logoScale,
-                          child: child,
-                        ),
+                        child: ScaleTransition(scale: _logoScale, child: child),
                       ),
                       child: Container(
                         width: 96,
                         height: 96,
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.12),
+                          color: Colors.white.withValues(alpha: 0.12),
                           borderRadius: BorderRadius.circular(24),
                           border: Border.all(
-                            color: Colors.white.withOpacity(0.18),
+                            color: Colors.white.withValues(alpha: 0.18),
                             width: 1.5,
                           ),
                         ),
@@ -220,7 +215,7 @@ class SplaceScreenState extends State<SplaceScreen>
                       child: Text(
                         'Track smarter. Spend better.',
                         style: TextStyle(
-                          color: Colors.white.withOpacity(0.7),
+                          color: Colors.white.withValues(alpha: 0.7),
                           fontSize: 15,
                           fontWeight: FontWeight.w400,
                           letterSpacing: 0.5,
@@ -239,7 +234,9 @@ class SplaceScreenState extends State<SplaceScreen>
                           SizedBox(
                             width: 120,
                             child: LinearProgressIndicator(
-                              backgroundColor: Colors.white.withOpacity(0.15),
+                              backgroundColor: Colors.white.withValues(
+                                alpha: 0.15,
+                              ),
                               valueColor: const AlwaysStoppedAnimation<Color>(
                                 AppColors.accent,
                               ),
@@ -250,7 +247,7 @@ class SplaceScreenState extends State<SplaceScreen>
                           Text(
                             'Loading...',
                             style: TextStyle(
-                              color: Colors.white.withOpacity(0.45),
+                              color: Colors.white.withValues(alpha: 0.45),
                               fontSize: 12,
                               letterSpacing: 1.2,
                               fontFamily: 'Roboto',
