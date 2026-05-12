@@ -1,9 +1,13 @@
 ﻿import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_application_1/firebase_options.dart';
 import 'package:flutter_application_1/services/firestore_services.dart';
 import 'package:flutter_application_1/services/notification_service.dart';
-import 'package:workmanager/workmanager.dart';
+
+// Only import workmanager on mobile platforms
+import 'package:workmanager/workmanager.dart'
+    show Workmanager, Constraints, NetworkType, ExistingPeriodicWorkPolicy;
 
 const String recurringTaskName = 'kharchaRecurringExpenseTask';
 
@@ -43,6 +47,13 @@ void callbackDispatcher() {
 
 class RecurringBackgroundService {
   static Future<void> initialize() async {
+    // Workmanager is only supported on Android and iOS
+    if (kIsWeb ||
+        (defaultTargetPlatform != TargetPlatform.android &&
+            defaultTargetPlatform != TargetPlatform.iOS)) {
+      return;
+    }
+
     await Workmanager().initialize(callbackDispatcher);
 
     await Workmanager().registerPeriodicTask(

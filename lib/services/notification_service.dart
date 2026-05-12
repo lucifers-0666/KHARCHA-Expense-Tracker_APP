@@ -1,4 +1,5 @@
-﻿import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+﻿import 'package:flutter/foundation.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class NotificationService {
   NotificationService._();
@@ -18,9 +19,14 @@ class NotificationService {
     const settings = InitializationSettings(android: android, iOS: ios);
     await _plugin.initialize(settings);
 
-    final androidPlugin = _plugin.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
-    await androidPlugin?.requestNotificationsPermission();
+    // Only request Android permissions on Android platform
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      final androidPlugin = _plugin
+          .resolvePlatformSpecificImplementation<
+            AndroidFlutterLocalNotificationsPlugin
+          >();
+      await androidPlugin?.requestNotificationsPermission();
+    }
 
     _initialized = true;
   }
