@@ -4,6 +4,9 @@ import 'app_colors.dart';
 import 'app_text_styles.dart';
 import 'app_radius.dart';
 
+// Re-export AppColors so screens that import app_theme.dart can use AppColors directly
+export 'app_colors.dart';
+
 class AppTheme {
   AppTheme._();
 
