@@ -1,5 +1,5 @@
 name: flutter_application_1
-description: "A new Flutter project."
+description: "KHARCHA - Premium Expense Tracker"
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -28,9 +28,9 @@ dependencies:
   csv: ^6.0.0
   sqflite: ^2.3.5
   connectivity_plus: ^6.0.5
-  # SMS feature
   permission_handler: ^11.3.1
   flutter_sms_inbox: ^1.0.4
+  google_fonts: ^6.2.1
 
 dev_dependencies:
   flutter_test:
@@ -40,5 +40,18 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/PlusJakartaSans-Medium.ttf
+          weight: 500
+        - asset: assets/fonts/PlusJakartaSans-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/PlusJakartaSans-Bold.ttf
+          weight: 700
+
   assets:
     - assets/
+    - assets/fonts/

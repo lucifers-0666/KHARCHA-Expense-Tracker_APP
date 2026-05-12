@@ -1,27 +1,45 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_application_1/models/expense.dart';
-import 'package:flutter_application_1/services/firestore_services.dart';
-import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import '../models/expense.dart';
+import '../services/firestore_services.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
+import '../theme/app_radius.dart';
+import '../theme/app_spacing.dart';
+import '../widgets/primary_button.dart';
 
-class QuickAddDialog extends StatefulWidget {
-  const QuickAddDialog({super.key});
-
-  @override
-  State<QuickAddDialog> createState() => _QuickAddDialogState();
+void showQuickAddSheet(BuildContext context, {VoidCallback? onAdded}) {
+  showModalBottomSheet(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Colors.transparent,
+    builder: (_) => QuickAddSheet(onAdded: onAdded),
+  );
 }
 
-class _QuickAddDialogState extends State<QuickAddDialog> {
-  final _service = FirestoreServices();
-  final _amountController = TextEditingController();
-  final _descriptionController = TextEditingController();
+class QuickAddSheet extends StatefulWidget {
+  final VoidCallback? onAdded;
+  const QuickAddSheet({super.key, this.onAdded});
 
-  String _selectedCategory = 'Food';
+  @override
+  State<QuickAddSheet> createState() => _QuickAddSheetState();
+}
+
+class _QuickAddSheetState extends State<QuickAddSheet> {
+  final _service = FirestoreServices();
+  final _amountCtrl = TextEditingController();
+  final _descCtrl   = TextEditingController();
+  String _category = 'Food';
+  bool _loading = false;
   List<Map<String, dynamic>> _templates = [];
-  bool _isLoading = false;
+
+  final List<String> _categories = [
+    'Food', 'Transport', 'Shopping', 'Entertainment',
+    'Bills', 'Health', 'Education', 'Other',
+  ];
 
   @override
   void initState() {
@@ -31,379 +49,263 @@ class _QuickAddDialogState extends State<QuickAddDialog> {
 
   @override
   void dispose() {
-    _amountController.dispose();
-    _descriptionController.dispose();
+    _amountCtrl.dispose();
+    _descCtrl.dispose();
     super.dispose();
   }
 
   Future<void> _loadTemplates() async {
     final prefs = await SharedPreferences.getInstance();
-    final templatesJson = prefs.getString('expense_templates') ?? '[]';
-    setState(() {
-      _templates = List<Map<String, dynamic>>.from(json.decode(templatesJson));
-    });
-  }
-
-  Future<void> _saveTemplate(String category, String description, double amount) async {
-    final template = {'category': category, 'description': description, 'amount': amount};
-    _templates.add(template);
-    if (_templates.length > 10) _templates.removeAt(0);
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('expense_templates', json.encode(_templates));
-  }
-
-  Future<void> _addExpense() async {
-    if (_amountController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter an amount')));
-      return;
+    final raw = prefs.getString('expense_templates') ?? '[]';
+    if (mounted) {
+      setState(() {
+        _templates = List<Map<String, dynamic>>.from(json.decode(raw));
+      });
     }
-    final amount = double.tryParse(_amountController.text);
+  }
+
+  Future<void> _submit() async {
+    final amount = double.tryParse(_amountCtrl.text);
     if (amount == null || amount <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid amount')));
+        const SnackBar(content: Text('Enter a valid amount')));
       return;
     }
-    setState(() => _isLoading = true);
+    setState(() => _loading = true);
     try {
-      final newExpense = Expense(
+      await _service.addExpense(Expense(
         id: '',
-        title: _descriptionController.text.isEmpty
-            ? _selectedCategory
-            : _descriptionController.text,
+        title: _descCtrl.text.isEmpty ? _category : _descCtrl.text,
         amount: amount,
-        category: _selectedCategory,
+        category: _category,
         date: DateTime.now(),
-        description: _descriptionController.text,
-      );
-      await _service.addExpense(newExpense);
-      if (_descriptionController.text.isNotEmpty) {
-        await _saveTemplate(_selectedCategory, _descriptionController.text, amount);
-      }
+        description: _descCtrl.text,
+      ));
       if (mounted) {
-        Navigator.of(context).pop(true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Expense added!'),
-            backgroundColor: AppColors.success,
-          ));
+        Navigator.pop(context);
+        widget.onAdded?.call();
       }
     } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
+      if (mounted) ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error: $e')));
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _loading = false);
     }
-  }
-
-  void _applyTemplate(Map<String, dynamic> template) {
-    setState(() {
-      _selectedCategory = template['category'];
-      _descriptionController.text = template['description'];
-      _amountController.text = template['amount'].toString();
-    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.bgSecondary,
+        borderRadius: AppRadius.sheetRadius,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+      ),
+      padding: EdgeInsets.fromLTRB(
+          AppSpacing.pagePadding, 8, AppSpacing.pagePadding,
+          AppSpacing.xl + bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildHeader(),
-          ConstrainedBox(
-            constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * 0.65,
+          // Drag handle
+          Center(
+            child: Container(
+              width: 36,
+              height: 4,
+              margin: const EdgeInsets.only(bottom: 20),
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 20),
+          ),
+          Text('Quick Add Expense', style: AppTextStyles.headline),
+          const SizedBox(height: AppSpacing.xl),
+
+          // Amount
+          _AmountInput(controller: _amountCtrl),
+          const SizedBox(height: AppSpacing.xl),
+
+          // Category
+          Text('Category',
+              style: AppTextStyles.caption.copyWith(
+                  color: AppColors.textMuted,
+                  letterSpacing: 0.8)),
+          const SizedBox(height: AppSpacing.md),
+          _CategoryGrid(
+            categories: _categories,
+            selected: _category,
+            onSelect: (c) => setState(() => _category = c),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // Description
+          TextField(
+            controller: _descCtrl,
+            style: AppTextStyles.body.copyWith(color: AppColors.textPrimary),
+            decoration: InputDecoration(
+              hintText: 'Description (optional)',
+              hintStyle:
+                  AppTextStyles.body.copyWith(color: AppColors.textDisabled),
+              filled: true,
+              fillColor: AppColors.surface,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              border: OutlineInputBorder(
+                  borderRadius: AppRadius.inputRadius,
+                  borderSide: const BorderSide(color: AppColors.border)),
+              enabledBorder: OutlineInputBorder(
+                  borderRadius: AppRadius.inputRadius,
+                  borderSide: const BorderSide(color: AppColors.border)),
+              focusedBorder: OutlineInputBorder(
+                  borderRadius: AppRadius.inputRadius,
+                  borderSide:
+                      const BorderSide(color: AppColors.accent, width: 1.5)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xl),
+
+          // Actions
+          Row(
+            children: [
+              Expanded(
+                child: PrimaryButton(
+                  label: 'Cancel',
+                  variant: ButtonVariant.outlined,
+                  onPressed: () => Navigator.pop(context),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                flex: 2,
+                child: PrimaryButton(
+                  label: 'Add Expense',
+                  isLoading: _loading,
+                  onPressed: _submit,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AmountInput extends StatelessWidget {
+  final TextEditingController controller;
+  const _AmountInput({required this.controller});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.inputRadius,
+        border: Border.all(color: AppColors.border),
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: Row(
+        children: [
+          Text('₹',
+              style: AppTextStyles.amount.copyWith(color: AppColors.accent)),
+          const SizedBox(width: 8),
+          Expanded(
+            child: TextField(
+              controller: controller,
+              autofocus: true,
+              keyboardType:
+                  const TextInputType.numberWithOptions(decimal: true),
+              inputFormatters: [
+                FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}'))
+              ],
+              style: AppTextStyles.amount,
+              textAlign: TextAlign.start,
+              decoration: InputDecoration(
+                hintText: '0.00',
+                hintStyle:
+                    AppTextStyles.amount.copyWith(color: AppColors.textDisabled),
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                filled: false,
+                contentPadding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryGrid extends StatelessWidget {
+  final List<String> categories;
+  final String selected;
+  final ValueChanged<String> onSelect;
+
+  const _CategoryGrid({
+    required this.categories,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(builder: (context, constraints) {
+      final cols  = 4;
+      final itemW = (constraints.maxWidth - (cols - 1) * 8) / cols;
+      final itemH = itemW * 0.95;
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        children: categories.map((cat) {
+          final isSelected = cat == selected;
+          final color = AppColors.categoryColor(cat);
+          final icon  = AppColors.categoryIcon(cat);
+          return GestureDetector(
+            onTap: () => onSelect(cat),
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: itemW,
+              height: itemH,
+              decoration: BoxDecoration(
+                color: isSelected
+                    ? color.withValues(alpha: 0.20)
+                    : AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: isSelected ? color : AppColors.border,
+                  width: isSelected ? 1.5 : 1,
+                ),
+              ),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  if (_templates.isNotEmpty) ...[
-                    _buildTemplatesSection(),
-                    const SizedBox(height: 16),
-                    const Divider(height: 1),
-                    const SizedBox(height: 16),
-                  ],
-                  _buildAmountField(),
-                  const SizedBox(height: 16),
-                  _buildCategoryGrid(),
-                  const SizedBox(height: 16),
-                  _buildDescriptionField(),
-                  const SizedBox(height: 20),
-                  _buildActionButtons(),
+                  Icon(icon,
+                      size: 22,
+                      color: isSelected ? color : AppColors.textMuted),
+                  const SizedBox(height: 4),
+                  Text(
+                    cat,
+                    style: AppTextStyles.caption.copyWith(
+                      color: isSelected ? color : AppColors.textMuted,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w400,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
+                  ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildHeader() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(colors: [AppColors.primary, AppColors.accent]),
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(24),
-          topRight: Radius.circular(24),
-        ),
-      ),
-      padding: const EdgeInsets.fromLTRB(16, 14, 8, 14),
-      child: Row(
-        children: [
-          const Icon(Icons.flash_on, color: Colors.white, size: 20),
-          const SizedBox(width: 8),
-          const Expanded(
-            child: Text(
-              'Quick Add Expense',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 17,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.close, color: Colors.white, size: 20),
-            padding: const EdgeInsets.all(8),
-            constraints: const BoxConstraints(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildTemplatesSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Recent Templates',
-          style: TextStyle(
-            fontSize: 12,
-            color: AppColors.textSecondary,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: _templates.reversed.take(5).map((template) {
-            return GestureDetector(
-              onTap: () => _applyTemplate(template),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.primary.withValues(alpha: 0.25)),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      Expense.categoryIcons[template['category']] ?? '💰',
-                      style: const TextStyle(fontSize: 13),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      template['description'],
-                      style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                    ),
-                    const SizedBox(width: 5),
-                    Text(
-                      '₹${NumberFormat('#,##,###').format(template['amount'])}',
-                      style: const TextStyle(fontSize: 11, color: AppColors.textSecondary),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }).toList(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildAmountField() {
-    return TextField(
-      controller: _amountController,
-      keyboardType: const TextInputType.numberWithOptions(decimal: true),
-      inputFormatters: [
-        FilteringTextInputFormatter.allow(RegExp(r'^\d+\.?\d{0,2}')),
-      ],
-      style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-      textAlign: TextAlign.center,
-      decoration: InputDecoration(
-        prefixText: '₹ ',
-        prefixStyle: const TextStyle(
-          fontSize: 28,
-          fontWeight: FontWeight.bold,
-          color: AppColors.primary,
-        ),
-        hintText: '0',
-        hintStyle: TextStyle(color: Colors.grey[400], fontSize: 28),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-      autofocus: true,
-    );
-  }
-
-  Widget _buildCategoryGrid() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Category',
-          style: TextStyle(
-            fontSize: 13,
-            fontWeight: FontWeight.w600,
-            color: AppColors.textSecondary,
-          ),
-        ),
-        const SizedBox(height: 8),
-        GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: 4,
-            crossAxisSpacing: 8,
-            mainAxisSpacing: 8,
-            childAspectRatio: 0.95, // slightly taller to prevent overflow
-          ),
-          itemCount: Expense.categoryIcons.length,
-          itemBuilder: (context, index) {
-            final category = Expense.categoryIcons.keys.elementAt(index);
-            final icon = Expense.categoryIcons[category]!;
-            final isSelected = _selectedCategory == category;
-            return InkWell(
-              onTap: () => setState(() => _selectedCategory = category),
-              borderRadius: BorderRadius.circular(12),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: isSelected ? AppColors.primary : Colors.grey[100],
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: isSelected ? AppColors.primary : Colors.grey[300]!,
-                    width: 1.5,
-                  ),
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text(icon, style: const TextStyle(fontSize: 22)),
-                    const SizedBox(height: 3),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 2),
-                      child: Text(
-                        category,
-                        style: TextStyle(
-                          fontSize: 9,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.white : Colors.black87,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildDescriptionField() {
-    return TextField(
-      controller: _descriptionController,
-      decoration: InputDecoration(
-        labelText: 'Description (Optional)',
-        hintText: 'What did you spend on?',
-        prefixIcon: const Icon(Icons.notes_rounded, size: 20),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: BorderSide(color: Colors.grey[300]!, width: 1.5),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.primary, width: 2),
-        ),
-      ),
-      maxLines: 1,
-    );
-  }
-
-  Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: OutlinedButton(
-            onPressed: () => Navigator.pop(context),
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              side: BorderSide(color: Colors.grey[400]!),
-            ),
-            child: const Text('Cancel'),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          flex: 2,
-          child: ElevatedButton(
-            onPressed: _isLoading ? null : _addExpense,
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 0,
-            ),
-            child: _isLoading
-                ? const SizedBox(
-                    height: 20,
-                    width: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  )
-                : const Text(
-                    'Add Expense',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.white,
-                    ),
-                  ),
-          ),
-        ),
-      ],
-    );
+          );
+        }).toList(),
+      );
+    });
   }
 }

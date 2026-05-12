@@ -1,276 +1,220 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/theme/app_theme.dart';
-import 'package:flutter_application_1/theme/theme_provider.dart';
-import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../theme/app_colors.dart';
+import '../theme/app_text_styles.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_radius.dart';
+import '../widgets/premium_card.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
-    final isDark = themeProvider.isDarkMode(context);
-
+    final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: isDark
-                ? [
-                    AppColorsDark.primaryDark,
-                    AppColorsDark.primary,
-                    AppColorsDark.accent,
-                  ]
-                : [AppColors.primaryDark, AppColors.primary, AppColors.accent],
-          ),
-        ),
-        child: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(context, isDark),
-              Expanded(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 16),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColorsDark.surface : AppColors.surface,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(30),
-                      topRight: Radius.circular(30),
-                    ),
-                  ),
-                  child: ListView(
-                    padding: const EdgeInsets.all(16),
-                    children: [
-                      _buildThemeSection(context, themeProvider, isDark),
-                      const SizedBox(height: 24),
-                      _buildAppInfoSection(context, isDark),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
+      backgroundColor: AppColors.bgPrimary,
+      appBar: AppBar(
+        title: const Text('Settings'),
+        backgroundColor: AppColors.bgPrimary,
+        elevation: 0,
       ),
-    );
-  }
-
-  Widget _buildHeader(BuildContext context, bool isDark) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        children: [
-          IconButton(
-            onPressed: () => Navigator.pop(context),
-            icon: const Icon(Icons.arrow_back, color: Colors.white),
-          ),
-          const SizedBox(width: 8),
-          const Text(
-            'Settings',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeSection(
-    BuildContext context,
-    ThemeProvider themeProvider,
-    bool isDark,
-  ) {
-    // Use surface color (card was removed — surface is the correct token)
-    final cardColor = isDark ? AppColorsDark.surface : AppColors.surface;
-    final accentColor = isDark ? AppColorsDark.accent : AppColors.accent;
-
-    return Card(
-      elevation: 2,
-      color: cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: accentColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.palette, color: accentColor, size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'Appearance',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          _buildThemeOption(context, themeProvider, isDark,
-              ThemePreference.light, 'Light Mode', 'Use light theme', Icons.light_mode),
-          _buildThemeOption(context, themeProvider, isDark,
-              ThemePreference.dark, 'Dark Mode', 'Use dark theme', Icons.dark_mode),
-          _buildThemeOption(context, themeProvider, isDark,
-              ThemePreference.system, 'System Default', 'Follow system settings',
-              Icons.brightness_auto),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildThemeOption(
-    BuildContext context,
-    ThemeProvider themeProvider,
-    bool isDark,
-    ThemePreference preference,
-    String title,
-    String subtitle,
-    IconData icon,
-  ) {
-    final bool isSelected = themeProvider.themePreference == preference;
-    final accentColor = isDark ? AppColorsDark.accent : AppColors.accent;
-    final secondaryTextColor =
-        isDark ? AppColorsDark.textSecondary : AppColors.textSecondary;
-
-    return InkWell(
-      onTap: () => themeProvider.setThemePreference(preference),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isSelected ? accentColor.withValues(alpha: 0.1) : null,
-        ),
-        child: Row(
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(AppSpacing.pagePadding),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(
-              icon,
-              color: isSelected ? accentColor : secondaryTextColor,
-              size: 28,
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            // Profile card
+            PremiumCard(
+              child: Row(
                 children: [
-                  Text(
-                    title,
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight:
-                          isSelected ? FontWeight.w600 : FontWeight.normal,
-                      color: isSelected ? accentColor : null,
+                  CircleAvatar(
+                    radius: 26,
+                    backgroundColor: AppColors.accentDim,
+                    child: Text(
+                      (user?.email?.isNotEmpty == true)
+                          ? user!.email![0].toUpperCase()
+                          : 'K',
+                      style: AppTextStyles.headline.copyWith(
+                          color: AppColors.accent),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    subtitle,
-                    style: TextStyle(fontSize: 13, color: secondaryTextColor),
+                  const SizedBox(width: 14),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          user?.displayName ?? 'KHARCHA User',
+                          style: AppTextStyles.title,
+                        ),
+                        Text(
+                          user?.email ?? '',
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
             ),
-            if (isSelected)
-              Icon(Icons.check_circle, color: accentColor, size: 24),
+            const SizedBox(height: AppSpacing.sectionGap),
+
+            _SectionLabel('Preferences'),
+            const SizedBox(height: AppSpacing.sm),
+            _SettingsGroup(items: [
+              _SettingsTile(
+                icon: Icons.currency_rupee_rounded,
+                label: 'Currency',
+                trailing: const Text('INR (₹)',
+                    style: AppTextStyles.body),
+              ),
+              _SettingsTile(
+                icon: Icons.notifications_rounded,
+                label: 'Notifications',
+                trailing: Switch(
+                  value: true,
+                  onChanged: (_) {},
+                  activeColor: AppColors.accent,
+                ),
+              ),
+              _SettingsTile(
+                icon: Icons.dark_mode_rounded,
+                label: 'Dark Mode',
+                trailing: Switch(
+                  value: true,
+                  onChanged: (_) {},
+                  activeColor: AppColors.accent,
+                ),
+              ),
+            ]),
+
+            const SizedBox(height: AppSpacing.sectionGap),
+            _SectionLabel('Data'),
+            const SizedBox(height: AppSpacing.sm),
+            _SettingsGroup(items: [
+              _SettingsTile(
+                icon: Icons.file_download_rounded,
+                label: 'Export Reports',
+                onTap: () => Navigator.pushNamed(context, '/export'),
+              ),
+              _SettingsTile(
+                icon: Icons.sms_rounded,
+                label: 'Import from SMS',
+                onTap: () => Navigator.pushNamed(context, '/sms-import'),
+              ),
+            ]),
+
+            const SizedBox(height: AppSpacing.sectionGap),
+            _SectionLabel('Account'),
+            const SizedBox(height: AppSpacing.sm),
+            _SettingsGroup(items: [
+              _SettingsTile(
+                icon: Icons.shield_rounded,
+                label: 'Security',
+              ),
+              _SettingsTile(
+                icon: Icons.logout_rounded,
+                label: 'Sign Out',
+                labelColor: AppColors.danger,
+                iconColor: AppColors.danger,
+                onTap: () async {
+                  await FirebaseAuth.instance.signOut();
+                  if (context.mounted) {
+                    Navigator.pushReplacementNamed(context, '/auth');
+                  }
+                },
+              ),
+            ]),
+            const SizedBox(height: 32),
+            Center(
+              child: Text(
+                'KHARCHA v1.0.0',
+                style: AppTextStyles.caption,
+              ),
+            ),
+            const SizedBox(height: 16),
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _buildAppInfoSection(BuildContext context, bool isDark) {
-    final cardColor = isDark ? AppColorsDark.surface : AppColors.surface;
-    final infoColor = isDark ? AppColorsDark.info : AppColors.info;
-    final successColor = isDark ? AppColorsDark.success : AppColors.success;
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
 
-    return Card(
-      elevation: 2,
-      color: cardColor,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-      child: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Row(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(10),
-                  decoration: BoxDecoration(
-                    color: infoColor.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(Icons.info, color: infoColor, size: 24),
-                ),
-                const SizedBox(width: 12),
-                const Text(
-                  'About',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          const Divider(height: 1),
-          ListTile(
-            leading: const Icon(Icons.info_outline),
-            title: const Text('Version'),
-            subtitle: const Text('1.0.0'),
-            trailing: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-              decoration: BoxDecoration(
-                color: successColor.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(20),
-              ),
-              child: Text(
-                'Latest',
-                style: TextStyle(
-                  color: successColor,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-          const ListTile(
-            leading: Icon(Icons.business),
-            title: Text('Developer'),
-            subtitle: Text('KHARCHA Team'),
-          ),
-          ListTile(
-            leading: const Icon(Icons.description),
-            title: const Text('License'),
-            subtitle: const Text('MIT License'),
-            onTap: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('License Information'),
-                  content: const Text(
-                    'This app is licensed under the MIT License.\n\n'
-                    'Permission is hereby granted, free of charge, to any '
-                    'person obtaining a copy of this software.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('Close'),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: AppTextStyles.label,
+    );
+  }
+}
+
+class _SettingsGroup extends StatelessWidget {
+  final List<Widget> items;
+  const _SettingsGroup({required this.items});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: AppRadius.cardRadius,
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
+      child: Column(
+        children: List.generate(items.length * 2 - 1, (i) {
+          if (i.isOdd) {
+            return const Divider(height: 1, color: AppColors.divider);
+          }
+          return items[i ~/ 2];
+        }),
+      ),
+    );
+  }
+}
+
+class _SettingsTile extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Widget? trailing;
+  final VoidCallback? onTap;
+  final Color? labelColor;
+  final Color? iconColor;
+
+  const _SettingsTile({
+    required this.icon,
+    required this.label,
+    this.trailing,
+    this.onTap,
+    this.labelColor,
+    this.iconColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(
+      leading: Icon(icon,
+          size: 20,
+          color: iconColor ?? AppColors.textMuted),
+      title: Text(
+        label,
+        style: AppTextStyles.body.copyWith(
+          color: labelColor ?? AppColors.textPrimary,
+        ),
+      ),
+      trailing: trailing ??
+          (onTap != null
+              ? const Icon(Icons.chevron_right_rounded,
+                  color: AppColors.textMuted, size: 18)
+              : null),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(borderRadius: AppRadius.tileRadius),
     );
   }
 }
