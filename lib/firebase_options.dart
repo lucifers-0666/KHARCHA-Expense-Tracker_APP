@@ -6,75 +6,31 @@ import 'package:flutter/foundation.dart'
 
 /// Default [FirebaseOptions] for use with your Firebase apps.
 ///
-/// ⚠️  Firebase config is loaded from --dart-define at build/run time.
-///
-/// HOW TO RUN:
-///   1. Create a `firebase_config.json` file (DO NOT COMMIT IT — add to .gitignore)
-///   2. Run: flutter run --dart-define-from-file=firebase_config.json
-///   3. Build: flutter build apk --dart-define-from-file=firebase_config.json
-///
-/// See .env.example for the required keys.
+/// See the Firebase documentation for more information.
 class DefaultFirebaseOptions {
-  static const String _apiKeyWeb = String.fromEnvironment('FIREBASE_API_KEY_WEB');
-  static const String _appIdWeb = String.fromEnvironment('FIREBASE_APP_ID_WEB');
-  static const String _messagingSenderId = String.fromEnvironment('FIREBASE_MESSAGING_SENDER_ID');
-  static const String _projectId = String.fromEnvironment('FIREBASE_PROJECT_ID');
-  static const String _authDomain = String.fromEnvironment('FIREBASE_AUTH_DOMAIN');
-  static const String _storageBucket = String.fromEnvironment('FIREBASE_STORAGE_BUCKET');
-  static const String _measurementIdWeb = String.fromEnvironment('FIREBASE_MEASUREMENT_ID_WEB');
-  static const String _apiKeyAndroid = String.fromEnvironment('FIREBASE_API_KEY_ANDROID');
-  static const String _appIdAndroid = String.fromEnvironment('FIREBASE_APP_ID_ANDROID');
-  static const String _apiKeyWindows = String.fromEnvironment('FIREBASE_API_KEY_WINDOWS');
-  static const String _appIdWindows = String.fromEnvironment('FIREBASE_APP_ID_WINDOWS');
-  static const String _measurementIdWindows = String.fromEnvironment('FIREBASE_MEASUREMENT_ID_WINDOWS');
-
-  /// Returns true if all required keys for the given platform are present.
-  static bool get isConfigured {
-    if (kIsWeb) {
-      return _apiKeyWeb.isNotEmpty &&
-          _appIdWeb.isNotEmpty &&
-          _projectId.isNotEmpty;
-    }
-    switch (defaultTargetPlatform) {
-      case TargetPlatform.android:
-        return _apiKeyAndroid.isNotEmpty &&
-            _appIdAndroid.isNotEmpty &&
-            _projectId.isNotEmpty;
-      case TargetPlatform.windows:
-        return _apiKeyWindows.isNotEmpty &&
-            _appIdWindows.isNotEmpty &&
-            _projectId.isNotEmpty;
-      default:
-        return false;
-    }
-  }
-
-  /// Returns null if config is missing instead of throwing.
-  static FirebaseOptions? get currentPlatformOrNull {
-    if (!isConfigured) return null;
-    return currentPlatform;
-  }
-
   static FirebaseOptions get currentPlatform {
-    if (kIsWeb) return _webFromEnv();
+    if (kIsWeb) {
+      return web;
+    }
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
-        return _androidFromEnv();
+        return android;
       case TargetPlatform.iOS:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for iOS. '
-          'Run the FlutterFire CLI again to add iOS support.',
+          'DefaultFirebaseOptions have not been configured for ios - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.macOS:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for macOS. '
-          'Run the FlutterFire CLI again to add macOS support.',
+          'DefaultFirebaseOptions have not been configured for macos - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
         );
       case TargetPlatform.windows:
-        return _windowsFromEnv();
+        return windows;
       case TargetPlatform.linux:
         throw UnsupportedError(
-          'DefaultFirebaseOptions have not been configured for Linux.',
+          'DefaultFirebaseOptions have not been configured for linux - '
+          'you can reconfigure this by running the FlutterFire CLI again.',
         );
       default:
         throw UnsupportedError(
@@ -83,31 +39,29 @@ class DefaultFirebaseOptions {
     }
   }
 
-  static FirebaseOptions _webFromEnv() => FirebaseOptions(
-        apiKey: _apiKeyWeb,
-        appId: _appIdWeb,
-        messagingSenderId: _messagingSenderId,
-        projectId: _projectId,
-        authDomain: _authDomain,
-        storageBucket: _storageBucket,
-        measurementId: _measurementIdWeb,
-      );
+  static const FirebaseOptions web = FirebaseOptions(
+    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
+    appId: '1:358899618997:web:24a938ed5c321fb0f81afc',
+    messagingSenderId: '358899618997',
+    projectId: 'expenses-db-afbea',
+    authDomain: 'expenses-db-afbea.firebaseapp.com',
+    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+  );
 
-  static FirebaseOptions _androidFromEnv() => FirebaseOptions(
-        apiKey: _apiKeyAndroid,
-        appId: _appIdAndroid,
-        messagingSenderId: _messagingSenderId,
-        projectId: _projectId,
-        storageBucket: _storageBucket,
-      );
+  static const FirebaseOptions android = FirebaseOptions(
+    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
+    appId: '1:358899618997:android:baac7a8682a43e95f81afc',
+    messagingSenderId: '358899618997',
+    projectId: 'expenses-db-afbea',
+    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+  );
 
-  static FirebaseOptions _windowsFromEnv() => FirebaseOptions(
-        apiKey: _apiKeyWindows,
-        appId: _appIdWindows,
-        messagingSenderId: _messagingSenderId,
-        projectId: _projectId,
-        authDomain: _authDomain,
-        storageBucket: _storageBucket,
-        measurementId: _measurementIdWindows,
-      );
+  static const FirebaseOptions windows = FirebaseOptions(
+    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
+    appId: '1:358899618997:web:60e8deb8d081538cf81afc',
+    messagingSenderId: '358899618997',
+    projectId: 'expenses-db-afbea',
+    authDomain: 'expenses-db-afbea.firebaseapp.com',
+    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+  );
 }

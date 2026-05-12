@@ -4,7 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_application_1/firebase_options.dart';
 import 'package:flutter_application_1/models/budget.dart';
 import 'package:flutter_application_1/models/expense.dart';
-import 'package:flutter_application_1/models/recurring_expense.dart';
 import 'package:flutter_application_1/screens/income_screen.dart';
 import 'package:flutter_application_1/screens/SplaceScreen.dart';
 import 'package:flutter_application_1/screens/add_expense.dart';
@@ -22,7 +21,6 @@ import 'package:flutter_application_1/screens/settings_screen.dart';
 import 'package:flutter_application_1/services/firestore_services.dart';
 import 'package:flutter_application_1/services/notification_service.dart';
 import 'package:flutter_application_1/services/recurring_background_service.dart';
-import 'package:flutter_application_1/theme/app_colors.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/theme/theme_provider.dart';
 import 'package:intl/intl.dart';
@@ -64,7 +62,7 @@ class KharchaApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: themeProvider.themeMode,
-          home: SplaceScreen(),
+          home: SplashScreen(),
           routes: {'/home': (context) => const ExpenseTrackerHome()},
         );
       },
@@ -713,13 +711,9 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                 _speedDialOption(
                   icon: Icons.flash_on_rounded,
                   label: 'Quick Add',
-                  onTap: () async {
+                  onTap: () {
                     setState(() => _isSpeedDialOpen = false);
-                    final result = await showDialog<bool>(
-                      context: context,
-                      builder: (_) => QuickAddDialog(),
-                    );
-                    if (result == true) setState(() {});
+                    showQuickAddSheet(context, onAdded: () => setState(() {}));
                   },
                 ),
                 const SizedBox(height: 12),

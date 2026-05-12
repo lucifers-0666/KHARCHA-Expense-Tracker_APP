@@ -42,6 +42,9 @@ class AppColors {
   /// Info alias — maps to catEducation blue
   static const Color info             = Color(0xFF5B9BD6);
 
+  static const Color income           = success;
+  static const Color expense          = danger;
+
   // ── Category Colors ──────────────────────────────────────────
   static const Color catFood          = Color(0xFFE8845C);
   static const Color catTransport     = Color(0xFF5B8ED6);

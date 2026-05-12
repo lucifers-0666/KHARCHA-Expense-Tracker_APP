@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
 import '../models/expense.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_colors.dart';
@@ -34,7 +31,6 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   final _descCtrl   = TextEditingController();
   String _category = 'Food';
   bool _loading = false;
-  List<Map<String, dynamic>> _templates = [];
 
   final List<String> _categories = [
     'Food', 'Transport', 'Shopping', 'Entertainment',
@@ -44,7 +40,6 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
   @override
   void initState() {
     super.initState();
-    _loadTemplates();
   }
 
   @override
@@ -52,16 +47,6 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
     _amountCtrl.dispose();
     _descCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadTemplates() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString('expense_templates') ?? '[]';
-    if (mounted) {
-      setState(() {
-        _templates = List<Map<String, dynamic>>.from(json.decode(raw));
-      });
-    }
   }
 
   Future<void> _submit() async {

@@ -36,7 +36,8 @@ class SettingsScreen extends StatelessWidget {
                           ? user!.email![0].toUpperCase()
                           : 'K',
                       style: AppTextStyles.headline.copyWith(
-                          color: AppColors.accent),
+                        color: AppColors.accent,
+                      ),
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -63,77 +64,74 @@ class SettingsScreen extends StatelessWidget {
 
             _SectionLabel('Preferences'),
             const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(items: [
-              _SettingsTile(
-                icon: Icons.currency_rupee_rounded,
-                label: 'Currency',
-                trailing: const Text('INR (₹)',
-                    style: AppTextStyles.body),
-              ),
-              _SettingsTile(
-                icon: Icons.notifications_rounded,
-                label: 'Notifications',
-                trailing: Switch(
-                  value: true,
-                  onChanged: (_) {},
-                  activeColor: AppColors.accent,
+            _SettingsGroup(
+              items: [
+                _SettingsTile(
+                  icon: Icons.currency_rupee_rounded,
+                  label: 'Currency',
+                  trailing: Text('INR (₹)', style: AppTextStyles.body),
                 ),
-              ),
-              _SettingsTile(
-                icon: Icons.dark_mode_rounded,
-                label: 'Dark Mode',
-                trailing: Switch(
-                  value: true,
-                  onChanged: (_) {},
-                  activeColor: AppColors.accent,
+                _SettingsTile(
+                  icon: Icons.notifications_rounded,
+                  label: 'Notifications',
+                  trailing: Switch(
+                    value: true,
+                    onChanged: (_) {},
+                    activeThumbColor: AppColors.accent,
+                  ),
                 ),
-              ),
-            ]),
+                _SettingsTile(
+                  icon: Icons.dark_mode_rounded,
+                  label: 'Dark Mode',
+                  trailing: Switch(
+                    value: true,
+                    onChanged: (_) {},
+                    activeThumbColor: AppColors.accent,
+                  ),
+                ),
+              ],
+            ),
 
             const SizedBox(height: AppSpacing.sectionGap),
             _SectionLabel('Data'),
             const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(items: [
-              _SettingsTile(
-                icon: Icons.file_download_rounded,
-                label: 'Export Reports',
-                onTap: () => Navigator.pushNamed(context, '/export'),
-              ),
-              _SettingsTile(
-                icon: Icons.sms_rounded,
-                label: 'Import from SMS',
-                onTap: () => Navigator.pushNamed(context, '/sms-import'),
-              ),
-            ]),
+            _SettingsGroup(
+              items: [
+                _SettingsTile(
+                  icon: Icons.file_download_rounded,
+                  label: 'Export Reports',
+                  onTap: () => Navigator.pushNamed(context, '/export'),
+                ),
+                _SettingsTile(
+                  icon: Icons.sms_rounded,
+                  label: 'Import from SMS',
+                  onTap: () => Navigator.pushNamed(context, '/sms-import'),
+                ),
+              ],
+            ),
 
             const SizedBox(height: AppSpacing.sectionGap),
             _SectionLabel('Account'),
             const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(items: [
-              _SettingsTile(
-                icon: Icons.shield_rounded,
-                label: 'Security',
-              ),
-              _SettingsTile(
-                icon: Icons.logout_rounded,
-                label: 'Sign Out',
-                labelColor: AppColors.danger,
-                iconColor: AppColors.danger,
-                onTap: () async {
-                  await FirebaseAuth.instance.signOut();
-                  if (context.mounted) {
-                    Navigator.pushReplacementNamed(context, '/auth');
-                  }
-                },
-              ),
-            ]),
-            const SizedBox(height: 32),
-            Center(
-              child: Text(
-                'KHARCHA v1.0.0',
-                style: AppTextStyles.caption,
-              ),
+            _SettingsGroup(
+              items: [
+                _SettingsTile(icon: Icons.shield_rounded, label: 'Security'),
+                _SettingsTile(
+                  icon: Icons.logout_rounded,
+                  label: 'Sign Out',
+                  labelColor: AppColors.danger,
+                  iconColor: AppColors.danger,
+                  onTap: () async {
+                    await FirebaseAuth.instance.signOut();
+                    if (context.mounted) {
+                      Navigator.pushReplacementNamed(context, '/auth');
+                    }
+                  },
+                ),
+              ],
             ),
+            const SizedBox(height: 32),
+            Center(child: Text('KHARCHA v1.0.0', style: AppTextStyles.caption)),
             const SizedBox(height: 16),
           ],
         ),
@@ -148,10 +146,7 @@ class _SectionLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Text(
-      text.toUpperCase(),
-      style: AppTextStyles.label,
-    );
+    return Text(text.toUpperCase(), style: AppTextStyles.label);
   }
 }
 
@@ -199,19 +194,21 @@ class _SettingsTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon,
-          size: 20,
-          color: iconColor ?? AppColors.textMuted),
+      leading: Icon(icon, size: 20, color: iconColor ?? AppColors.textMuted),
       title: Text(
         label,
         style: AppTextStyles.body.copyWith(
           color: labelColor ?? AppColors.textPrimary,
         ),
       ),
-      trailing: trailing ??
+      trailing:
+          trailing ??
           (onTap != null
-              ? const Icon(Icons.chevron_right_rounded,
-                  color: AppColors.textMuted, size: 18)
+              ? const Icon(
+                  Icons.chevron_right_rounded,
+                  color: AppColors.textMuted,
+                  size: 18,
+                )
               : null),
       onTap: onTap,
       shape: RoundedRectangleBorder(borderRadius: AppRadius.tileRadius),
