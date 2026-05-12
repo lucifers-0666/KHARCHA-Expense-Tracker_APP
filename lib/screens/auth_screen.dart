@@ -17,6 +17,7 @@ class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
   bool _isLogin = true;
   bool _loading = false;
+  String? _errorMessage;
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
   final _passCtrl  = TextEditingController();
@@ -28,7 +29,7 @@ class _AuthScreenState extends State<AuthScreen>
   void initState() {
     super.initState();
     _animCtrl = AnimationController(
-      vsync: this, duration: const Duration(milliseconds: 400));
+        vsync: this, duration: const Duration(milliseconds: 400));
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
   }
@@ -44,13 +45,45 @@ class _AuthScreenState extends State<AuthScreen>
 
   void _toggle() {
     _animCtrl.reset();
-    setState(() => _isLogin = !_isLogin);
+    setState(() {
+      _isLogin = !_isLogin;
+      _errorMessage = null;
+    });
     _animCtrl.forward();
+  }
+
+  String _friendlyError(FirebaseAuthException e) {
+    switch (e.code) {
+      case 'user-not-found':
+        return 'No account found with this email.';
+      case 'wrong-password':
+      case 'invalid-credential':
+        return 'Incorrect email or password.';
+      case 'email-already-in-use':
+        return 'An account already exists with this email.';
+      case 'invalid-email':
+        return 'Please enter a valid email address.';
+      case 'weak-password':
+        return 'Password must be at least 6 characters.';
+      case 'too-many-requests':
+        return 'Too many attempts. Please try again later.';
+      case 'user-disabled':
+        return 'This account has been disabled.';
+      case 'network-request-failed':
+        return 'No internet connection. Please check your network and try again.';
+      case 'operation-not-allowed':
+        return 'Email/password login is not enabled. Contact support.';
+      default:
+        return 'Something went wrong. Please try again.';
+    }
   }
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _loading = true);
+    setState(() {
+      _loading = true;
+      _errorMessage = null;
+    });
     try {
       if (_isLogin) {
         await FirebaseAuth.instance.signInWithEmailAndPassword(
@@ -58,16 +91,22 @@ class _AuthScreenState extends State<AuthScreen>
           password: _passCtrl.text,
         );
       } else {
-        await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: _emailCtrl.text.trim(),
           password: _passCtrl.text,
         );
+        // Update display name after registration
+        if (_nameCtrl.text.trim().isNotEmpty) {
+          await cred.user?.updateDisplayName(_nameCtrl.text.trim());
+        }
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
+      if (mounted) setState(() => _errorMessage = _friendlyError(e));
+    } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? 'Authentication failed')));
+        setState(() => _errorMessage =
+            'An unexpected error occurred. Please try again.');
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -129,7 +168,8 @@ class _AuthScreenState extends State<AuthScreen>
                       controller: _nameCtrl,
                       prefixIcon: const Icon(Icons.person_outline_rounded,
                           size: 20, color: AppColors.textMuted),
-                      validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                      validator: (v) =>
+                          v == null || v.isEmpty ? 'Required' : null,
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
@@ -141,7 +181,9 @@ class _AuthScreenState extends State<AuthScreen>
                     prefixIcon: const Icon(Icons.mail_outline_rounded,
                         size: 20, color: AppColors.textMuted),
                     validator: (v) =>
-                        v == null || !v.contains('@') ? 'Enter valid email' : null,
+                        v == null || !v.contains('@')
+                            ? 'Enter valid email'
+                            : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   PremiumTextField(
@@ -152,9 +194,50 @@ class _AuthScreenState extends State<AuthScreen>
                     prefixIcon: const Icon(Icons.lock_outline_rounded,
                         size: 20, color: AppColors.textMuted),
                     validator: (v) =>
-                        v == null || v.length < 6 ? 'Min 6 characters' : null,
+                        v == null || v.length < 6
+                            ? 'Min 6 characters'
+                            : null,
                   ),
                   const SizedBox(height: AppSpacing.xl),
+
+                  // Error Banner
+                  if (_errorMessage != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: AppColors.danger.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                            color: AppColors.danger.withValues(alpha: 0.3)),
+                      ),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Icon(Icons.error_outline_rounded,
+                              color: AppColors.danger, size: 18),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                  color: AppColors.danger,
+                                  fontSize: 13,
+                                  height: 1.4),
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () =>
+                                setState(() => _errorMessage = null),
+                            child: Icon(Icons.close_rounded,
+                                color: AppColors.danger, size: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.lg),
+                  ],
 
                   PrimaryButton(
                     label: _isLogin ? 'Sign In' : 'Create Account',
