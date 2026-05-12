@@ -64,7 +64,7 @@ class KharchaApp extends StatelessWidget {
           theme: AppTheme.light(),
           darkTheme: AppTheme.dark(),
           themeMode: themeProvider.themeMode,
-          home: const SplaceScreen(),
+          home: SplaceScreen(),
           routes: {'/home': (context) => const ExpenseTrackerHome()},
         );
       },
@@ -717,7 +717,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                     setState(() => _isSpeedDialOpen = false);
                     final result = await showDialog<bool>(
                       context: context,
-                      builder: (_) => const QuickAddDialog(),
+                      builder: (_) => QuickAddDialog(),
                     );
                     if (result == true) setState(() {});
                   },
