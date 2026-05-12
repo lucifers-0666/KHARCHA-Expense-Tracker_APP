@@ -22,6 +22,7 @@ import 'package:flutter_application_1/screens/settings_screen.dart';
 import 'package:flutter_application_1/services/firestore_services.dart';
 import 'package:flutter_application_1/services/notification_service.dart';
 import 'package:flutter_application_1/services/recurring_background_service.dart';
+import 'package:flutter_application_1/theme/app_colors.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
 import 'package:flutter_application_1/theme/theme_provider.dart';
 import 'package:intl/intl.dart';
@@ -29,24 +30,19 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // Guard against duplicate-app error on hot restart / multiple init calls
   if (Firebase.apps.isEmpty) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
   }
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
-
   await NotificationService.instance.initialize();
   await RecurringBackgroundService.initialize();
-
   runApp(
     ChangeNotifierProvider(
       create: (_) => ThemeProvider(),
@@ -84,36 +80,32 @@ class ExpenseTrackerHome extends StatefulWidget {
 }
 
 class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
+  int _currentTab = 0;
   late DateTime month = DateTime.now();
   bool monthView = false;
   bool _isSpeedDialOpen = false;
   final _service = FirestoreServices();
   final Set<String> _sentBudgetAlerts = <String>{};
 
-  void chgMonth(int offset) {
-    setState(() {
-      month = DateTime(month.year, month.month + offset, 1);
-    });
-  }
+  void chgMonth(int offset) => setState(() {
+        month = DateTime(month.year, month.month + offset, 1);
+      });
 
   void snack(String msg, [bool err = false]) =>
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Row(
             children: [
-              Icon(
-                err ? Icons.error_outline : Icons.check_circle_outline,
-                color: Colors.white,
-              ),
+              Icon(err ? Icons.error_outline : Icons.check_circle_outline,
+                  color: Colors.white),
               const SizedBox(width: 12),
               Expanded(child: Text(msg)),
             ],
           ),
           backgroundColor: err ? AppColors.danger : AppColors.success,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
           margin: const EdgeInsets.all(16),
           duration: const Duration(seconds: 2),
         ),
@@ -121,11 +113,10 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
 
   void _showBudgetAlertIfNeeded(double spent, double limit) {
     if (limit <= 0) return;
-
     final ratio = spent / limit;
-    final keyBase = '${month.year}-${month.month.toString().padLeft(2, '0')}';
-
-    void sendThresholdAlert(double threshold, String message) {
+    final keyBase =
+        '${month.year}-${month.month.toString().padLeft(2, '0')}';
+    void alert(double threshold, String message) {
       final key = '$keyBase-$threshold';
       if (ratio >= threshold && !_sentBudgetAlerts.contains(key)) {
         _sentBudgetAlerts.add(key);
@@ -135,87 +126,72 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
         });
       }
     }
-
-    sendThresholdAlert(0.75, 'Budget crossed 75% for this month');
-    sendThresholdAlert(0.90, 'Budget crossed 90% for this month');
-    sendThresholdAlert(1.00, 'Budget limit reached/exceeded');
+    alert(0.75, 'Budget crossed 75% for this month');
+    alert(0.90, 'Budget crossed 90% for this month');
+    alert(1.00, 'Budget limit reached/exceeded');
   }
 
   void sheet([Expense? expense]) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(25.0)),
-    ),
-    builder: (context) => AddExpenseScreen(
-      onSave: () => snack(
-        expense == null
-            ? 'Expense saved successfully'
-            : 'Expense updated successfully',
-      ),
-      expenseToEdit: expense,
-    ),
-  );
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (context) => AddExpenseScreen(
+          onSave: () => snack(expense == null
+              ? 'Expense saved successfully'
+              : 'Expense updated successfully'),
+          expenseToEdit: expense,
+        ),
+      );
 
   void delete(String id) => showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.danger.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(10),
+        context: context,
+        builder: (context) => AlertDialog(
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Row(children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.danger.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.delete_outline,
+                  color: AppColors.danger, size: 24),
             ),
-            child: const Icon(
-              Icons.delete_outline,
-              color: AppColors.danger,
-              size: 28,
+            const SizedBox(width: 12),
+            const Text('Delete Expense'),
+          ]),
+          content: const Text(
+              'Are you sure you want to delete this expense? This cannot be undone.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child:
+                  const Text('Cancel', style: TextStyle(color: Colors.grey)),
             ),
-          ),
-          const SizedBox(width: 12),
-          const Text('Delete Expense'),
-        ],
-      ),
-      content: const Text(
-        'Are you sure you want to delete this expense? This action cannot be undone.',
-        style: TextStyle(fontSize: 15),
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          style: TextButton.styleFrom(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          ),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
+            ElevatedButton(
+              onPressed: () async {
+                try {
+                  await _service.deleteExpense(id);
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                  snack('Expense deleted');
+                } catch (e) {
+                  if (!mounted) return;
+                  Navigator.pop(context);
+                  snack('Error: $e', true);
+                }
+              },
+              style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.danger,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10))),
+              child:
+                  const Text('Delete', style: TextStyle(color: Colors.white)),
+            ),
+          ],
         ),
-        ElevatedButton(
-          onPressed: () async {
-            try {
-              await _service.deleteExpense(id);
-              if (!mounted) return;
-              Navigator.pop(context);
-              snack('Expense deleted successfully');
-            } catch (e) {
-              if (!mounted) return;
-              Navigator.pop(context);
-              snack('Error deleting expense: $e', true);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: const Text('Delete', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    ),
-  );
+      );
 
   Color _budgetColor(double ratio) {
     if (ratio < 0.75) return AppColors.success;
@@ -223,347 +199,284 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
     return AppColors.danger;
   }
 
-  Widget _buildBudgetProgressCard() {
-    return StreamBuilder<Budget?>(
-      stream: _service.getBudgetForMonth(month.year, month.month),
-      builder: (context, budgetSnapshot) {
-        final budget = budgetSnapshot.data;
-
-        return StreamBuilder<double>(
-          stream: _service.getTotalExpensesByMonth(month),
-          builder: (context, spentSnapshot) {
-            final spent = spentSnapshot.data ?? 0.0;
-
-            if (budgetSnapshot.connectionState == ConnectionState.waiting ||
-                spentSnapshot.connectionState == ConnectionState.waiting) {
-              return const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                child: Center(
-                  child: CircularProgressIndicator(color: Colors.white),
-                ),
-              );
-            }
-
-            if (budget == null || budget.monthlyLimit <= 0) {
-              return Container(
-                margin: const EdgeInsets.symmetric(horizontal: 16),
-                padding: const EdgeInsets.all(16),
+  // ── Screens for bottom nav ──────────────────────────────────
+  Widget _homeTab() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [AppColors.primaryDark, AppColors.primary],
+          stops: [0.0, 0.55],
+        ),
+      ),
+      child: Column(
+        children: [
+          const OfflineStatusIndicator(),
+          const SizedBox(height: 96),
+          // ── Month Selector ─────────────────────────────────────
+          if (monthView)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+              child: Container(
                 decoration: BoxDecoration(
                   color: Colors.white.withValues(alpha: 0.15),
-                  borderRadius: BorderRadius.circular(20),
+                  borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.savings, color: Colors.white),
-                    const SizedBox(width: 10),
-                    const Expanded(
-                      child: Text(
-                        'No monthly budget set for this month.',
-                        style: TextStyle(color: Colors.white),
+                    IconButton(
+                        onPressed: () => chgMonth(-1),
+                        icon: const Icon(Icons.chevron_left,
+                            color: Colors.white)),
+                    Text(
+                      DateFormat('MMMM yyyy').format(month),
+                      style: const TextStyle(
+                          fontSize: 17,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white),
+                    ),
+                    IconButton(
+                        onPressed: () => chgMonth(1),
+                        icon: const Icon(Icons.chevron_right,
+                            color: Colors.white)),
+                  ],
+                ),
+              ),
+            ),
+          // ── Total Spending Card ────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: StreamBuilder<double>(
+              stream: monthView
+                  ? _service.getTotalExpensesByMonth(month)
+                  : _service.getTotalExpenses(),
+              builder: (context, snapshot) => Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 20),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      AppColors.accent.withValues(alpha: 0.9),
+                      AppColors.accentSoft.withValues(alpha: 0.6)
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppColors.accent.withValues(alpha: 0.35),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    )
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      monthView ? 'Monthly Spending' : 'Total Spending',
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          letterSpacing: 0.5),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      '₹${NumberFormat('#,##,###.##').format(snapshot.data ?? 0)}',
+                      style: const TextStyle(
+                        fontSize: 34,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                        letterSpacing: -0.5,
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const BudgetSetupScreen(),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'Set Budget',
-                        style: TextStyle(color: Colors.white),
-                      ),
+                    const SizedBox(height: 6),
+                    Text(
+                      snapshot.connectionState == ConnectionState.waiting
+                          ? 'Loading...'
+                          : 'Tap + to add a new expense',
+                      style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.65)),
                     ),
                   ],
                 ),
-              );
-            }
-
-            final ratio = spent / budget.monthlyLimit;
-            final progress = ratio.isFinite
-                ? ratio.clamp(0, 1).toDouble()
-                : 0.0;
-            final color = _budgetColor(ratio);
-            _showBudgetAlertIfNeeded(spent, budget.monthlyLimit);
-
-            return Container(
-              margin: const EdgeInsets.symmetric(horizontal: 16),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.18),
-                borderRadius: BorderRadius.circular(20),
               ),
-              child: Row(
-                children: [
-                  SizedBox(
-                    height: 80,
-                    width: 80,
-                    child: Stack(
-                      fit: StackFit.expand,
-                      children: [
-                        CircularProgressIndicator(
-                          value: progress,
-                          strokeWidth: 8,
-                          backgroundColor: Colors.white24,
-                          valueColor: AlwaysStoppedAnimation<Color>(color),
-                        ),
-                        Center(
-                          child: Text(
-                            '${(ratio * 100).toStringAsFixed(0)}%',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Budget Progress',
+            ),
+          ),
+          // ── Budget Progress ────────────────────────────────────
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+            child: _buildBudgetProgressCard(),
+          ),
+          // ── Expense List ───────────────────────────────────────
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.only(top: 16),
+              decoration: const BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+              ),
+              child: StreamBuilder<List<Expense>>(
+                stream: monthView
+                    ? _service.getExpensesByMonth(month)
+                    : _service.getAllExpenses(),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return ListView.builder(
+                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
+                      itemCount: 6,
+                      itemBuilder: (_, __) => _shimmerCard(),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text('Error: ${snapshot.error}',
+                            style:
+                                const TextStyle(color: AppColors.danger)),
+                      ),
+                    );
+                  }
+                  final expenses = snapshot.data ?? [];
+                  if (expenses.isEmpty) return _emptyState();
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+                        child: Text(
+                          'Recent Expenses',
                           style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
                             fontSize: 16,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.textPrimary
+                                .withValues(alpha: 0.9),
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Spent: Rs ${spent.toStringAsFixed(2)} / Rs ${budget.monthlyLimit.toStringAsFixed(2)}',
-                          style: const TextStyle(color: Colors.white70),
+                      ),
+                      Expanded(
+                        child: ListView.builder(
+                          padding:
+                              const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                          physics: const BouncingScrollPhysics(),
+                          itemCount: expenses.length,
+                          itemBuilder: (context, index) => ExpenseCard(
+                            expense: expenses[index],
+                            onEdit: () => sheet(expenses[index]),
+                            onDelete: () => delete(expenses[index].id),
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                      ),
+                    ],
+                  );
+                },
               ),
-            );
-          },
-        );
-      },
+            ),
+          ),
+        ],
+      ),
     );
   }
 
-  Widget _buildIncomeVsExpenseCard() {
-    return StreamBuilder<double>(
-      stream: _service.getTotalIncomeByMonth(month),
-      builder: (context, incomeSnapshot) {
+  Widget _buildBudgetProgressCard() {
+    return StreamBuilder<Budget?>(
+      stream: _service.getBudgetForMonth(month.year, month.month),
+      builder: (context, budgetSnap) {
         return StreamBuilder<double>(
           stream: _service.getTotalExpensesByMonth(month),
-          builder: (context, expenseSnapshot) {
-            if (incomeSnapshot.connectionState == ConnectionState.waiting ||
-                expenseSnapshot.connectionState == ConnectionState.waiting) {
-              return const SizedBox.shrink();
-            }
-
-            final income = incomeSnapshot.data ?? 0.0;
-            final expense = expenseSnapshot.data ?? 0.0;
-            final netCashFlow = income - expense;
-            final savingsRate = income > 0
-                ? ((netCashFlow / income) * 100)
-                : 0.0;
-
-            // Hide if no income recorded
-            if (income == 0) return const SizedBox.shrink();
-
-            return Container(
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: netCashFlow >= 0
-                      ? [AppColors.success, const Color(0xFF4CAF50)]
-                      : [AppColors.danger, const Color(0xFFE57373)],
-                ),
-                borderRadius: BorderRadius.circular(18),
-                boxShadow: [
-                  BoxShadow(
-                    color:
-                        (netCashFlow >= 0
-                                ? AppColors.success
-                                : AppColors.danger)
-                            .withValues(alpha: 0.3),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
+          builder: (context, spentSnap) {
+            final budget = budgetSnap.data;
+            final spent = spentSnap.data ?? 0.0;
+            if (budget == null || budget.monthlyLimit <= 0) {
+              return GestureDetector(
+                onTap: () => Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const BudgetSetupScreen())),
+                child: Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.2)),
                   ),
-                ],
+                  child: Row(
+                    children: [
+                      const Icon(Icons.savings_outlined,
+                          color: Colors.white70, size: 20),
+                      const SizedBox(width: 10),
+                      const Expanded(
+                        child: Text('No budget set for this month',
+                            style: TextStyle(
+                                color: Colors.white70, fontSize: 13)),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('Set Budget',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600)),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }
+            final ratio =
+                (spent / budget.monthlyLimit).clamp(0.0, 1.0);
+            final color = _budgetColor(ratio);
+            _showBudgetAlertIfNeeded(spent, budget.monthlyLimit);
+            return Container(
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Cash Flow',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      GestureDetector(
-                        onTap: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const IncomeScreen(),
-                          ),
-                        ),
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.3),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Manage',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(width: 4),
-                              Icon(
-                                Icons.arrow_forward,
-                                color: Colors.white,
-                                size: 14,
-                              ),
-                            ],
-                          ),
-                        ),
+                      const Text('Monthly Budget',
+                          style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600)),
+                      Text(
+                        '${(ratio * 100).toStringAsFixed(0)}%',
+                        style:
+                            TextStyle(color: color, fontWeight: FontWeight.bold),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Income',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '+₹${NumberFormat('#,##,###').format(income)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Expenses',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '-₹${NumberFormat('#,##,###').format(expense)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      Container(
-                        width: 1,
-                        height: 40,
-                        color: Colors.white.withValues(alpha: 0.3),
-                      ),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              'Net',
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.8),
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              '${netCashFlow >= 0 ? '+' : ''}₹${NumberFormat('#,##,###').format(netCashFlow)}',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ],
+                  const SizedBox(height: 8),
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: LinearProgressIndicator(
+                      value: ratio,
+                      backgroundColor:
+                          Colors.white.withValues(alpha: 0.2),
+                      valueColor: AlwaysStoppedAnimation<Color>(color),
+                      minHeight: 8,
+                    ),
                   ),
-                  const SizedBox(height: 12),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.2),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          savingsRate >= 20
-                              ? Icons.trending_up
-                              : savingsRate >= 0
-                              ? Icons.trending_flat
-                              : Icons.trending_down,
-                          color: Colors.white,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'Savings Rate: ${savingsRate.toStringAsFixed(1)}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '₹${NumberFormat('#,##,###').format(spent)} of ₹${NumberFormat('#,##,###').format(budget.monthlyLimit)}',
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 12),
                   ),
                 ],
               ),
@@ -574,122 +487,98 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
     );
   }
 
-  Widget _buildRecurringSummary() {
-    return StreamBuilder<List<RecurringExpense>>(
-      stream: _service.getActiveRecurringExpenses(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const SizedBox.shrink();
-        }
-
-        if (snapshot.hasError) {
-          return const SizedBox.shrink();
-        }
-
-        final recurring = snapshot.data ?? [];
-        if (recurring.isEmpty) {
-          return const SizedBox.shrink();
-        }
-
-        final topItems = recurring.take(3).toList(growable: false);
-
-        return Container(
-          margin: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            color: Colors.white.withValues(alpha: 0.18),
-            borderRadius: BorderRadius.circular(18),
+  Widget _emptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(28),
+            decoration: BoxDecoration(
+              color: AppColors.accent.withValues(alpha: 0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(Icons.receipt_long_rounded,
+                size: 64, color: AppColors.accent.withValues(alpha: 0.5)),
           ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Upcoming Recurring',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
+          const SizedBox(height: 20),
+          const Text('No expenses yet',
+              style: TextStyle(
+                  fontSize: 20,
                   fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 8),
-              ...topItems.map(
-                (item) => Padding(
-                  padding: const EdgeInsets.only(bottom: 6),
-                  child: Row(
-                    children: [
-                      const Icon(Icons.repeat, size: 16, color: Colors.white70),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '${item.title} (${item.frequency})',
-                          style: const TextStyle(color: Colors.white),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                      Text(
-                        '${item.nextDueDate.day}/${item.nextDueDate.month}',
-                        style: const TextStyle(color: Colors.white70),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
+                  color: AppColors.textPrimary)),
+          const SizedBox(height: 8),
+          Text(
+            'Tap the + button to add\nyour first expense',
+            style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textMuted,
+                height: 1.5),
+            textAlign: TextAlign.center,
           ),
-        );
-      },
+        ],
+      ),
     );
   }
 
-  void _openMenuAction(String value) {
-    switch (value) {
-      case 'income':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const IncomeScreen()),
-        );
-      case 'health':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const FinancialHealthScreen()),
-        );
-      case 'groups':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const GroupsScreen()),
-        );
-      case 'budget':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const BudgetSetupScreen()),
-        );
-      case 'analytics':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const AnalyticsDashboardScreen()),
-        );
-      case 'recurring':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const RecurringExpensesScreen()),
-        );
-      case 'export':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const ExportReportsScreen()),
-        );
-      case 'settings':
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const SettingsScreen()),
-        );
-      default:
-        break;
-    }
+  Widget _shimmerCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceElevated,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: [
+          Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(12))),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                    width: double.infinity,
+                    height: 14,
+                    decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(4))),
+                const SizedBox(height: 8),
+                Container(
+                    width: 90,
+                    height: 10,
+                    decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(4))),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+              width: 60,
+              height: 16,
+              decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(4))),
+        ],
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
+    final tabs = [
+      _homeTab(),
+      const AnalyticsDashboardScreen(),
+      const IncomeScreen(),
+      const SettingsScreen(),
+    ];
+
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -698,263 +587,108 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
         title: const Text(
           'KHARCHA',
           style: TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-          ),
+              fontSize: 22,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              letterSpacing: 1.2),
         ),
         centerTitle: false,
         actions: [
           IconButton(
-            onPressed: () {
-              Navigator.push(
-                context,
+            onPressed: () => Navigator.push(context,
                 MaterialPageRoute(
-                  builder: (_) => const SearchAndFilterScreen(),
-                ),
-              );
-            },
-            icon: const Icon(Icons.search, color: Colors.white, size: 28),
+                    builder: (_) => const SearchAndFilterScreen())),
+            icon: const Icon(Icons.search_rounded,
+                color: Colors.white, size: 26),
+            tooltip: 'Search',
           ),
           IconButton(
-            onPressed: () {
-              setState(() {
-                monthView = !monthView;
-              });
-            },
+            onPressed: () => setState(() => monthView = !monthView),
             icon: Icon(
-              monthView ? Icons.calendar_view_day : Icons.calendar_month,
-              color: Colors.white,
-              size: 28,
-            ),
+                monthView
+                    ? Icons.calendar_view_day_rounded
+                    : Icons.calendar_month_rounded,
+                color: Colors.white,
+                size: 26),
+            tooltip: monthView ? 'All Time' : 'Month View',
           ),
           PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
+            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
             onSelected: _openMenuAction,
+            shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14)),
             itemBuilder: (context) => const [
-              PopupMenuItem(value: 'income', child: Text('Income Tracker')),
-              PopupMenuItem(value: 'health', child: Text('Financial Health')),
-              PopupMenuItem(value: 'groups', child: Text('Split Expenses')),
-              PopupMenuItem(value: 'budget', child: Text('Budget Setup')),
               PopupMenuItem(
-                value: 'analytics',
-                child: Text('Analytics Dashboard'),
-              ),
+                  value: 'health', child: Text('Financial Health')),
               PopupMenuItem(
-                value: 'recurring',
-                child: Text('Recurring Expenses'),
-              ),
-              PopupMenuItem(value: 'export', child: Text('Export & Reports')),
-              PopupMenuItem(value: 'settings', child: Text('Settings')),
+                  value: 'groups', child: Text('Split Expenses')),
+              PopupMenuItem(
+                  value: 'budget', child: Text('Budget Setup')),
+              PopupMenuItem(
+                  value: 'recurring',
+                  child: Text('Recurring Expenses')),
+              PopupMenuItem(
+                  value: 'export', child: Text('Export & Reports')),
             ],
           ),
         ],
       ),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              AppColors.primaryDark,
-              AppColors.primary,
-              AppColors.accent,
-            ],
-          ),
+      body: IndexedStack(index: _currentTab, children: tabs),
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: AppColors.bgSecondary,
+          border: Border(
+              top: BorderSide(
+                  color: Colors.white.withValues(alpha: 0.08))),
         ),
-        child: Column(
-          children: [
-            const OfflineStatusIndicator(),
-            const SizedBox(height: 96),
-            if (monthView)
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16.0,
-                  vertical: 8.0,
-                ),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.2),
-                    borderRadius: BorderRadius.circular(20.0),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      IconButton(
-                        onPressed: () => chgMonth(-1),
-                        icon: const Icon(
-                          Icons.chevron_left,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                      Text(
-                        '${['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][month.month - 1]} ${month.year}',
-                        style: const TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: () => chgMonth(1),
-                        icon: const Icon(
-                          Icons.chevron_right,
-                          color: Colors.white,
-                          size: 30,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: StreamBuilder<double>(
-                stream: monthView
-                    ? _service.getTotalExpensesByMonth(month)
-                    : _service.getTotalExpenses(),
-                builder: (context, snapshot) => Container(
-                  padding: const EdgeInsets.all(24.0),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [AppColors.accent, AppColors.primary],
-                    ),
-                    borderRadius: BorderRadius.circular(25),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.2),
-                        blurRadius: 15,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        monthView ? 'Monthly Spending' : 'Total Spending',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.white70,
-                          letterSpacing: 1,
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Rs ${(snapshot.data ?? 0).toStringAsFixed(2)}',
-                        style: const TextStyle(
-                          fontSize: 36,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
+        child: NavigationBar(
+          selectedIndex: _currentTab,
+          onDestinationSelected: (i) => setState(() => _currentTab = i),
+          backgroundColor: AppColors.bgSecondary,
+          indicatorColor: AppColors.accent.withValues(alpha: 0.18),
+          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+          height: 65,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: 'Home',
             ),
-            _buildBudgetProgressCard(),
-            _buildIncomeVsExpenseCard(),
-            _buildRecurringSummary(),
-            Expanded(
-              child: Container(
-                margin: const EdgeInsets.only(top: 8),
-                decoration: const BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.only(
-                    topLeft: Radius.circular(30),
-                    topRight: Radius.circular(30),
-                  ),
-                ),
-                child: StreamBuilder<List<Expense>>(
-                  stream: monthView
-                      ? _service.getExpensesByMonth(month)
-                      : _service.getAllExpenses(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return ListView.builder(
-                        padding: const EdgeInsets.all(16),
-                        itemCount: 5,
-                        itemBuilder: (context, index) => _buildShimmerCard(),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            'Error: ${snapshot.error}',
-                            style: const TextStyle(
-                              color: AppColors.danger,
-                              fontSize: 16,
-                            ),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-
-                    final expenses = snapshot.data ?? [];
-                    if (expenses.isEmpty) {
-                      return Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(30),
-                              decoration: BoxDecoration(
-                                color: AppColors.primary.withValues(alpha: 0.1),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.receipt_long_rounded,
-                                size: 80,
-                                color: AppColors.primary.withValues(alpha: 0.5),
-                              ),
-                            ),
-                            const SizedBox(height: 24),
-                            const Text(
-                              'No expenses yet',
-                              style: TextStyle(
-                                fontSize: 22,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            const Text(
-                              'Tap the + button below to add your first expense',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: AppColors.textSecondary,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      );
-                    }
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.all(16),
-                      physics: const BouncingScrollPhysics(),
-                      itemCount: expenses.length,
-                      itemBuilder: (context, index) => ExpenseCard(
-                        expense: expenses[index],
-                        onEdit: () => sheet(expenses[index]),
-                        onDelete: () => delete(expenses[index].id),
-                      ),
-                    );
-                  },
-                ),
-              ),
+            NavigationDestination(
+              icon: Icon(Icons.bar_chart_outlined),
+              selectedIcon: Icon(Icons.bar_chart_rounded),
+              label: 'Analytics',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.account_balance_wallet_outlined),
+              selectedIcon: Icon(Icons.account_balance_wallet_rounded),
+              label: 'Income',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.settings_outlined),
+              selectedIcon: Icon(Icons.settings_rounded),
+              label: 'Settings',
             ),
           ],
         ),
       ),
-      floatingActionButton: _buildSpeedDial(),
+      floatingActionButton: _currentTab == 0 ? _buildSpeedDial() : null,
     );
+  }
+
+  void _openMenuAction(String value) {
+    final routes = {
+      'health': const FinancialHealthScreen(),
+      'groups': const GroupsScreen(),
+      'budget': const BudgetSetupScreen(),
+      'recurring': const RecurringExpensesScreen(),
+      'export': const ExportReportsScreen(),
+    };
+    final screen = routes[value];
+    if (screen != null) {
+      Navigator.push(context,
+          MaterialPageRoute(builder: (_) => screen));
+    }
   }
 
   Widget _buildSpeedDial() {
@@ -965,7 +699,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
           GestureDetector(
             onTap: () => setState(() => _isSpeedDialOpen = false),
             child: Container(
-              color: Colors.black.withValues(alpha: 0.3),
+              color: Colors.black.withValues(alpha: 0.35),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -976,8 +710,8 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                _buildSpeedDialOption(
-                  icon: Icons.flash_on,
+                _speedDialOption(
+                  icon: Icons.flash_on_rounded,
                   label: 'Quick Add',
                   onTap: () async {
                     setState(() => _isSpeedDialOpen = false);
@@ -985,14 +719,12 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                       context: context,
                       builder: (_) => const QuickAddDialog(),
                     );
-                    if (result == true) {
-                      setState(() {});
-                    }
+                    if (result == true) setState(() {});
                   },
                 ),
                 const SizedBox(height: 12),
-                _buildSpeedDialOption(
-                  icon: Icons.add_box,
+                _speedDialOption(
+                  icon: Icons.add_box_rounded,
                   label: 'Detailed Add',
                   onTap: () {
                     setState(() => _isSpeedDialOpen = false);
@@ -1004,15 +736,19 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
           ),
         ],
         FloatingActionButton(
-          onPressed: () => setState(() => _isSpeedDialOpen = !_isSpeedDialOpen),
+          onPressed: () =>
+              setState(() => _isSpeedDialOpen = !_isSpeedDialOpen),
           backgroundColor: AppColors.accent,
-          elevation: 8,
+          elevation: 6,
           child: AnimatedRotation(
             turns: _isSpeedDialOpen ? 0.125 : 0,
             duration: const Duration(milliseconds: 200),
             child: Icon(
-              _isSpeedDialOpen ? Icons.close : Icons.add_rounded,
+              _isSpeedDialOpen
+                  ? Icons.close_rounded
+                  : Icons.add_rounded,
               size: 28,
+              color: AppColors.bgPrimary,
             ),
           ),
         ),
@@ -1020,7 +756,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
     );
   }
 
-  Widget _buildSpeedDialOption({
+  Widget _speedDialOption({
     required IconData icon,
     required String label,
     required VoidCallback onTap,
@@ -1029,99 +765,33 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          padding:
+              const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
+            color: AppColors.surfaceElevated,
+            borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.1),
-                blurRadius: 8,
-                offset: const Offset(0, 2),
-              ),
+                  color: Colors.black.withValues(alpha: 0.15),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3))
             ],
           ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
+          child: Text(label,
+              style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary)),
         ),
         const SizedBox(width: 12),
         FloatingActionButton(
+          heroTag: label,
           mini: true,
           onPressed: onTap,
           backgroundColor: AppColors.primary,
-          child: Icon(icon, color: Colors.white),
+          child: Icon(icon, color: Colors.white, size: 20),
         ),
       ],
-    );
-  }
-
-  Widget _buildShimmerCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 52,
-            height: 52,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(15),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 16,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 100,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.grey[200],
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 60,
-            height: 20,
-            decoration: BoxDecoration(
-              color: Colors.grey[200],
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
