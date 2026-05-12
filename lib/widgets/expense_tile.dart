@@ -7,7 +7,7 @@ import '../theme/app_text_styles.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 
-/// Alias used by screens that import ExpenseCard
+/// Alias so screens that import ExpenseCard still work
 typedef ExpenseCard = ExpenseTile;
 
 class ExpenseTile extends StatelessWidget {
@@ -25,8 +25,10 @@ class ExpenseTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final color = AppColors.categoryColor(expense.category);
-    final icon = AppColors.categoryIcon(expense.category);
-    final fmt = NumberFormat('#,##,###.##');
+    final icon  = AppColors.categoryIcon(expense.category);
+    final fmt   = NumberFormat('#,##,###.##');
+    // description is nullable — guard before using
+    final desc  = expense.description;
 
     return Dismissible(
       key: Key(expense.id),
@@ -50,9 +52,10 @@ class ExpenseTile extends StatelessWidget {
                   ElevatedButton(
                     onPressed: () => Navigator.pop(ctx, true),
                     style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.danger,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10))),
+                      backgroundColor: AppColors.danger,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10)),
+                    ),
                     child: const Text('Delete',
                         style: TextStyle(color: Colors.white)),
                   ),
@@ -76,7 +79,7 @@ class ExpenseTile extends StatelessWidget {
             const Icon(Icons.delete_outline_rounded,
                 color: AppColors.danger, size: 26),
             const SizedBox(height: 4),
-            Text('Delete',
+            const Text('Delete',
                 style: TextStyle(
                     color: AppColors.danger,
                     fontSize: 11,
@@ -89,8 +92,8 @@ class ExpenseTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: AppRadius.tileRadius,
-          border:
-              Border.all(color: AppColors.border.withValues(alpha: 0.5)),
+          border: Border.all(
+              color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Material(
           color: Colors.transparent,
@@ -103,7 +106,7 @@ class ExpenseTile extends StatelessWidget {
                   horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               child: Row(
                 children: [
-                  // Category Icon
+                  // Category icon
                   Container(
                     width: 44,
                     height: 44,
@@ -152,12 +155,13 @@ class ExpenseTile extends StatelessWidget {
                             ),
                           ],
                         ),
-                        if (expense.description.isNotEmpty) ...[
+                        // Show description only if non-null and non-empty
+                        if (desc != null && desc.isNotEmpty) ...[
                           const SizedBox(height: 3),
                           Text(
-                            expense.description,
-                            style: AppTextStyles.caption.copyWith(
-                                color: AppColors.textMuted),
+                            desc,
+                            style: AppTextStyles.caption
+                                .copyWith(color: AppColors.textMuted),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -180,7 +184,8 @@ class ExpenseTile extends StatelessWidget {
                       ),
                       const SizedBox(height: 4),
                       const Icon(Icons.chevron_right_rounded,
-                          size: 16, color: AppColors.textDisabled),
+                          size: 16,
+                          color: AppColors.textDisabled),
                     ],
                   ),
                 ],

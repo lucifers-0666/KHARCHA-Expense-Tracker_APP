@@ -10,6 +10,12 @@ class AppColors {
   static const Color surfaceElevated  = Color(0xFF2A4541);
   static const Color surfaceHigh      = Color(0xFF324F4B);
 
+  // ── Primary aliases (used across many screens) ───────────────
+  /// Main brand primary = bgSecondary (dark green-navy)
+  static const Color primary          = Color(0xFF18312E);
+  /// Darker shade of primary for gradients
+  static const Color primaryDark      = Color(0xFF102321);
+
   // ── Accent ───────────────────────────────────────────────────
   static const Color accent           = Color(0xFF7BAE9E);
   static const Color accentSoft       = Color(0xFFA8CFC2);
@@ -33,6 +39,8 @@ class AppColors {
   static const Color warningSoft      = Color(0x33D9A441);
   static const Color danger           = Color(0xFFD96C6C);
   static const Color dangerSoft       = Color(0x33D96C6C);
+  /// Info alias — maps to catEducation blue
+  static const Color info             = Color(0xFF5B9BD6);
 
   // ── Category Colors ──────────────────────────────────────────
   static const Color catFood          = Color(0xFFE8845C);
@@ -47,7 +55,7 @@ class AppColors {
   // ── Shadow ───────────────────────────────────────────────────
   static const Color shadowColor      = Color(0x33000000);
 
-  // ── Helper ───────────────────────────────────────────────────
+  // ── Helpers ──────────────────────────────────────────────────
   static Color categoryColor(String category) {
     return {
       'Food':          catFood,
