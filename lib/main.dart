@@ -6,57 +6,29 @@ import 'package:flutter_application_1/models/budget.dart';
 import 'package:flutter_application_1/models/expense.dart';
 import 'package:flutter_application_1/screens/income_screen.dart';
 import 'package:flutter_application_1/screens/SplaceScreen.dart';
+import 'package:flutter_application_1/screens/settings_screen.dart';
 import 'package:flutter_application_1/screens/add_expense.dart';
 import 'package:flutter_application_1/screens/analytics_dashboard_screen.dart';
-import 'package:flutter_application_1/screens/auth_screen.dart';
 import 'package:flutter_application_1/screens/budget_setup_screen.dart';
-import 'package:flutter_application_1/screens/expense_card.dart';
-import 'package:flutter_application_1/screens/export_reports_screen.dart';
-import 'package:flutter_application_1/screens/financial_health_screen.dart';
-import 'package:flutter_application_1/screens/groups_screen.dart';
-import 'package:flutter_application_1/screens/quick_add_dialog.dart';
-import 'package:flutter_application_1/screens/recurring_expenses_screen.dart';
-import 'package:flutter_application_1/widgets/offline_status_indicator.dart';
-import 'package:flutter_application_1/screens/search_filter_screen.dart';
-import 'package:flutter_application_1/screens/settings_screen.dart';
-import 'package:flutter_application_1/services/error_log_service.dart';
-import 'package:flutter_application_1/services/firestore_services.dart';
-import 'package:flutter_application_1/services/notification_service.dart';
-import 'package:flutter_application_1/services/recurring_background_service.dart';
+import 'package:flutter_application_1/services/expense_service.dart';
+import 'package:flutter_application_1/services/budget_service.dart';
+import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
-import 'package:flutter_application_1/theme/theme_provider.dart';
 import 'package:intl/intl.dart';
-import 'package:provider/provider.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  // ── Global Flutter error handler → logs to Firestore ──────────────────────
-  final originalOnError = FlutterError.onError;
-  FlutterError.onError = (FlutterErrorDetails details) {
-    ErrorLogService.instance.logFatal(details, context: 'FlutterError');
-    originalOnError?.call(details);
-  };
-
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-
-  // Log successful startup
-  await ErrorLogService.instance.logAppStartup();
-
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: Brightness.light,
     ),
   );
-  await NotificationService.instance.initialize();
-  await RecurringBackgroundService.initialize();
-  runApp(
-    ChangeNotifierProvider(
-      create: (_) => ThemeProvider(),
-      child: const KharchaApp(),
-    ),
-  );
+  runApp(const KharchaApp());
 }
 
 class KharchaApp extends StatelessWidget {
@@ -64,449 +36,227 @@ class KharchaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
-        return MaterialApp(
-          debugShowCheckedModeBanner: false,
-          title: 'KHARCHA',
-          theme: AppTheme.light(),
-          darkTheme: AppTheme.dark(),
-          themeMode: themeProvider.themeMode,
-          home: SplashScreen(),
-          routes: {
-            '/home': (context) => const ExpenseTrackerHome(),
-            '/auth': (context) => const AuthScreen(),
-          },
-        );
-      },
+    return MaterialApp(
+      title: 'Kharcha',
+      debugShowCheckedModeBanner: false,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.dark,
+      home: const SplashScreen(),
     );
   }
 }
 
-class ExpenseTrackerHome extends StatefulWidget {
-  const ExpenseTrackerHome({super.key});
+// ─── Snack helper ────────────────────────────────────────────────────────────
+void snack(BuildContext ctx, String msg, {bool err = false}) {
+  ScaffoldMessenger.of(ctx).showSnackBar(
+    SnackBar(
+      content: Text(msg),
+      backgroundColor: err ? AppColors.danger : AppColors.success,
+      behavior: SnackBarBehavior.floating,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      margin: const EdgeInsets.all(12),
+    ),
+  );
+}
+
+// ─── Main Shell ──────────────────────────────────────────────────────────────
+class MainShell extends StatefulWidget {
+  const MainShell({super.key});
 
   @override
-  State<ExpenseTrackerHome> createState() => _ExpenseTrackerHomeState();
+  State<MainShell> createState() => _MainShellState();
 }
 
-class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
-  int _currentTab = 0;
-  late DateTime month = DateTime.now();
-  bool monthView = false;
-  bool _isSpeedDialOpen = false;
-  final _service = FirestoreServices();
-  final Set<String> _sentBudgetAlerts = <String>{};
+class _MainShellState extends State<MainShell> {
+  int _tab = 0;
 
-  void chgMonth(int offset) => setState(() {
-    month = DateTime(month.year, month.month + offset, 1);
-  });
+  final _pages = const [
+    HomeScreen(),
+    AnalyticsDashboardScreen(),
+    IncomeScreen(),
+    SettingsScreen(),
+  ];
 
-  void snack(String msg, [bool err = false]) =>
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(
-                err ? Icons.error_outline : Icons.check_circle_outline,
-                color: Colors.white,
-              ),
-              const SizedBox(width: 12),
-              Expanded(child: Text(msg)),
-            ],
-          ),
-          backgroundColor: err ? AppColors.danger : AppColors.success,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: const EdgeInsets.all(16),
-          duration: const Duration(seconds: 2),
-        ),
-      );
-
-  void _showBudgetAlertIfNeeded(double spent, double limit) {
-    if (limit <= 0) return;
-    final ratio = spent / limit;
-    final keyBase = '${month.year}-${month.month.toString().padLeft(2, '0')}';
-    void alert(double threshold, String message) {
-      final key = '$keyBase-$threshold';
-      if (ratio >= threshold && !_sentBudgetAlerts.contains(key)) {
-        _sentBudgetAlerts.add(key);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          snack(message, threshold >= 1);
-        });
-      }
-    }
-
-    alert(0.75, 'Budget crossed 75% for this month');
-    alert(0.90, 'Budget crossed 90% for this month');
-    alert(1.00, 'Budget limit reached/exceeded');
-  }
-
-  void sheet([Expense? expense]) => showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.transparent,
-    builder: (context) => AddExpenseScreen(
-      onSave: () => snack(
-        expense == null
-            ? 'Expense saved successfully'
-            : 'Expense updated successfully',
-      ),
-      expenseToEdit: expense,
-    ),
-  );
-
-  void delete(String id) => showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-      title: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppColors.danger.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: const Icon(
-              Icons.delete_outline,
-              color: AppColors.danger,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 12),
-          const Text('Delete Expense'),
-        ],
-      ),
-      content: const Text(
-        'Are you sure you want to delete this expense? This cannot be undone.',
-      ),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: const Text('Cancel', style: TextStyle(color: Colors.grey)),
-        ),
-        ElevatedButton(
-          onPressed: () async {
-            try {
-              await _service.deleteExpense(id);
-              if (!mounted) return;
-              Navigator.pop(context);
-              snack('Expense deleted');
-            } catch (e, st) {
-              // Log deletion error to Firestore
-              ErrorLogService.instance.logError(
-                e,
-                st,
-                context: 'ExpenseTrackerHome.delete',
-                extra: {'expenseId': id},
-              );
-              if (!mounted) return;
-              Navigator.pop(context);
-              snack('Error: $e', true);
-            }
-          },
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.danger,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-          child: const Text('Delete', style: TextStyle(color: Colors.white)),
-        ),
-      ],
-    ),
-  );
-
-  Color _budgetColor(double ratio) {
-    if (ratio < 0.75) return AppColors.success;
-    if (ratio < 0.90) return const Color(0xFFF1A24A);
-    return AppColors.danger;
-  }
-
-  // ── Screens for bottom nav ────────────────────────────────────────────────
-  Widget _homeTab() {
-    return Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topCenter,
-          end: Alignment.bottomCenter,
-          colors: [AppColors.primaryDark, AppColors.primary],
-          stops: [0.0, 0.55],
-        ),
-      ),
-      child: Column(
-        children: [
-          const OfflineStatusIndicator(),
-          const SizedBox(height: 96),
-          // ── Month Selector ────────────────────────────────────────────────
-          if (monthView)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    IconButton(
-                      onPressed: () => chgMonth(-1),
-                      icon: const Icon(Icons.chevron_left, color: Colors.white),
-                    ),
-                    Text(
-                      DateFormat('MMMM yyyy').format(month),
-                      style: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.white,
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () => chgMonth(1),
-                      icon: const Icon(
-                        Icons.chevron_right,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // ── Total Spending Card ───────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: StreamBuilder<double>(
-              stream: monthView
-                  ? _service.getTotalExpensesByMonth(month)
-                  : _service.getTotalExpenses(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  ErrorLogService.instance.logError(
-                    snapshot.error,
-                    snapshot.stackTrace,
-                    context: 'ExpenseTrackerHome.totalSpendingStream',
-                  );
-                }
-                return Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 20,
-                  ),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        AppColors.accent.withOpacity(0.9),
-                        AppColors.accentSoft.withOpacity(0.6),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.accent.withOpacity(0.35),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        monthView ? 'Monthly Spending' : 'Total Spending',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.white.withOpacity(0.85),
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        '₹${NumberFormat('#,##,###.##').format(snapshot.data ?? 0)}',
-                        style: const TextStyle(
-                          fontSize: 34,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                          letterSpacing: -0.5,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        snapshot.connectionState == ConnectionState.waiting
-                            ? 'Loading...'
-                            : 'Tap + to add a new expense',
-                        style: TextStyle(
-                          fontSize: 12,
-                          color: Colors.white.withOpacity(0.65),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-          ),
-          // ── Budget Progress ───────────────────────────────────────────────
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-            child: _buildBudgetProgressCard(),
-          ),
-          // ── Expense List ──────────────────────────────────────────────────
-          Expanded(
-            child: Container(
-              margin: const EdgeInsets.only(top: 16),
-              decoration: const BoxDecoration(
-                color: AppColors.surface,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
-              ),
-              child: StreamBuilder<List<Expense>>(
-                stream: monthView
-                    ? _service.getExpensesByMonth(month)
-                    : _service.getAllExpenses(),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return ListView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 20, 16, 100),
-                      itemCount: 6,
-                      itemBuilder: (_, __) => _shimmerCard(),
-                    );
-                  }
-                  if (snapshot.hasError) {
-                    ErrorLogService.instance.logError(
-                      snapshot.error,
-                      snapshot.stackTrace,
-                      context: 'ExpenseTrackerHome.expenseListStream',
-                    );
-                    return Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(24),
-                        child: Text(
-                          'Error: ${snapshot.error}',
-                          style: const TextStyle(color: AppColors.danger),
-                        ),
-                      ),
-                    );
-                  }
-                  final expenses = snapshot.data ?? [];
-                  if (expenses.isEmpty) return _emptyState();
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(20, 20, 20, 8),
-                        child: Text(
-                          'Recent Expenses',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary.withOpacity(0.9),
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: ListView.builder(
-                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
-                          physics: const BouncingScrollPhysics(),
-                          itemCount: expenses.length,
-                          itemBuilder: (context, index) => ExpenseCard(
-                            expense: expenses[index],
-                            onEdit: () => sheet(expenses[index]),
-                            onDelete: () => delete(expenses[index].id),
-                          ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
-              ),
-            ),
-          ),
-        ],
+  void _openAdd() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => AddExpenseScreen(
+        onSave: () => snack(context, 'Expense saved!'),
       ),
     );
   }
 
-  Widget _buildBudgetProgressCard() {
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.bg,
+      body: _pages[_tab],
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _openAdd,
+        backgroundColor: AppColors.primary,
+        foregroundColor: AppColors.bg,
+        icon: const Icon(Icons.add_rounded),
+        label: const Text(
+          'Add',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      bottomNavigationBar: _BottomBar(
+        current: _tab,
+        onTap: (i) => setState(() => _tab = i),
+      ),
+    );
+  }
+}
+
+// ─── Bottom Bar ──────────────────────────────────────────────────────────────
+class _BottomBar extends StatelessWidget {
+  final int current;
+  final ValueChanged<int> onTap;
+  const _BottomBar({required this.current, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.6),
+            width: 1,
+          ),
+        ),
+      ),
+      child: BottomAppBar(
+        color: Colors.transparent,
+        elevation: 0,
+        notchMargin: 8,
+        shape: const CircularNotchedRectangle(),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            _NavItem(
+              icon: Icons.home_rounded,
+              label: 'Home',
+              active: current == 0,
+              onTap: () => onTap(0),
+            ),
+            _NavItem(
+              icon: Icons.bar_chart_rounded,
+              label: 'Analytics',
+              active: current == 1,
+              onTap: () => onTap(1),
+            ),
+            const SizedBox(width: 56),
+            _NavItem(
+              icon: Icons.account_balance_wallet_rounded,
+              label: 'Income',
+              active: current == 2,
+              onTap: () => onTap(2),
+            ),
+            _NavItem(
+              icon: Icons.settings_rounded,
+              label: 'Settings',
+              active: current == 3,
+              onTap: () => onTap(3),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _NavItem extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final bool active;
+  final VoidCallback onTap;
+  const _NavItem({
+    required this.icon,
+    required this.label,
+    required this.active,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              color: active ? AppColors.primary : AppColors.textMuted,
+              size: 24,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: active ? FontWeight.w600 : FontWeight.w500,
+                color: active ? AppColors.primary : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Budget Progress Widget ──────────────────────────────────────────────────
+class BudgetProgressCard extends StatefulWidget {
+  const BudgetProgressCard({super.key});
+
+  @override
+  State<BudgetProgressCard> createState() => _BudgetProgressCardState();
+}
+
+class _BudgetProgressCardState extends State<BudgetProgressCard> {
+  final _budgetSvc = BudgetService();
+  final _expenseSvc = ExpenseService();
+
+  @override
+  Widget build(BuildContext context) {
     return StreamBuilder<Budget?>(
-      stream: _service.getBudgetForMonth(month.year, month.month),
-      builder: (context, budgetSnap) {
-        return StreamBuilder<double>(
-          stream: _service.getTotalExpensesByMonth(month),
-          builder: (context, spentSnap) {
-            if (budgetSnap.hasError) {
-              ErrorLogService.instance.logError(
-                budgetSnap.error,
-                budgetSnap.stackTrace,
-                context: 'ExpenseTrackerHome.budgetStream',
-              );
-            }
-            final budget = budgetSnap.data;
-            final spent = spentSnap.data ?? 0.0;
-            if (budget == null || budget.monthlyLimit <= 0) {
-              return GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const BudgetSetupScreen()),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: Colors.white.withOpacity(0.2)),
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.savings_outlined,
-                        color: Colors.white70,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Text(
-                          'No budget set for this month',
-                          style: TextStyle(color: Colors.white70, fontSize: 13),
-                        ),
-                      ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: const Text(
-                          'Set Budget',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            }
-            final ratio = (spent / budget.monthlyLimit).clamp(0.0, 1.0);
-            final color = _budgetColor(ratio);
-            _showBudgetAlertIfNeeded(spent, budget.monthlyLimit);
+      stream: _budgetSvc.getBudget(),
+      builder: (ctx, budgetSnap) {
+        final budget = budgetSnap.data;
+        if (budget == null) return const SizedBox.shrink();
+
+        return StreamBuilder<List<Expense>>(
+          stream: _expenseSvc.getExpenses(),
+          builder: (ctx, expSnap) {
+            final expenses = expSnap.data ?? [];
+            final now = DateTime.now();
+            final monthExpenses = expenses.where(
+              (e) => e.date.month == now.month && e.date.year == now.year,
+            );
+            final spent =
+                monthExpenses.fold(0.0, (sum, e) => sum + e.amount);
+            final total = budget.monthlyLimit;
+            final ratio = total > 0 ? (spent / total).clamp(0.0, 1.0) : 0.0;
+            final color = _progressColor(ratio);
+
             return Container(
-              padding: const EdgeInsets.all(14),
+              margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(18),
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(
+                  color: AppColors.border.withValues(alpha: 0.6),
+                ),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -514,36 +264,54 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Monthly Budget',
                         style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
-                        '${(ratio * 100).toStringAsFixed(0)}%',
+                        '${(ratio * 100).toInt()}%',
                         style: TextStyle(
                           color: color,
-                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
+                    borderRadius: BorderRadius.circular(4),
                     child: LinearProgressIndicator(
                       value: ratio,
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      valueColor: AlwaysStoppedAnimation<Color>(color),
-                      minHeight: 8,
+                      backgroundColor: AppColors.surfaceOffset,
+                      valueColor: AlwaysStoppedAnimation(color),
+                      minHeight: 6,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '₹${NumberFormat('#,##,###').format(spent)} of ₹${NumberFormat('#,##,###').format(budget.monthlyLimit)}',
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
+                  const SizedBox(height: 10),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '₹${NumberFormat('#,##0').format(spent)} spent',
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'of ₹${NumberFormat('#,##0').format(total)}',
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -554,325 +322,323 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
     );
   }
 
-  Widget _emptyState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(28),
-            decoration: BoxDecoration(
-              color: AppColors.accent.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              Icons.receipt_long_rounded,
-              size: 64,
-              color: AppColors.accent.withOpacity(0.5),
-            ),
-          ),
-          const SizedBox(height: 20),
-          const Text(
-            'No expenses yet',
-            style: TextStyle(
-              fontSize: 20,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textPrimary,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Tap the + button to add\nyour first expense',
-            style: TextStyle(
-              fontSize: 14,
-              color: AppColors.textMuted,
-              height: 1.5,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
-      ),
-    );
+  Color _progressColor(double ratio) {
+    if (ratio < 0.75) return AppColors.success;
+    if (ratio < 0.90) return AppColors.warning;
+    return AppColors.danger;
   }
+}
 
-  Widget _shimmerCard() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceElevated,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  height: 14,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  width: 90,
-                  height: 10,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Container(
-            width: 60,
-            height: 16,
-            decoration: BoxDecoration(
-              color: AppColors.border,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+// ─── Expense Chart ───────────────────────────────────────────────────────────
+class WeeklyExpenseChart extends StatelessWidget {
+  final List<Expense> expenses;
+  const WeeklyExpenseChart({super.key, required this.expenses});
 
   @override
   Widget build(BuildContext context) {
-    final tabs = [
-      _homeTab(),
-      const AnalyticsDashboardScreen(),
-      const IncomeScreen(),
-      const SettingsScreen(),
-    ];
+    final days = _last7Days();
+    final bars = days.map((day) {
+      final total = expenses
+          .where(
+            (e) =>
+                e.date.year == day.year &&
+                e.date.month == day.month &&
+                e.date.day == day.day,
+          )
+          .fold(0.0, (s, e) => s + e.amount);
+      return total;
+    }).toList();
 
-    return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        elevation: 0,
-        backgroundColor: Colors.transparent,
-        title: const Text(
-          'KHARCHA',
-          style: TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.bold,
-            color: Colors.white,
-            letterSpacing: 1.2,
-          ),
-        ),
-        centerTitle: false,
-        actions: [
-          IconButton(
-            onPressed: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const SearchAndFilterScreen()),
+    final maxVal = bars.isEmpty ? 1.0 : bars.reduce((a, b) => a > b ? a : b);
+
+    return Container(
+      height: 160,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+      ),
+      child: BarChart(
+        BarChartData(
+          maxY: maxVal * 1.2,
+          gridData: FlGridData(show: false),
+          borderData: FlBorderData(show: false),
+          titlesData: FlTitlesData(
+            leftTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
-            icon: const Icon(
-              Icons.search_rounded,
-              color: Colors.white,
-              size: 26,
+            rightTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
-            tooltip: 'Search',
-          ),
-          IconButton(
-            onPressed: () => setState(() => monthView = !monthView),
-            icon: Icon(
-              monthView
-                  ? Icons.calendar_view_day_rounded
-                  : Icons.calendar_month_rounded,
-              color: Colors.white,
-              size: 26,
+            topTitles: const AxisTitles(
+              sideTitles: SideTitles(showTitles: false),
             ),
-            tooltip: monthView ? 'All Time' : 'Month View',
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert_rounded, color: Colors.white),
-            onSelected: _openMenuAction,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-            itemBuilder: (context) => const [
-              PopupMenuItem(value: 'health', child: Text('Financial Health')),
-              PopupMenuItem(value: 'groups', child: Text('Split Expenses')),
-              PopupMenuItem(value: 'budget', child: Text('Budget Setup')),
-              PopupMenuItem(
-                value: 'recurring',
-                child: Text('Recurring Expenses'),
+            bottomTitles: AxisTitles(
+              sideTitles: SideTitles(
+                showTitles: true,
+                getTitlesWidget: (v, _) {
+                  final day = days[v.toInt()];
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      DateFormat('E').format(day).substring(0, 1),
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 10,
+                      ),
+                    ),
+                  );
+                },
               ),
-              PopupMenuItem(value: 'export', child: Text('Export & Reports')),
-            ],
-          ),
-        ],
-      ),
-      body: IndexedStack(index: _currentTab, children: tabs),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.bgSecondary,
-          border: Border(
-            top: BorderSide(color: Colors.white.withOpacity(0.08)),
-          ),
-        ),
-        child: NavigationBar(
-          selectedIndex: _currentTab,
-          onDestinationSelected: (i) => setState(() => _currentTab = i),
-          backgroundColor: AppColors.bgSecondary,
-          indicatorColor: AppColors.accent.withOpacity(0.18),
-          labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
-          height: 65,
-          destinations: const [
-            NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home_rounded),
-              label: 'Home',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.bar_chart_outlined),
-              selectedIcon: Icon(Icons.bar_chart_rounded),
-              label: 'Analytics',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.account_balance_wallet_outlined),
-              selectedIcon: Icon(Icons.account_balance_wallet_rounded),
-              label: 'Income',
-            ),
-            NavigationDestination(
-              icon: Icon(Icons.settings_outlined),
-              selectedIcon: Icon(Icons.settings_rounded),
-              label: 'Settings',
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: _currentTab == 0 ? _buildSpeedDial() : null,
-    );
-  }
-
-  void _openMenuAction(String value) {
-    final routes = {
-      'health': const FinancialHealthScreen(),
-      'groups': const GroupsScreen(),
-      'budget': const BudgetSetupScreen(),
-      'recurring': const RecurringExpensesScreen(),
-      'export': const ExportReportsScreen(),
-    };
-    final screen = routes[value];
-    if (screen != null) {
-      Navigator.push(context, MaterialPageRoute(builder: (_) => screen));
-    }
-  }
-
-  Widget _buildSpeedDial() {
-    return Stack(
-      alignment: Alignment.bottomRight,
-      children: [
-        if (_isSpeedDialOpen) ...[
-          GestureDetector(
-            onTap: () => setState(() => _isSpeedDialOpen = false),
-            child: Container(
-              color: Colors.black.withOpacity(0.35),
-              width: double.infinity,
-              height: double.infinity,
             ),
           ),
-          Positioned(
-            bottom: 80,
-            right: 0,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _speedDialOption(
-                  icon: Icons.flash_on_rounded,
-                  label: 'Quick Add',
-                  onTap: () {
-                    setState(() => _isSpeedDialOpen = false);
-                    showQuickAddSheet(context, onAdded: () => setState(() {}));
-                  },
-                ),
-                const SizedBox(height: 12),
-                _speedDialOption(
-                  icon: Icons.add_box_rounded,
-                  label: 'Detailed Add',
-                  onTap: () {
-                    setState(() => _isSpeedDialOpen = false);
-                    sheet();
-                  },
+          barGroups: List.generate(
+            7,
+            (i) => BarChartGroupData(
+              x: i,
+              barRods: [
+                BarChartRodData(
+                  toY: bars[i],
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      AppColors.accent.withValues(alpha: 0.9),
+                      AppColors.accentSoft.withValues(alpha: 0.6),
+                    ],
+                  ),
+                  width: 20,
+                  borderRadius: BorderRadius.circular(4),
+                  backDrawRodData: BackgroundBarChartRodData(
+                    show: true,
+                    toY: maxVal * 1.2,
+                    color: AppColors.accent.withValues(alpha: 0.35),
+                  ),
                 ),
               ],
             ),
           ),
-        ],
-        FloatingActionButton(
-          onPressed: () => setState(() => _isSpeedDialOpen = !_isSpeedDialOpen),
-          backgroundColor: AppColors.accent,
-          elevation: 6,
-          child: AnimatedRotation(
-            turns: _isSpeedDialOpen ? 0.125 : 0,
-            duration: const Duration(milliseconds: 200),
-            child: Icon(
-              _isSpeedDialOpen ? Icons.close_rounded : Icons.add_rounded,
-              size: 28,
-              color: AppColors.bgPrimary,
-            ),
-          ),
         ),
-      ],
+      ),
     );
   }
 
-  Widget _speedDialOption({
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+  List<DateTime> _last7Days() {
+    final now = DateTime.now();
+    return List.generate(7, (i) => now.subtract(Duration(days: 6 - i)));
+  }
+}
+
+// ─── Recent Expenses List ─────────────────────────────────────────────────────
+class RecentExpensesList extends StatelessWidget {
+  final List<Expense> expenses;
+  final int limit;
+  const RecentExpensesList({
+    super.key,
+    required this.expenses,
+    this.limit = 5,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = expenses.take(limit).toList();
+    if (recent.isEmpty) {
+      return Container(
+        padding: const EdgeInsets.all(32),
+        child: const Center(
+          child: Text(
+            'No expenses yet',
+            style: TextStyle(color: AppColors.textMuted),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      children: recent.map((e) {
+        final icon = AppColors.categoryIcon(e.category);
+        final color = AppColors.categoryColor(e.category);
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            color: AppColors.surfaceElevated,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.15),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: AppColors.border.withValues(alpha: 0.4),
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      e.description,
+                      style: const TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    Text(
+                      e.category,
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text(
+                    '-₹${NumberFormat('#,##0').format(e.amount)}',
+                    style: const TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    DateFormat('d MMM').format(e.date),
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
-          child: Text(
-            label,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        FloatingActionButton(
-          heroTag: label,
-          mini: true,
-          onPressed: onTap,
-          backgroundColor: AppColors.primary,
-          child: Icon(icon, color: Colors.white, size: 20),
-        ),
-      ],
+        );
+      }).toList(),
     );
   }
 }
+
+// ─── Category Pie ─────────────────────────────────────────────────────────────
+class CategoryPieChart extends StatelessWidget {
+  final List<Expense> expenses;
+  const CategoryPieChart({super.key, required this.expenses});
+
+  @override
+  Widget build(BuildContext context) {
+    final Map<String, double> catTotals = {};
+    for (final e in expenses) {
+      catTotals[e.category] = (catTotals[e.category] ?? 0) + e.amount;
+    }
+    if (catTotals.isEmpty) return const SizedBox.shrink();
+
+    final entries = catTotals.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final top = entries.take(5).toList();
+    final total = top.fold(0.0, (s, e) => s + e.value);
+
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'By Category',
+            style: TextStyle(
+              color: AppColors.textPrimary,
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 180,
+            child: PieChart(
+              PieChartData(
+                sections: top.map((e) {
+                  final color = AppColors.categoryColor(e.key);
+                  return PieChartSectionData(
+                    color: color,
+                    value: e.value,
+                    title: '${((e.value / total) * 100).toInt()}%',
+                    radius: 50,
+                    titleStyle: const TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.white,
+                    ),
+                  );
+                }).toList(),
+                sectionsSpace: 2,
+                centerSpaceRadius: 40,
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          Wrap(
+            spacing: 12,
+            runSpacing: 8,
+            children: top.map((e) {
+              final color = AppColors.categoryColor(e.key);
+              return Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: color,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    e.key,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              );
+            }).toList(),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Firestore budget watcher ─────────────────────────────────────────────────
+Stream<double> monthlyBudgetStream(String uid) {
+  final now = DateTime.now();
+  final key = '${now.year}-${now.month.toString().padLeft(2, '0')}';
+  return FirebaseFirestore.instance
+      .collection('users')
+      .doc(uid)
+      .collection('budgets')
+      .doc(key)
+      .snapshots()
+      .map((s) => (s.data()?['amount'] as num?)?.toDouble() ?? 0.0);
+}
+
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
+User? get currentUser => FirebaseAuth.instance.currentUser;
+Stream<User?> get authStateStream => FirebaseAuth.instance.authStateChanges();
