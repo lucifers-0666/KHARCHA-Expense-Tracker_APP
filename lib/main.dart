@@ -1,1 +1,18 @@
-PLACEHOLDER_MAIN
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'firebase_options.dart';
+import 'package:flutter_application_1/models/budget.dart';
+import 'package:flutter_application_1/models/expense.dart';
+import 'package:flutter_application_1/screens/income_screen.dart';
+import 'package:flutter_application_1/screens/SplaceScreen.dart';
+import 'package:flutter_application_1/screens/settings_screen.dart';
+import 'package:flutter_application_1/screens/add_expense.dart';
+import 'package:flutter_application_1/screens/analytics_dashboard_screen.dart';
+import 'package:flutter_application_1/services/firestore_services.dart';
+import 'package:flutter_application_1/screens/home_screen.dart';
+import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:intl/intl.dart';
+import 'package:fl_chart/fl_chart.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
