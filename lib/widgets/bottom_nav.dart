@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_radius.dart';
 
 class PremiumBottomNav extends StatelessWidget {
   final int currentIndex;
@@ -15,83 +13,60 @@ class PremiumBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    const items = [
-      _NavItem(icon: Icons.home_rounded, label: 'Home'),
-      _NavItem(icon: Icons.bar_chart_rounded, label: 'Analytics'),
-      _NavItem(icon: Icons.group_rounded, label: 'Groups'),
-      _NavItem(icon: Icons.settings_rounded, label: 'Settings'),
-    ];
-
     return Container(
-      margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       decoration: BoxDecoration(
         color: AppColors.bgSecondary,
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(color: AppColors.border.withOpacity(0.6)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.25),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
+        border: Border(
+          top: BorderSide(
+            color: AppColors.border.withValues(alpha: 0.6),
+            width: 1,
+          ),
+        ),
+      ),
+      child: NavigationBar(
+        selectedIndex: currentIndex,
+        onDestinationSelected: onTap,
+        backgroundColor: Colors.transparent,
+        indicatorColor: AppColors.accent.withValues(alpha: 0.18),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        destinations: [
+          NavigationDestination(
+            icon: Icon(
+              Icons.home_outlined,
+              color: AppColors.textMuted.withValues(alpha: 0.8),
+            ),
+            selectedIcon: const Icon(Icons.home_rounded, color: AppColors.accent),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.bar_chart_outlined,
+              color: AppColors.textMuted.withValues(alpha: 0.8),
+            ),
+            selectedIcon: const Icon(Icons.bar_chart_rounded, color: AppColors.accent),
+            label: 'Analytics',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.account_balance_wallet_outlined,
+              color: AppColors.textMuted.withValues(alpha: 0.8),
+            ),
+            selectedIcon: const Icon(
+              Icons.account_balance_wallet_rounded,
+              color: AppColors.accent,
+            ),
+            label: 'Income',
+          ),
+          NavigationDestination(
+            icon: Icon(
+              Icons.settings_outlined,
+              color: AppColors.textMuted.withValues(alpha: 0.8),
+            ),
+            selectedIcon: const Icon(Icons.settings_rounded, color: AppColors.accent),
+            label: 'Settings',
           ),
         ],
       ),
-      child: Row(
-        children: List.generate(items.length, (i) {
-          final selected = i == currentIndex;
-          return Expanded(
-            child: GestureDetector(
-              onTap: () => onTap(i),
-              behavior: HitTestBehavior.opaque,
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                decoration: BoxDecoration(
-                  color: selected
-                      ? AppColors.accent.withOpacity(0.12)
-                      : Colors.transparent,
-                  borderRadius: AppRadius.cardRadius,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    AnimatedSwitcher(
-                      duration: const Duration(milliseconds: 200),
-                      child: Icon(
-                        items[i].icon,
-                        key: ValueKey(selected),
-                        size: 22,
-                        color: selected
-                            ? AppColors.accent
-                            : AppColors.textMuted,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      items[i].label,
-                      style: AppTextStyles.caption.copyWith(
-                        color: selected
-                            ? AppColors.accent
-                            : AppColors.textMuted,
-                        fontWeight: selected
-                            ? FontWeight.w600
-                            : FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          );
-        }),
-      ),
     );
   }
-}
-
-class _NavItem {
-  final IconData icon;
-  final String label;
-  const _NavItem({required this.icon, required this.label});
 }
