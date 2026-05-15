@@ -19,6 +19,7 @@ import 'package:flutter_application_1/screens/recurring_expenses_screen.dart';
 import 'package:flutter_application_1/widgets/offline_status_indicator.dart';
 import 'package:flutter_application_1/screens/search_filter_screen.dart';
 import 'package:flutter_application_1/screens/settings_screen.dart';
+import 'package:flutter_application_1/services/error_log_service.dart';
 import 'package:flutter_application_1/services/firestore_services.dart';
 import 'package:flutter_application_1/services/notification_service.dart';
 import 'package:flutter_application_1/services/recurring_background_service.dart';
@@ -29,7 +30,19 @@ import 'package:provider/provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // ── Global Flutter error handler → logs to Firestore ──────────────────────
+  final originalOnError = FlutterError.onError;
+  FlutterError.onError = (FlutterErrorDetails details) {
+    ErrorLogService.instance.logFatal(details, context: 'FlutterError');
+    originalOnError?.call(details);
+  };
+
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+
+  // Log successful startup
+  await ErrorLogService.instance.logAppStartup();
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
@@ -183,7 +196,14 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
               if (!mounted) return;
               Navigator.pop(context);
               snack('Expense deleted');
-            } catch (e) {
+            } catch (e, st) {
+              // Log deletion error to Firestore
+              ErrorLogService.instance.logError(
+                e,
+                st,
+                context: 'ExpenseTrackerHome.delete',
+                extra: {'expenseId': id},
+              );
               if (!mounted) return;
               Navigator.pop(context);
               snack('Error: $e', true);
@@ -207,7 +227,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
     return AppColors.danger;
   }
 
-  // ── Screens for bottom nav ──────────────────────────────────
+  // ── Screens for bottom nav ────────────────────────────────────────────────
   Widget _homeTab() {
     return Container(
       decoration: const BoxDecoration(
@@ -222,7 +242,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
         children: [
           const OfflineStatusIndicator(),
           const SizedBox(height: 96),
-          // ── Month Selector ─────────────────────────────────────
+          // ── Month Selector ────────────────────────────────────────────────
           if (monthView)
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
@@ -257,79 +277,88 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                 ),
               ),
             ),
-          // ── Total Spending Card ────────────────────────────────
+          // ── Total Spending Card ───────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
             child: StreamBuilder<double>(
               stream: monthView
                   ? _service.getTotalExpensesByMonth(month)
                   : _service.getTotalExpenses(),
-              builder: (context, snapshot) => Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 20,
-                ),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      AppColors.accent.withValues(alpha: 0.9),
-                      AppColors.accentSoft.withValues(alpha: 0.6),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  ErrorLogService.instance.logError(
+                    snapshot.error,
+                    snapshot.stackTrace,
+                    context: 'ExpenseTrackerHome.totalSpendingStream',
+                  );
+                }
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 20,
                   ),
-                  borderRadius: BorderRadius.circular(24),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.accent.withValues(alpha: 0.35),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.accent.withValues(alpha: 0.9),
+                        AppColors.accentSoft.withValues(alpha: 0.6),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
                     ),
-                  ],
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      monthView ? 'Monthly Spending' : 'Total Spending',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.white.withValues(alpha: 0.85),
-                        letterSpacing: 0.5,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.accent.withValues(alpha: 0.35),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
                       ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      '₹${NumberFormat('#,##,###.##').format(snapshot.data ?? 0)}',
-                      style: const TextStyle(
-                        fontSize: 34,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                        letterSpacing: -0.5,
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        monthView ? 'Monthly Spending' : 'Total Spending',
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: Colors.white.withValues(alpha: 0.85),
+                          letterSpacing: 0.5,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      snapshot.connectionState == ConnectionState.waiting
-                          ? 'Loading...'
-                          : 'Tap + to add a new expense',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.white.withValues(alpha: 0.65),
+                      const SizedBox(height: 8),
+                      Text(
+                        '₹${NumberFormat('#,##,###.##').format(snapshot.data ?? 0)}',
+                        style: const TextStyle(
+                          fontSize: 34,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                          letterSpacing: -0.5,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ),
+                      const SizedBox(height: 6),
+                      Text(
+                        snapshot.connectionState == ConnectionState.waiting
+                            ? 'Loading...'
+                            : 'Tap + to add a new expense',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.white.withValues(alpha: 0.65),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
             ),
           ),
-          // ── Budget Progress ────────────────────────────────────
+          // ── Budget Progress ───────────────────────────────────────────────
           Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
             child: _buildBudgetProgressCard(),
           ),
-          // ── Expense List ───────────────────────────────────────
+          // ── Expense List ──────────────────────────────────────────────────
           Expanded(
             child: Container(
               margin: const EdgeInsets.only(top: 16),
@@ -350,6 +379,11 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                     );
                   }
                   if (snapshot.hasError) {
+                    ErrorLogService.instance.logError(
+                      snapshot.error,
+                      snapshot.stackTrace,
+                      context: 'ExpenseTrackerHome.expenseListStream',
+                    );
                     return Center(
                       child: Padding(
                         padding: const EdgeInsets.all(24),
@@ -406,6 +440,13 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
         return StreamBuilder<double>(
           stream: _service.getTotalExpensesByMonth(month),
           builder: (context, spentSnap) {
+            if (budgetSnap.hasError) {
+              ErrorLogService.instance.logError(
+                budgetSnap.error,
+                budgetSnap.stackTrace,
+                context: 'ExpenseTrackerHome.budgetStream',
+              );
+            }
             final budget = budgetSnap.data;
             final spent = spentSnap.data ?? 0.0;
             if (budget == null || budget.monthlyLimit <= 0) {
