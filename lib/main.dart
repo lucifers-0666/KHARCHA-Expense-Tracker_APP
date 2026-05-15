@@ -1,6 +1,7 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'package:flutter_application_1/models/budget.dart';
 import 'package:flutter_application_1/models/expense.dart';
@@ -12,6 +13,7 @@ import 'package:flutter_application_1/screens/analytics_dashboard_screen.dart';
 import 'package:flutter_application_1/services/firestore_services.dart';
 import 'package:flutter_application_1/screens/home_screen.dart';
 import 'package:flutter_application_1/theme/app_theme.dart';
+import 'package:flutter_application_1/providers/theme_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -25,12 +27,17 @@ void main() async {
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-      systemNavigationBarColor: AppColors.bgPrimary,
-      systemNavigationBarIconBrightness: Brightness.light,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: AppColors.bg,
+      systemNavigationBarIconBrightness: Brightness.dark,
     ),
   );
-  runApp(const KharchaApp());
+  runApp(
+    ChangeNotifierProvider(
+      create: (_) => ThemeProvider(),
+      child: const KharchaApp(),
+    ),
+  );
 }
 
 class KharchaApp extends StatelessWidget {
@@ -38,15 +45,19 @@ class KharchaApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final themeProvider = Provider.of<ThemeProvider>(context);
     return MaterialApp(
       title: 'Kharcha',
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.darkTheme,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: themeProvider.themeMode,
       home: const SplashScreen(),
     );
   }
 }
 
+// ─── Legacy MainShell (kept for compat, not used) ────────────────────────────
 class MainShell extends StatefulWidget {
   const MainShell({super.key});
 
@@ -66,73 +77,56 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      body: IndexedStack(
-        index: _currentIndex,
-        children: _screens,
-      ),
+      backgroundColor: isDark ? AppColors.bgDark : AppColors.bg,
+      body: IndexedStack(index: _currentIndex, children: _screens),
       floatingActionButton: _currentIndex == 0
-          ? FloatingActionButton.extended(
+          ? FloatingActionButton(
               onPressed: () => _showAddExpense(context),
-              backgroundColor: AppColors.accent,
-              icon: const Icon(Icons.add_rounded, color: Colors.black),
-              label: const Text(
-                'Add Expense',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              elevation: 2,
+              child: const Icon(Icons.add_rounded, size: 24),
             )
           : null,
-      bottomNavigationBar: _buildBottomNav(),
+      bottomNavigationBar: _buildBottomNav(isDark),
     );
   }
 
-  Widget _buildBottomNav() {
+  Widget _buildBottomNav(bool isDark) {
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         border: Border(
           top: BorderSide(
-            color: AppColors.border.withValues(alpha: 0.5),
-            width: 1,
+            color: isDark ? AppColors.borderDark : AppColors.border,
           ),
         ),
       ),
-      child: BottomNavigationBar(
-        currentIndex: _currentIndex,
-        onTap: (i) => setState(() => _currentIndex = i),
+      child: NavigationBar(
+        selectedIndex: _currentIndex,
+        onDestinationSelected: (i) => setState(() => _currentIndex = i),
         backgroundColor: Colors.transparent,
-        elevation: 0,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.accent,
-        unselectedItemColor: AppColors.textMuted,
-        selectedLabelStyle: const TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-        ),
-        unselectedLabelStyle: const TextStyle(fontSize: 11),
-        items: const [
-          BottomNavigationBarItem(
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home_rounded),
+            selectedIcon: Icon(Icons.home_rounded),
             label: 'Home',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
-            activeIcon: Icon(Icons.bar_chart_rounded),
+            selectedIcon: Icon(Icons.bar_chart_rounded),
             label: 'Analytics',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.account_balance_wallet_outlined),
-            activeIcon: Icon(Icons.account_balance_wallet_rounded),
+            selectedIcon: Icon(Icons.account_balance_wallet_rounded),
             label: 'Income',
           ),
-          BottomNavigationBarItem(
+          NavigationDestination(
             icon: Icon(Icons.settings_outlined),
-            activeIcon: Icon(Icons.settings_rounded),
+            selectedIcon: Icon(Icons.settings_rounded),
             label: 'Settings',
           ),
         ],
@@ -150,11 +144,9 @@ class _MainShellState extends State<MainShell> {
   }
 }
 
-// ── Budget Progress Card ──────────────────────────────────────────────────────
-
+// ─── Budget Progress Card ─────────────────────────────────────────────────────
 class BudgetProgressCard extends StatefulWidget {
   const BudgetProgressCard({super.key});
-
   @override
   State<BudgetProgressCard> createState() => _BudgetProgressCardState();
 }
@@ -164,15 +156,17 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+
     return StreamBuilder<Budget?>(
-      stream: _svc.getBudgetForMonth(
-        DateTime.now().year,
-        DateTime.now().month,
-      ),
+      stream: _svc.getBudgetForMonth(DateTime.now().year, DateTime.now().month),
       builder: (ctx, budgetSnap) {
         final budget = budgetSnap.data;
         if (budget == null) return const SizedBox.shrink();
-
         return StreamBuilder<List<Expense>>(
           stream: _svc.getAllExpenses(),
           builder: (ctx, expSnap) {
@@ -181,13 +175,9 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
             final monthExpenses = expenses.where(
               (e) => e.date.month == now.month && e.date.year == now.year,
             );
-            final spent = monthExpenses.fold<double>(
-              0,
-              (sum, e) => sum + e.amount,
-            );
+            final spent = monthExpenses.fold<double>(0, (sum, e) => sum + e.amount);
             final limit = budget.monthlyLimit;
-            final progress =
-                limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
+            final progress = limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
             final remaining = limit - spent;
             final isOver = spent > limit;
 
@@ -196,13 +186,18 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
                 horizontal: AppSpacing.base,
                 vertical: AppSpacing.sm,
               ),
-              padding: const EdgeInsets.all(AppSpacing.base),
+              padding: const EdgeInsets.all(AppSpacing.cardPad),
               decoration: BoxDecoration(
-                color: AppColors.bgSecondary,
-                borderRadius: BorderRadius.circular(AppRadius.xl),
-                border: Border.all(
-                  color: AppColors.border.withValues(alpha: 0.6),
-                ),
+                color: cardColor,
+                borderRadius: BorderRadius.circular(AppRadius.lg),
+                border: Border.all(color: borderColor),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -210,21 +205,29 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
+                      Text(
                         'Monthly Budget',
                         style: TextStyle(
-                          color: AppColors.textMuted,
+                          color: textMuted,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                      Text(
-                        isOver ? 'Over Budget' : 'On Track',
-                        style: TextStyle(
-                          color:
-                              isOver ? AppColors.expense : AppColors.income,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isOver
+                              ? AppColors.dangerSoft
+                              : AppColors.successSoft,
+                          borderRadius: BorderRadius.circular(AppRadius.full),
+                        ),
+                        child: Text(
+                          isOver ? 'Over Budget' : 'On Track',
+                          style: TextStyle(
+                            color: isOver ? AppColors.danger : AppColors.success,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     ],
@@ -237,19 +240,15 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
                       Text(
                         '₹${NumberFormat('#,##,###').format(spent.toInt())}',
                         style: TextStyle(
-                          color: isOver
-                              ? AppColors.expense
-                              : AppColors.textPrimary,
+                          color: isOver ? AppColors.danger : textPrimary,
                           fontSize: 22,
                           fontWeight: FontWeight.w700,
+                          letterSpacing: -0.5,
                         ),
                       ),
                       Text(
                         ' / ₹${NumberFormat('#,##,###').format(limit.toInt())}',
-                        style: const TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 14,
-                        ),
+                        style: TextStyle(color: textMuted, fontSize: 14),
                       ),
                     ],
                   ),
@@ -258,10 +257,10 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
                     borderRadius: BorderRadius.circular(AppRadius.full),
                     child: LinearProgressIndicator(
                       value: progress,
-                      minHeight: 8,
-                      backgroundColor: AppColors.surfaceOffset,
+                      minHeight: 6,
+                      backgroundColor: isDark ? AppColors.borderDark : AppColors.border,
                       valueColor: AlwaysStoppedAnimation<Color>(
-                        isOver ? AppColors.expense : AppColors.accent,
+                        isOver ? AppColors.danger : AppColors.success,
                       ),
                     ),
                   ),
@@ -271,7 +270,7 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
                         ? '₹${NumberFormat('#,##,###').format(remaining.abs().toInt())} over limit'
                         : '₹${NumberFormat('#,##,###').format(remaining.toInt())} remaining',
                     style: TextStyle(
-                      color: isOver ? AppColors.expense : AppColors.textMuted,
+                      color: isOver ? AppColors.danger : textMuted,
                       fontSize: 12,
                     ),
                   ),
@@ -285,30 +284,52 @@ class _BudgetProgressCardState extends State<BudgetProgressCard> {
   }
 }
 
-// ── Recent Transactions Widget ────────────────────────────────────────────────
-
+// ─── Recent Transactions Widget ───────────────────────────────────────────────
 class RecentTransactionsWidget extends StatelessWidget {
   const RecentTransactionsWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final svc = FirestoreServices();
     return StreamBuilder<List<Expense>>(
       stream: svc.getAllExpenses(),
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(color: AppColors.accent),
+            child: Padding(
+              padding: EdgeInsets.all(24),
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.primary,
+              ),
+            ),
+          );
+        }
+        if (snap.hasError) {
+          return Padding(
+            padding: const EdgeInsets.all(20),
+            child: Text(
+              'Unable to load transactions. Please try again later.',
+              style: TextStyle(
+                color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
+                fontSize: 14,
+              ),
+              textAlign: TextAlign.center,
+            ),
           );
         }
         final expenses = snap.data ?? [];
         if (expenses.isEmpty) {
-          return const Padding(
-            padding: EdgeInsets.all(AppSpacing.x2l),
+          return Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32),
             child: Center(
               child: Text(
                 'No transactions yet',
-                style: TextStyle(color: AppColors.textMuted),
+                style: TextStyle(
+                  color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
+                  fontSize: 14,
+                ),
               ),
             ),
           );
@@ -318,10 +339,7 @@ class RecentTransactionsWidget extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: recent.length,
-          itemBuilder: (ctx, i) {
-            final e = recent[i];
-            return _ExpenseTile(expense: e);
-          },
+          itemBuilder: (ctx, i) => _ExpenseTile(expense: recent[i], isDark: isDark),
         );
       },
     );
@@ -330,27 +348,30 @@ class RecentTransactionsWidget extends StatelessWidget {
 
 class _ExpenseTile extends StatelessWidget {
   final Expense expense;
-  const _ExpenseTile({required this.expense});
+  final bool isDark;
+  const _ExpenseTile({required this.expense, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
     final e = expense;
-    final color = _categoryColor(e.category);
+    final color = AppColors.categoryColor(e.category);
+    final icon = AppColors.categoryIcon(e.category);
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.base,
-        vertical: 3,
-      ),
-      padding: const EdgeInsets.symmetric(
-        horizontal: AppSpacing.base,
-        vertical: AppSpacing.sm,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.base, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
-        color: AppColors.bgSecondary,
+        color: isDark ? AppColors.surfaceDark : AppColors.surface,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-          color: AppColors.border.withValues(alpha: 0.4),
+          color: isDark ? AppColors.borderDark : AppColors.border,
         ),
+        boxShadow: isDark ? [] : [
+          BoxShadow(
+            color: AppColors.shadow,
+            blurRadius: 4,
+            offset: const Offset(0, 1),
+          ),
+        ],
       ),
       child: Row(
         children: [
@@ -358,14 +379,10 @@ class _ExpenseTile extends StatelessWidget {
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-              color: color.withValues(alpha: 0.15),
-              borderRadius: BorderRadius.circular(AppRadius.md),
+              color: color.withValues(alpha: 0.10),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
             ),
-            child: Icon(
-              _categoryIcon(e.category),
-              color: color,
-              size: 18,
-            ),
+            child: Icon(icon, color: color, size: 18),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -374,16 +391,16 @@ class _ExpenseTile extends StatelessWidget {
               children: [
                 Text(
                   e.description ?? e.title,
-                  style: const TextStyle(
-                    color: AppColors.textPrimary,
+                  style: TextStyle(
+                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 Text(
-                  '${e.category} • ${DateFormat('MMM d').format(e.date)}',
-                  style: const TextStyle(
-                    color: AppColors.textMuted,
+                  '${e.category} · ${DateFormat('MMM d').format(e.date)}',
+                  style: TextStyle(
+                    color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
                     fontSize: 12,
                   ),
                 ),
@@ -393,7 +410,7 @@ class _ExpenseTile extends StatelessWidget {
           Text(
             '-₹${NumberFormat('#,##,###.##').format(e.amount)}',
             style: const TextStyle(
-              color: AppColors.expense,
+              color: AppColors.danger,
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -402,39 +419,11 @@ class _ExpenseTile extends StatelessWidget {
       ),
     );
   }
-
-  Color _categoryColor(String cat) {
-    const map = {
-      'food': Color(0xFFFF6B6B),
-      'transport': Color(0xFF4ECDC4),
-      'shopping': Color(0xFFFFE66D),
-      'entertainment': Color(0xFFA8E6CF),
-      'health': Color(0xFFFF8B94),
-      'bills': Color(0xFFB4A7D6),
-      'education': Color(0xFF88D8C0),
-    };
-    return map[cat.toLowerCase()] ?? AppColors.accent;
-  }
-
-  IconData _categoryIcon(String cat) {
-    const map = {
-      'food': Icons.restaurant_rounded,
-      'transport': Icons.directions_car_rounded,
-      'shopping': Icons.shopping_bag_rounded,
-      'entertainment': Icons.movie_rounded,
-      'health': Icons.favorite_rounded,
-      'bills': Icons.receipt_rounded,
-      'education': Icons.school_rounded,
-    };
-    return map[cat.toLowerCase()] ?? Icons.attach_money_rounded;
-  }
 }
 
-// ── Spending Chart ────────────────────────────────────────────────────────────
-
+// ─── Spending Chart ───────────────────────────────────────────────────────────
 class SpendingChart extends StatefulWidget {
   const SpendingChart({super.key});
-
   @override
   State<SpendingChart> createState() => _SpendingChartState();
 }
@@ -443,77 +432,84 @@ class _SpendingChartState extends State<SpendingChart> {
   int _touchedIndex = -1;
   final _svc = FirestoreServices();
 
+  // Muted premium chart colors (terracotta, slate-blue, olive, amber, rose, steel, stone)
+  static const _chartColors = [
+    Color(0xFFB85C5C),
+    Color(0xFF5577AA),
+    Color(0xFF7A8F6B),
+    Color(0xFFC6923D),
+    Color(0xFFAA6B8B),
+    Color(0xFF4A7799),
+    Color(0xFF8B8B8B),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
+    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+
     return StreamBuilder<Map<String, double>>(
       stream: _svc.getCategoryTotalsByMonth(DateTime.now()),
       builder: (ctx, snap) {
         if (!snap.hasData || snap.data!.isEmpty) {
           return Container(
-            height: 200,
+            height: 180,
             margin: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.base,
-              vertical: AppSpacing.sm,
+              horizontal: AppSpacing.base, vertical: AppSpacing.sm,
             ),
             decoration: BoxDecoration(
-              color: AppColors.bgSecondary,
-              borderRadius: BorderRadius.circular(AppRadius.xl),
-              border: Border.all(
-                color: AppColors.border.withValues(alpha: 0.5),
-              ),
+              color: cardColor,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
+              border: Border.all(color: borderColor),
             ),
-            child: const Center(
+            child: Center(
               child: Text(
                 'No spending data this month',
-                style: TextStyle(color: AppColors.textMuted),
+                style: TextStyle(color: textMuted, fontSize: 14),
               ),
             ),
           );
         }
-
         final data = snap.data!;
         final total = data.values.fold<double>(0, (a, b) => a + b);
-        final colors = [
-          const Color(0xFFFF6B6B),
-          const Color(0xFF4ECDC4),
-          const Color(0xFFFFE66D),
-          const Color(0xFFA8E6CF),
-          const Color(0xFFFF8B94),
-          const Color(0xFFB4A7D6),
-          const Color(0xFF88D8C0),
-        ];
         final entries = data.entries.toList();
 
         return Container(
           margin: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.base,
-            vertical: AppSpacing.sm,
+            horizontal: AppSpacing.base, vertical: AppSpacing.sm,
           ),
           padding: const EdgeInsets.all(AppSpacing.base),
           decoration: BoxDecoration(
-            color: AppColors.bgSecondary,
-            borderRadius: BorderRadius.circular(AppRadius.xl),
-            border: Border.all(
-              color: AppColors.border.withValues(alpha: 0.5),
-            ),
+            color: cardColor,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: borderColor),
+            boxShadow: isDark ? [] : [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Spending by Category',
                 style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500,
+                  color: textMuted, fontSize: 12,
+                  fontWeight: FontWeight.w600, letterSpacing: 0.3,
                 ),
               ),
               const SizedBox(height: AppSpacing.base),
               Row(
                 children: [
                   SizedBox(
-                    width: 140,
-                    height: 140,
+                    width: 130,
+                    height: 130,
                     child: PieChart(
                       PieChartData(
                         pieTouchData: PieTouchData(
@@ -532,23 +528,22 @@ class _SpendingChartState extends State<SpendingChart> {
                         ),
                         sections: List.generate(entries.length, (i) {
                           final isTouched = i == _touchedIndex;
-                          final pct =
-                              total > 0 ? entries[i].value / total : 0.0;
+                          final pct = total > 0 ? entries[i].value / total : 0.0;
                           return PieChartSectionData(
-                            color: colors[i % colors.length],
+                            color: _chartColors[i % _chartColors.length],
                             value: entries[i].value,
                             title: isTouched
-                                ? '${(pct * 100).toStringAsFixed(1)}%'
+                                ? '${(pct * 100).toStringAsFixed(0)}%'
                                 : '',
-                            radius: isTouched ? 58 : 50,
+                            radius: isTouched ? 52 : 44,
                             titleStyle: const TextStyle(
-                              fontSize: 12,
+                              fontSize: 11,
                               fontWeight: FontWeight.bold,
-                              color: Colors.black,
+                              color: Colors.white,
                             ),
                           );
                         }),
-                        centerSpaceRadius: 28,
+                        centerSpaceRadius: 32,
                         sectionsSpace: 2,
                       ),
                     ),
@@ -560,14 +555,14 @@ class _SpendingChartState extends State<SpendingChart> {
                       children: List.generate(
                         entries.length > 5 ? 5 : entries.length,
                         (i) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 3),
+                          padding: const EdgeInsets.symmetric(vertical: 4),
                           child: Row(
                             children: [
                               Container(
-                                width: 10,
-                                height: 10,
+                                width: 8,
+                                height: 8,
                                 decoration: BoxDecoration(
-                                  color: colors[i % colors.length],
+                                  color: _chartColors[i % _chartColors.length],
                                   shape: BoxShape.circle,
                                 ),
                               ),
@@ -575,17 +570,14 @@ class _SpendingChartState extends State<SpendingChart> {
                               Expanded(
                                 child: Text(
                                   entries[i].key,
-                                  style: const TextStyle(
-                                    color: AppColors.textMuted,
-                                    fontSize: 12,
-                                  ),
+                                  style: TextStyle(color: textMuted, fontSize: 12),
                                   overflow: TextOverflow.ellipsis,
                                 ),
                               ),
                               Text(
                                 '₹${NumberFormat('#,##,###').format(entries[i].value.toInt())}',
-                                style: const TextStyle(
-                                  color: AppColors.textPrimary,
+                                style: TextStyle(
+                                  color: textPrimary,
                                   fontSize: 11,
                                   fontWeight: FontWeight.w600,
                                 ),
@@ -606,7 +598,6 @@ class _SpendingChartState extends State<SpendingChart> {
   }
 }
 
-// ── Auth helpers (used by screens) ───────────────────────────────────────────
-
+// ─── Auth helpers ─────────────────────────────────────────────────────────────
 User? get currentUser => FirebaseAuth.instance.currentUser;
 Stream<User?> get authStateStream => FirebaseAuth.instance.authStateChanges();
