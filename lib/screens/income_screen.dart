@@ -21,10 +21,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
     'Jul','Aug','Sep','Oct','Nov','Dec'
   ];
 
-  static const _incomeCategories = [
-    'Salary', 'Freelance', 'Investment', 'Business', 'Others'
-  ];
-
   void _showAddSheet() {
     showModalBottomSheet(
       context: context,
@@ -46,15 +42,13 @@ class _IncomeScreenState extends State<IncomeScreen> {
               padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
               child: Row(
                 children: [
-                  const Text(
-                    'Income',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 26,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.5,
-                    ),
-                  ),
+                  const Text('Income',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 26,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      )),
                   const Spacer(),
                   GestureDetector(
                     onTap: _showAddSheet,
@@ -91,7 +85,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
               child: Row(
                 children: [
                   _monthBtn(Icons.chevron_left_rounded,
-                      () => setState(() => _month = DateTime(_month.year, _month.month - 1))),
+                      () => setState(() => _month =
+                          DateTime(_month.year, _month.month - 1))),
                   const SizedBox(width: 12),
                   Text(
                     '${_months[_month.month - 1]} ${_month.year}',
@@ -103,7 +98,8 @@ class _IncomeScreenState extends State<IncomeScreen> {
                   ),
                   const SizedBox(width: 12),
                   _monthBtn(Icons.chevron_right_rounded, () {
-                    final next = DateTime(_month.year, _month.month + 1);
+                    final next =
+                        DateTime(_month.year, _month.month + 1);
                     if (!next.isAfter(DateTime.now()))
                       setState(() => _month = next);
                   }),
@@ -178,7 +174,6 @@ class _IncomeScreenState extends State<IncomeScreen> {
               child: SectionHeader(title: 'Income Records'),
             ),
             const SizedBox(height: 12),
-            // Income list
             Expanded(
               child: StreamBuilder<List<Income>>(
                 stream: _service.getIncomeByMonth(_month),
@@ -199,12 +194,13 @@ class _IncomeScreenState extends State<IncomeScreen> {
                     );
                   }
                   return ListView.builder(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 20),
                     itemCount: incomes.length,
                     itemBuilder: (ctx, i) {
                       final inc = incomes[i];
                       return TransactionTile(
-                        title: inc.title,
+                        title: inc.source,           // Income uses 'source'
                         category: inc.category,
                         amount: inc.amount.toStringAsFixed(0),
                         isExpense: false,
@@ -241,7 +237,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
   }
 }
 
-// Add Income Bottom Sheet
+// ─── Add Income Bottom Sheet ─────────────────────────────────────────────────
 class _AddIncomeSheet extends StatefulWidget {
   final FirestoreServices service;
   const _AddIncomeSheet({required this.service});
@@ -252,19 +248,20 @@ class _AddIncomeSheet extends StatefulWidget {
 
 class _AddIncomeSheetState extends State<_AddIncomeSheet> {
   final _formKey = GlobalKey<FormState>();
-  final _titleCtrl = TextEditingController();
+  final _sourceCtrl = TextEditingController();  // Income uses 'source'
+  final _descCtrl = TextEditingController();
   final _amountCtrl = TextEditingController();
   String _selectedCategory = 'Salary';
-  DateTime _selectedDate = DateTime.now();
   bool _loading = false;
 
   static const _categories = [
-    'Salary', 'Freelance', 'Investment', 'Business', 'Others'
+    'Salary', 'Freelance', 'Investment', 'Business', 'Gift', 'Other'
   ];
 
   @override
   void dispose() {
-    _titleCtrl.dispose();
+    _sourceCtrl.dispose();
+    _descCtrl.dispose();
     _amountCtrl.dispose();
     super.dispose();
   }
@@ -275,10 +272,11 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
     try {
       final income = Income(
         id: '',
-        title: _titleCtrl.text.trim(),
+        source: _sourceCtrl.text.trim(),
         amount: double.parse(_amountCtrl.text.trim()),
         category: _selectedCategory,
-        date: _selectedDate,
+        date: DateTime.now(),
+        description: _descCtrl.text.trim(),
       );
       await widget.service.addIncome(income);
       if (mounted) Navigator.pop(context);
@@ -298,8 +296,8 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -331,15 +329,20 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
               const SizedBox(height: 20),
               TextFormField(
                 controller: _amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
-                style: const TextStyle(color: AppColors.textPrimary),
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'[\d.]'))
+                ],
+                style:
+                    const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Amount',
-                  prefixText: '\u20b9 ',
-                  prefixStyle: TextStyle(color: AppColors.income, fontWeight: FontWeight.w600),
-                  prefixIcon: Icon(Icons.currency_rupee_rounded,
-                      color: AppColors.income, size: 20),
+                  prefixIcon: Icon(
+                      Icons.currency_rupee_rounded,
+                      color: AppColors.income,
+                      size: 20),
                 ),
                 validator: (v) {
                   if (v == null || v.isEmpty) return 'Enter amount';
@@ -349,14 +352,27 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
               ),
               const SizedBox(height: 14),
               TextFormField(
-                controller: _titleCtrl,
-                style: const TextStyle(color: AppColors.textPrimary),
+                controller: _sourceCtrl,
+                style:
+                    const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
-                  labelText: 'Title',
-                  prefixIcon: Icon(Icons.title_rounded,
+                  labelText: 'Source (e.g. Employer name)',
+                  prefixIcon: Icon(Icons.work_rounded,
                       color: AppColors.textMuted, size: 20),
                 ),
-                validator: (v) => v!.isEmpty ? 'Enter a title' : null,
+                validator: (v) =>
+                    v!.isEmpty ? 'Enter income source' : null,
+              ),
+              const SizedBox(height: 14),
+              TextFormField(
+                controller: _descCtrl,
+                style:
+                    const TextStyle(color: AppColors.textPrimary),
+                decoration: const InputDecoration(
+                  labelText: 'Description (optional)',
+                  prefixIcon: Icon(Icons.notes_rounded,
+                      color: AppColors.textMuted, size: 20),
+                ),
               ),
               const SizedBox(height: 16),
               const Text('Category',
@@ -385,15 +401,18 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
                             : AppColors.surfaceOffset,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color:
-                              isSelected ? color : AppColors.border,
+                          color: isSelected
+                              ? color
+                              : AppColors.border,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Text(
                         cat,
                         style: TextStyle(
-                          color: isSelected ? color : AppColors.textMuted,
+                          color: isSelected
+                              ? color
+                              : AppColors.textMuted,
                           fontSize: 13,
                           fontWeight: isSelected
                               ? FontWeight.w600
@@ -412,7 +431,7 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
                   onPressed: _loading ? null : _save,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.income,
-                    foregroundColor: Colors.white,
+                    foregroundColor: Colors.black,
                   ),
                   child: _loading
                       ? const SizedBox(

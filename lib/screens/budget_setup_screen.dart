@@ -36,9 +36,11 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
     }
     setState(() => _loading = true);
     try {
+      // Budget model uses 'monthlyLimit' and 'categoryLimits'
       final budget = Budget(
         id: '',
-        amount: val,
+        monthlyLimit: val,
+        categoryLimits: {},
         year: _month.year,
         month: _month.month,
       );
@@ -47,7 +49,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: const Row(children: [
-              Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
+              Icon(Icons.check_circle_rounded,
+                  color: Colors.white, size: 18),
               SizedBox(width: 8),
               Text('Budget saved!'),
             ]),
@@ -121,8 +124,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                     ),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () => setState(() =>
-                          _month = DateTime(_month.year, _month.month - 1)),
+                      onTap: () => setState(() => _month =
+                          DateTime(_month.year, _month.month - 1)),
                       child: const Icon(Icons.chevron_left_rounded,
                           color: AppColors.textMuted),
                     ),
@@ -130,8 +133,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                       onTap: () {
                         final next =
                             DateTime(_month.year, _month.month + 1);
-                        if (!next.isAfter(
-                            DateTime(_month.year + 1, _month.month)))
+                        if (!next.isAfter(DateTime(
+                            _month.year + 1, _month.month)))
                           setState(() => _month = next);
                       },
                       child: const Icon(Icons.chevron_right_rounded,
@@ -141,7 +144,7 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // Budget amount
+              // Big amount input
               Container(
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
@@ -153,7 +156,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                   children: [
                     const Text('Monthly Budget',
                         style: TextStyle(
-                            color: AppColors.textMuted, fontSize: 13)),
+                            color: AppColors.textMuted,
+                            fontSize: 13)),
                     const SizedBox(height: 12),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -167,8 +171,13 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                         IntrinsicWidth(
                           child: TextField(
                             controller: _ctrl,
-                            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+                            keyboardType:
+                                const TextInputType.numberWithOptions(
+                                    decimal: true),
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                  RegExp(r'[\d.]'))
+                            ],
                             style: const TextStyle(
                               color: AppColors.textPrimary,
                               fontSize: 44,
@@ -197,7 +206,7 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // Current budget status
+              // Current status
               StreamBuilder<Budget?>(
                 stream: _service.getBudgetForMonth(
                     _month.year, _month.month),
@@ -247,7 +256,7 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                             const SizedBox(height: 14),
                             BudgetProgressBar(
                                 spent: spent,
-                                total: budget.amount),
+                                total: budget.monthlyLimit), // correct field
                           ],
                         ),
                       );
@@ -270,7 +279,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                         )
                       : const Text('Save Budget',
                           style: TextStyle(
-                              fontSize: 16, fontWeight: FontWeight.w700)),
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 24),

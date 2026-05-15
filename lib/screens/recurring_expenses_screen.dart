@@ -23,7 +23,8 @@ class RecurringExpensesScreen extends StatelessWidget {
         ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add_rounded, color: AppColors.primary),
+            icon:
+                const Icon(Icons.add_rounded, color: AppColors.primary),
             onPressed: () => _showAddSheet(context, service),
           ),
         ],
@@ -41,7 +42,8 @@ class RecurringExpensesScreen extends StatelessWidget {
             return EmptyStateWidget(
               icon: Icons.repeat_rounded,
               title: 'No recurring expenses',
-              subtitle: 'Add subscriptions, rent, EMIs\nto track automatically',
+              subtitle:
+                  'Add subscriptions, rent, EMIs to track automatically',
               buttonLabel: 'Add Recurring',
               onButton: () => _showAddSheet(context, service),
             );
@@ -51,10 +53,10 @@ class RecurringExpensesScreen extends StatelessWidget {
             itemCount: items.length,
             itemBuilder: (ctx, i) {
               final r = items[i];
-              final color = AppColors.categoryColors[r.category] ??
-                  AppColors.primary;
-              final icon = AppColors.categoryIcons[r.category] ??
-                  Icons.repeat_rounded;
+              final color =
+                  AppColors.categoryColors[r.category] ??
+                      AppColors.primary;
+              final icon = AppColors.categoryIcon(r.category);
               final daysLeft = r.nextDueDate
                   .difference(DateTime.now())
                   .inDays;
@@ -75,21 +77,20 @@ class RecurringExpensesScreen extends StatelessWidget {
                         color: color.withOpacity(0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
-                      child: Icon(icon, color: color, size: 20),
+                      child:
+                          Icon(icon, color: color, size: 20),
                     ),
                     const SizedBox(width: 14),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            r.title,
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
+                          Text(r.title,
+                              style: const TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              )),
                           const SizedBox(height: 4),
                           Row(
                             children: [
@@ -162,23 +163,23 @@ class RecurringExpensesScreen extends StatelessWidget {
 
   Widget _chip(String label, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
         color: color.withOpacity(0.1),
         borderRadius: BorderRadius.circular(20),
       ),
-      child: Text(
-        label,
-        style: TextStyle(
-          color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
+      child: Text(label,
+          style: TextStyle(
+            color: color,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          )),
     );
   }
 
-  void _showAddSheet(BuildContext context, FirestoreServices service) {
+  void _showAddSheet(
+      BuildContext context, FirestoreServices service) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -188,6 +189,7 @@ class RecurringExpensesScreen extends StatelessWidget {
   }
 }
 
+// ─── Add Recurring Bottom Sheet ───────────────────────────────────────────────
 class _AddRecurringSheet extends StatefulWidget {
   final FirestoreServices service;
   const _AddRecurringSheet({required this.service});
@@ -221,11 +223,13 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
     setState(() => _loading = true);
     try {
       final now = DateTime.now();
+      // RecurringExpense model requires 'date' field
       final expense = RecurringExpense(
         id: '',
         title: _titleCtrl.text.trim(),
         amount: double.parse(_amountCtrl.text.trim()),
         category: _category,
+        date: now,
         frequency: _frequency,
         nextDueDate: DateTime(now.year, now.month + 1, now.day),
         isActive: true,
@@ -248,8 +252,8 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom),
+      padding:
+          EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
       decoration: const BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
@@ -293,8 +297,12 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
               const SizedBox(height: 14),
               TextFormField(
                 controller: _amountCtrl,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[\d.]'))],
+                keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true),
+                inputFormatters: [
+                  FilteringTextInputFormatter.allow(
+                      RegExp(r'[\d.]'))
+                ],
                 style: const TextStyle(color: AppColors.textPrimary),
                 decoration: const InputDecoration(
                   labelText: 'Amount',
@@ -378,16 +386,16 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
                             : AppColors.surfaceOffset,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                          color:
-                              isSelected ? color : AppColors.border,
+                          color: isSelected ? color : AppColors.border,
                           width: isSelected ? 1.5 : 1,
                         ),
                       ),
                       child: Text(
                         cat,
                         style: TextStyle(
-                          color:
-                              isSelected ? color : AppColors.textMuted,
+                          color: isSelected
+                              ? color
+                              : AppColors.textMuted,
                           fontSize: 13,
                           fontWeight: isSelected
                               ? FontWeight.w600
@@ -413,7 +421,8 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
                         )
                       : const Text('Add Recurring',
                           style: TextStyle(
-                              fontSize: 15, fontWeight: FontWeight.w700)),
+                              fontSize: 15,
+                              fontWeight: FontWeight.w700)),
                 ),
               ),
               const SizedBox(height: 12),
