@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_application_1/models/expense.dart';
 import 'package:flutter_application_1/models/sms_suggestion.dart';
 import 'package:flutter_application_1/screens/add_expense.dart';
 import 'package:flutter_application_1/services/sms_import_service.dart';
@@ -26,7 +27,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
 
   List<SmsSuggestion> _newSuggestions = [];
   List<SmsSuggestion> _imported = [];
-  List<SmsSuggestion> _ignored  = [];
+  List<SmsSuggestion> _ignored = [];
 
   @override
   void initState() {
@@ -100,8 +101,8 @@ class _SmsImportScreenState extends State<SmsImportScreen>
     if (!mounted) return;
     setState(() {
       _newSuggestions = results[0];
-      _imported       = results[1];
-      _ignored        = results[2];
+      _imported = results[1];
+      _ignored = results[2];
     });
   }
 
@@ -146,10 +147,14 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                   await _importService.markAsImported(suggestion.id);
                   await _refreshLists();
                 },
-                initialTitle   : suggestion.parsedMerchant ?? 'SMS Import',
-                initialAmount  : suggestion.parsedAmount,
-                initialDate    : suggestion.parsedDate,
-                initialCategory: 'Other',
+                expenseToEdit: Expense(
+                  id: '',
+                  title: suggestion.parsedMerchant ?? 'SMS Import',
+                  amount: suggestion.parsedAmount ?? 0.0,
+                  category: 'Other',
+                  date: suggestion.parsedDate ?? DateTime.now(),
+                  description: suggestion.rawSms,
+                ),
               ),
             ),
           ),
@@ -221,15 +226,15 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         child: _isLoading
             ? _buildShimmerList()
             : !_permissionStatus.isGranted
-                ? _buildPermissionView()
-                : TabBarView(
-                    controller: _tabController,
-                    children: [
-                      _buildList(_newSuggestions, isNewTab: true),
-                      _buildList(_imported),
-                      _buildList(_ignored),
-                    ],
-                  ),
+            ? _buildPermissionView()
+            : TabBarView(
+                controller: _tabController,
+                children: [
+                  _buildList(_newSuggestions, isNewTab: true),
+                  _buildList(_imported),
+                  _buildList(_ignored),
+                ],
+              ),
       ),
     );
   }
@@ -258,7 +263,8 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                       child: Text(
                         'SMS access needed',
                         style: TextStyle(
-                          fontSize: 18, fontWeight: FontWeight.bold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
@@ -270,9 +276,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
                   'KHARCHA reads only transactional SMS alerts '
                   '(bank/UPI/card debit) to suggest expenses. '
                   'We never auto-submit entries without your review.',
-                  style: TextStyle(
-                    color: AppColors.textSecondary, height: 1.4,
-                  ),
+                  style: TextStyle(color: AppColors.textSecondary, height: 1.4),
                 ),
                 const SizedBox(height: 18),
                 SizedBox(
@@ -308,7 +312,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.9),
+          color: Colors.white.withOpacity(0.9),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -318,7 +322,11 @@ class _SmsImportScreenState extends State<SmsImportScreen>
             const SizedBox(height: 10),
             Container(height: 14, width: 100, color: Colors.grey.shade300),
             const SizedBox(height: 10),
-            Container(height: 12, width: double.infinity, color: Colors.grey.shade300),
+            Container(
+              height: 12,
+              width: double.infinity,
+              color: Colors.grey.shade300,
+            ),
           ],
         ),
       ),
@@ -338,7 +346,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
               Icon(
                 isNewTab ? Icons.inbox_rounded : Icons.check_circle_outline,
                 size: 48,
-                color: Colors.white.withValues(alpha: 0.7),
+                color: Colors.white.withOpacity(0.7),
               ),
               const SizedBox(height: 16),
               Text(
@@ -360,11 +368,15 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         padding: const EdgeInsets.all(16),
         itemCount: suggestions.length,
         itemBuilder: (context, index) => _SuggestionCard(
-          suggestion  : suggestions[index],
-          threshold   : SmsParserService.defaultConfidenceThreshold,
-          onConfirm   : isNewTab ? () => _confirmSuggestion(suggestions[index]) : null,
-          onEdit      : isNewTab ? () => _openEditPrefill(suggestions[index])  : null,
-          onIgnore    : isNewTab ? () => _ignoreSuggestion(suggestions[index])  : null,
+          suggestion: suggestions[index],
+          threshold: SmsParserService.defaultConfidenceThreshold,
+          onConfirm: isNewTab
+              ? () => _confirmSuggestion(suggestions[index])
+              : null,
+          onEdit: isNewTab ? () => _openEditPrefill(suggestions[index]) : null,
+          onIgnore: isNewTab
+              ? () => _ignoreSuggestion(suggestions[index])
+              : null,
         ),
       ),
     );
@@ -383,28 +395,28 @@ class _SuggestionCard extends StatelessWidget {
   });
 
   final SmsSuggestion suggestion;
-  final double        threshold;
+  final double threshold;
   final VoidCallback? onConfirm;
   final VoidCallback? onEdit;
   final VoidCallback? onIgnore;
 
   @override
   Widget build(BuildContext context) {
-    final pct          = (suggestion.confidence * 100).toStringAsFixed(0);
-    final lowConfidence= suggestion.confidence < threshold;
-    final dateText     = suggestion.parsedDate == null
+    final pct = (suggestion.confidence * 100).toStringAsFixed(0);
+    final lowConfidence = suggestion.confidence < threshold;
+    final dateText = suggestion.parsedDate == null
         ? 'Unknown date'
         : DateFormat('dd MMM yyyy, hh:mm a').format(suggestion.parsedDate!);
 
     return Container(
-      margin   : const EdgeInsets.only(bottom: 12),
-      padding  : const EdgeInsets.all(14),
+      margin: const EdgeInsets.only(bottom: 12),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.06),
+            color: Colors.black.withOpacity(0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -439,13 +451,13 @@ class _SuggestionCard extends StatelessWidget {
           const SizedBox(height: 8),
           _InfoRow(icon: Icons.calendar_today_outlined, label: dateText),
           _InfoRow(
-            icon : Icons.verified_outlined,
+            icon: Icons.verified_outlined,
             label: 'Confidence: $pct%',
             color: lowConfidence ? AppColors.warning : AppColors.income,
           ),
           if (suggestion.detectedAccount != null)
             _InfoRow(
-              icon : Icons.account_balance_outlined,
+              icon: Icons.account_balance_outlined,
               label: suggestion.detectedAccount!,
             ),
           if (lowConfidence)
@@ -453,15 +465,16 @@ class _SuggestionCard extends StatelessWidget {
               padding: const EdgeInsets.only(top: 6),
               child: Row(
                 children: [
-                  const Icon(Icons.warning_amber_rounded,
-                      size: 14, color: AppColors.warning),
+                  const Icon(
+                    Icons.warning_amber_rounded,
+                    size: 14,
+                    color: AppColors.warning,
+                  ),
                   const SizedBox(width: 4),
                   const Expanded(
                     child: Text(
                       'Low confidence — review before confirming.',
-                      style: TextStyle(
-                        color: AppColors.warning, fontSize: 12,
-                      ),
+                      style: TextStyle(color: AppColors.warning, fontSize: 12),
                     ),
                   ),
                 ],
@@ -478,7 +491,7 @@ class _SuggestionCard extends StatelessWidget {
                   if (onConfirm != null)
                     ElevatedButton.icon(
                       onPressed: onConfirm,
-                      icon : const Icon(Icons.check_circle_outline, size: 16),
+                      icon: const Icon(Icons.check_circle_outline, size: 16),
                       label: const Text('Confirm'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.income,
@@ -489,7 +502,7 @@ class _SuggestionCard extends StatelessWidget {
                   if (onEdit != null)
                     OutlinedButton.icon(
                       onPressed: onEdit,
-                      icon : const Icon(Icons.edit_outlined, size: 16),
+                      icon: const Icon(Icons.edit_outlined, size: 16),
                       label: const Text('Edit'),
                       style: OutlinedButton.styleFrom(
                         visualDensity: VisualDensity.compact,
@@ -498,7 +511,7 @@ class _SuggestionCard extends StatelessWidget {
                   if (onIgnore != null)
                     TextButton.icon(
                       onPressed: onIgnore,
-                      icon : const Icon(Icons.block_outlined, size: 16),
+                      icon: const Icon(Icons.block_outlined, size: 16),
                       label: const Text('Ignore'),
                       style: TextButton.styleFrom(
                         foregroundColor: AppColors.expense,
@@ -517,8 +530,8 @@ class _SuggestionCard extends StatelessWidget {
 class _InfoRow extends StatelessWidget {
   const _InfoRow({required this.icon, required this.label, this.color});
   final IconData icon;
-  final String   label;
-  final Color?   color;
+  final String label;
+  final Color? color;
 
   @override
   Widget build(BuildContext context) {

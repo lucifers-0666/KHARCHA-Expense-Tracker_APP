@@ -24,7 +24,10 @@ class _AuthScreenState extends State<AuthScreen>
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(vsync: this, duration: const Duration(milliseconds: 400));
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _fade = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
   }
@@ -51,10 +54,15 @@ class _AuthScreenState extends State<AuthScreen>
       final auth = AuthService();
       if (_isLogin) {
         await auth.signInWithEmailAndPassword(
-            _emailCtrl.text.trim(), _passCtrl.text.trim());
+          _emailCtrl.text.trim(),
+          _passCtrl.text.trim(),
+        );
       } else {
-        await auth.signUpWithEmailAndPassword(
-            _emailCtrl.text.trim(), _passCtrl.text.trim());
+        await auth.registerWithEmailPasswordAndName(
+          _emailCtrl.text.trim(),
+          _passCtrl.text.trim(),
+          _nameCtrl.text.trim(),
+        );
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
@@ -64,7 +72,9 @@ class _AuthScreenState extends State<AuthScreen>
             content: Text(e.toString()),
             backgroundColor: AppColors.expense,
             behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }
@@ -76,9 +86,11 @@ class _AuthScreenState extends State<AuthScreen>
   Future<void> _googleSignIn() async {
     setState(() => _loading = true);
     try {
-      final auth = AuthService();
-      await auth.signInWithGoogle();
-      if (mounted) Navigator.pushReplacementNamed(context, '/home');
+      // Google Sign-in is not configured in this project. Show helpful message.
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Google Sign-in is not configured.')),
+      );
+      return;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -213,14 +225,17 @@ class _AuthScreenState extends State<AuthScreen>
                       backgroundColor: AppColors.primary,
                       foregroundColor: Colors.black,
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
                     child: _loading
                         ? const SizedBox(
                             width: 22,
                             height: 22,
                             child: CircularProgressIndicator(
-                                strokeWidth: 2, color: Colors.white),
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
                           )
                         : Text(
                             _isLogin ? 'Sign In' : 'Create Account',
@@ -234,16 +249,18 @@ class _AuthScreenState extends State<AuthScreen>
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    const Expanded(
-                        child: Divider(color: AppColors.border)),
+                    const Expanded(child: Divider(color: AppColors.border)),
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('or',
-                          style: TextStyle(
-                              color: AppColors.textMuted, fontSize: 13)),
+                      child: Text(
+                        'or',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
-                    const Expanded(
-                        child: Divider(color: AppColors.border)),
+                    const Expanded(child: Divider(color: AppColors.border)),
                   ],
                 ),
                 const SizedBox(height: 20),
@@ -256,15 +273,21 @@ class _AuthScreenState extends State<AuthScreen>
                       foregroundColor: AppColors.textPrimary,
                       side: const BorderSide(color: AppColors.border),
                       shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14)),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
                     ),
-                    icon: const Text('G',
-                        style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18,
-                            color: AppColors.primary)),
-                    label: const Text('Continue with Google',
-                        style: TextStyle(fontSize: 14)),
+                    icon: const Text(
+                      'G',
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 18,
+                        color: AppColors.primary,
+                      ),
+                    ),
+                    label: const Text(
+                      'Continue with Google',
+                      style: TextStyle(fontSize: 14),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 28),
@@ -277,7 +300,9 @@ class _AuthScreenState extends State<AuthScreen>
                             ? "Don't have an account? "
                             : 'Already have an account? ',
                         style: const TextStyle(
-                            color: AppColors.textMuted, fontSize: 14),
+                          color: AppColors.textMuted,
+                          fontSize: 14,
+                        ),
                       ),
                       GestureDetector(
                         onTap: _toggle,

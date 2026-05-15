@@ -50,8 +50,10 @@ class _HomeScreenState extends State<HomeScreen> {
               backgroundColor: AppColors.primary,
               foregroundColor: Colors.black,
               icon: const Icon(Icons.add_rounded),
-              label: const Text('Add Expense',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
+              label: const Text(
+                'Add Expense',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
               elevation: 0,
             )
           : null,
@@ -107,8 +109,18 @@ class _DashboardPage extends StatelessWidget {
 
   String _monthLabel(DateTime d) {
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'May',
+      'Jun',
+      'Jul',
+      'Aug',
+      'Sep',
+      'Oct',
+      'Nov',
+      'Dec',
     ];
     return '${months[d.month - 1]} ${d.year}';
   }
@@ -131,7 +143,9 @@ class _DashboardPage extends StatelessWidget {
                         Text(
                           'Good ${_greeting()},',
                           style: const TextStyle(
-                              color: AppColors.textMuted, fontSize: 13),
+                            color: AppColors.textMuted,
+                            fontSize: 13,
+                          ),
                         ),
                         const SizedBox(height: 2),
                         Text(
@@ -149,7 +163,8 @@ class _DashboardPage extends StatelessWidget {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                          builder: (_) => const SearchFilterScreen()),
+                        builder: (_) => const SearchAndFilterScreen(),
+                      ),
                     ),
                     child: Container(
                       width: 40,
@@ -159,8 +174,11 @@ class _DashboardPage extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: AppColors.border),
                       ),
-                      child: const Icon(Icons.search_rounded,
-                          color: AppColors.textMuted, size: 20),
+                      child: const Icon(
+                        Icons.search_rounded,
+                        color: AppColors.textMuted,
+                        size: 20,
+                      ),
                     ),
                   ),
                 ],
@@ -192,7 +210,8 @@ class _DashboardPage extends StatelessWidget {
                             ],
                           ),
                           border: Border.all(
-                              color: AppColors.primary.withOpacity(0.2)),
+                            color: AppColors.primary.withOpacity(0.2),
+                          ),
                         ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -200,8 +219,7 @@ class _DashboardPage extends StatelessWidget {
                             Text(
                               _monthLabel(month),
                               style: TextStyle(
-                                color:
-                                    AppColors.primary.withOpacity(0.9),
+                                color: AppColors.primary.withOpacity(0.9),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1,
@@ -230,11 +248,17 @@ class _DashboardPage extends StatelessWidget {
                             const SizedBox(height: 20),
                             Row(
                               children: [
-                                _miniStat('Income', '₹${inc.toStringAsFixed(0)}',
-                                    AppColors.income),
+                                _miniStat(
+                                  'Income',
+                                  '₹${inc.toStringAsFixed(0)}',
+                                  AppColors.income,
+                                ),
                                 const SizedBox(width: 24),
-                                _miniStat('Spent', '₹${exp.toStringAsFixed(0)}',
-                                    AppColors.expense),
+                                _miniStat(
+                                  'Spent',
+                                  '₹${exp.toStringAsFixed(0)}',
+                                  AppColors.expense,
+                                ),
                               ],
                             ),
                           ],
@@ -256,8 +280,8 @@ class _DashboardPage extends StatelessWidget {
                   final cats = snap.data ?? {};
                   final topCat = cats.isNotEmpty
                       ? cats.entries
-                          .reduce((a, b) => a.value > b.value ? a : b)
-                          .key
+                            .reduce((a, b) => a.value > b.value ? a : b)
+                            .key
                       : 'None';
                   return Row(
                     children: [
@@ -266,7 +290,9 @@ class _DashboardPage extends StatelessWidget {
                           title: 'Top Category',
                           amount: topCat,
                           amountColor: AppColors.primary,
-                          icon: AppColors.categoryIcons[topCat] ?? Icons.category_rounded,
+                          icon:
+                              AppColors.categoryIcons[topCat] ??
+                              Icons.category_rounded,
                           iconBg: AppColors.primary.withOpacity(0.1),
                         ),
                       ),
@@ -308,7 +334,9 @@ class _DashboardPage extends StatelessWidget {
                       child: Padding(
                         padding: EdgeInsets.all(24),
                         child: CircularProgressIndicator(
-                            strokeWidth: 2, color: AppColors.primary),
+                          strokeWidth: 2,
+                          color: AppColors.primary,
+                        ),
                       ),
                     ),
                   );
@@ -325,22 +353,19 @@ class _DashboardPage extends StatelessWidget {
                   );
                 }
                 return SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (ctx, i) {
-                      final e = expenses[i];
-                      return TransactionTile(
-                        title: e.title,
-                        category: e.category,
-                        amount: e.amount.toStringAsFixed(0),
-                        isExpense: true,
-                        date: _fmtDate(e.date),
-                        onDelete: () async {
-                          await service.deleteExpense(e.id);
-                        },
-                      );
-                    },
-                    childCount: expenses.length > 20 ? 20 : expenses.length,
-                  ),
+                  delegate: SliverChildBuilderDelegate((ctx, i) {
+                    final e = expenses[i];
+                    return TransactionTile(
+                      title: e.title,
+                      category: e.category,
+                      amount: e.amount.toStringAsFixed(0),
+                      isExpense: true,
+                      date: _fmtDate(e.date),
+                      onDelete: () async {
+                        await service.deleteExpense(e.id);
+                      },
+                    );
+                  }, childCount: expenses.length > 20 ? 20 : expenses.length),
                 );
               },
             ),
@@ -354,16 +379,19 @@ class _DashboardPage extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label,
-            style: const TextStyle(
-                color: AppColors.textMuted, fontSize: 11)),
+        Text(
+          label,
+          style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+        ),
         const SizedBox(height: 2),
-        Text(value,
-            style: TextStyle(
-              color: color,
-              fontSize: 16,
-              fontWeight: FontWeight.w700,
-            )),
+        Text(
+          value,
+          style: TextStyle(
+            color: color,
+            fontSize: 16,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
       ],
     );
   }

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -86,8 +86,9 @@ class PremiumButton extends StatelessWidget {
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize:
-                          fullWidth ? MainAxisSize.max : MainAxisSize.min,
+                      mainAxisSize: fullWidth
+                          ? MainAxisSize.max
+                          : MainAxisSize.min,
                       children: [
                         if (icon != null) ...[
                           Icon(icon, size: 18, color: fg),

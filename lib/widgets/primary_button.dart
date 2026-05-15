@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_radius.dart';
 
@@ -38,9 +38,13 @@ class _PrimaryButtonState extends State<PrimaryButton>
   void initState() {
     super.initState();
     _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 100));
-    _scale = Tween(begin: 1.0, end: 0.96).animate(
-        CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+      vsync: this,
+      duration: const Duration(milliseconds: 100),
+    );
+    _scale = Tween(
+      begin: 1.0,
+      end: 0.96,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
@@ -51,21 +55,31 @@ class _PrimaryButtonState extends State<PrimaryButton>
 
   Color get _bg {
     switch (widget.variant) {
-      case ButtonVariant.primary:   return AppColors.accent;
-      case ButtonVariant.secondary: return AppColors.surfaceElevated;
-      case ButtonVariant.ghost:     return Colors.transparent;
-      case ButtonVariant.danger:    return AppColors.dangerSoft;
-      case ButtonVariant.outlined:  return Colors.transparent;
+      case ButtonVariant.primary:
+        return AppColors.accent;
+      case ButtonVariant.secondary:
+        return AppColors.surfaceElevated;
+      case ButtonVariant.ghost:
+        return Colors.transparent;
+      case ButtonVariant.danger:
+        return AppColors.dangerSoft;
+      case ButtonVariant.outlined:
+        return Colors.transparent;
     }
   }
 
   Color get _fg {
     switch (widget.variant) {
-      case ButtonVariant.primary:   return AppColors.bgPrimary;
-      case ButtonVariant.secondary: return AppColors.textPrimary;
-      case ButtonVariant.ghost:     return AppColors.accent;
-      case ButtonVariant.danger:    return AppColors.danger;
-      case ButtonVariant.outlined:  return AppColors.accent;
+      case ButtonVariant.primary:
+        return AppColors.bgPrimary;
+      case ButtonVariant.secondary:
+        return AppColors.textPrimary;
+      case ButtonVariant.ghost:
+        return AppColors.accent;
+      case ButtonVariant.danger:
+        return AppColors.danger;
+      case ButtonVariant.outlined:
+        return AppColors.accent;
     }
   }
 

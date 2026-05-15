@@ -168,7 +168,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: AppColors.danger.withValues(alpha: 0.1),
+              color: AppColors.danger.withOpacity(0.1),
               borderRadius: BorderRadius.circular(10),
             ),
             child: const Icon(
@@ -248,7 +248,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.15),
+                  color: Colors.white.withOpacity(0.15),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -301,8 +301,8 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [
-                        AppColors.accent.withValues(alpha: 0.9),
-                        AppColors.accentSoft.withValues(alpha: 0.6),
+                        AppColors.accent.withOpacity(0.9),
+                        AppColors.accentSoft.withOpacity(0.6),
                       ],
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
@@ -310,7 +310,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                     borderRadius: BorderRadius.circular(24),
                     boxShadow: [
                       BoxShadow(
-                        color: AppColors.accent.withValues(alpha: 0.35),
+                        color: AppColors.accent.withOpacity(0.35),
                         blurRadius: 20,
                         offset: const Offset(0, 8),
                       ),
@@ -323,7 +323,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                         monthView ? 'Monthly Spending' : 'Total Spending',
                         style: TextStyle(
                           fontSize: 13,
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: Colors.white.withOpacity(0.85),
                           letterSpacing: 0.5,
                         ),
                       ),
@@ -344,7 +344,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                             : 'Tap + to add a new expense',
                         style: TextStyle(
                           fontSize: 12,
-                          color: Colors.white.withValues(alpha: 0.65),
+                          color: Colors.white.withOpacity(0.65),
                         ),
                       ),
                     ],
@@ -406,7 +406,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.textPrimary.withValues(alpha: 0.9),
+                            color: AppColors.textPrimary.withOpacity(0.9),
                           ),
                         ),
                       ),
@@ -458,11 +458,9 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                 child: Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.12),
+                    color: Colors.white.withOpacity(0.12),
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
+                    border: Border.all(color: Colors.white.withOpacity(0.2)),
                   ),
                   child: Row(
                     children: [
@@ -484,7 +482,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                           vertical: 6,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.2),
+                          color: Colors.white.withOpacity(0.2),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: const Text(
@@ -507,7 +505,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
             return Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.12),
+                color: Colors.white.withOpacity(0.12),
                 borderRadius: BorderRadius.circular(18),
               ),
               child: Column(
@@ -537,7 +535,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
                     borderRadius: BorderRadius.circular(6),
                     child: LinearProgressIndicator(
                       value: ratio,
-                      backgroundColor: Colors.white.withValues(alpha: 0.2),
+                      backgroundColor: Colors.white.withOpacity(0.2),
                       valueColor: AlwaysStoppedAnimation<Color>(color),
                       minHeight: 8,
                     ),
@@ -564,13 +562,13 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
           Container(
             padding: const EdgeInsets.all(28),
             decoration: BoxDecoration(
-              color: AppColors.accent.withValues(alpha: 0.1),
+              color: AppColors.accent.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.receipt_long_rounded,
               size: 64,
-              color: AppColors.accent.withValues(alpha: 0.5),
+              color: AppColors.accent.withOpacity(0.5),
             ),
           ),
           const SizedBox(height: 20),
@@ -726,14 +724,14 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
         decoration: BoxDecoration(
           color: AppColors.bgSecondary,
           border: Border(
-            top: BorderSide(color: Colors.white.withValues(alpha: 0.08)),
+            top: BorderSide(color: Colors.white.withOpacity(0.08)),
           ),
         ),
         child: NavigationBar(
           selectedIndex: _currentTab,
           onDestinationSelected: (i) => setState(() => _currentTab = i),
           backgroundColor: AppColors.bgSecondary,
-          indicatorColor: AppColors.accent.withValues(alpha: 0.18),
+          indicatorColor: AppColors.accent.withOpacity(0.18),
           labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
           height: 65,
           destinations: const [
@@ -786,7 +784,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
           GestureDetector(
             onTap: () => setState(() => _isSpeedDialOpen = false),
             child: Container(
-              color: Colors.black.withValues(alpha: 0.35),
+              color: Colors.black.withOpacity(0.35),
               width: double.infinity,
               height: double.infinity,
             ),
@@ -851,7 +849,7 @@ class _ExpenseTrackerHomeState extends State<ExpenseTrackerHome> {
             borderRadius: BorderRadius.circular(22),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.15),
+                color: Colors.black.withOpacity(0.15),
                 blurRadius: 10,
                 offset: const Offset(0, 3),
               ),

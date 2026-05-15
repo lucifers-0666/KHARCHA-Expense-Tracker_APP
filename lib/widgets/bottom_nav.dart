@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_radius.dart';
 
@@ -16,10 +16,10 @@ class PremiumBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const items = [
-      _NavItem(icon: Icons.home_rounded,          label: 'Home'),
-      _NavItem(icon: Icons.bar_chart_rounded,     label: 'Analytics'),
-      _NavItem(icon: Icons.group_rounded,         label: 'Groups'),
-      _NavItem(icon: Icons.settings_rounded,      label: 'Settings'),
+      _NavItem(icon: Icons.home_rounded, label: 'Home'),
+      _NavItem(icon: Icons.bar_chart_rounded, label: 'Analytics'),
+      _NavItem(icon: Icons.group_rounded, label: 'Groups'),
+      _NavItem(icon: Icons.settings_rounded, label: 'Settings'),
     ];
 
     return Container(
@@ -27,10 +27,10 @@ class PremiumBottomNav extends StatelessWidget {
       decoration: BoxDecoration(
         color: AppColors.bgSecondary,
         borderRadius: AppRadius.cardRadius,
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.6)),
+        border: Border.all(color: AppColors.border.withOpacity(0.6)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
+            color: Colors.black.withOpacity(0.25),
             blurRadius: 20,
             offset: const Offset(0, 8),
           ),
@@ -49,7 +49,7 @@ class PremiumBottomNav extends StatelessWidget {
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
                   color: selected
-                      ? AppColors.accent.withValues(alpha: 0.12)
+                      ? AppColors.accent.withOpacity(0.12)
                       : Colors.transparent,
                   borderRadius: AppRadius.cardRadius,
                 ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_radius.dart';
@@ -28,15 +28,24 @@ class TransactionTile extends StatelessWidget {
 
   IconData _categoryIcon(String cat) {
     switch (cat.toLowerCase()) {
-      case 'food':          return Icons.restaurant_rounded;
-      case 'transport':     return Icons.directions_car_rounded;
-      case 'shopping':      return Icons.shopping_bag_rounded;
-      case 'bills':         return Icons.receipt_long_rounded;
-      case 'entertainment': return Icons.movie_rounded;
-      case 'health':        return Icons.favorite_rounded;
-      case 'education':     return Icons.school_rounded;
-      case 'income':        return Icons.payments_rounded;
-      default:              return Icons.circle_outlined;
+      case 'food':
+        return Icons.restaurant_rounded;
+      case 'transport':
+        return Icons.directions_car_rounded;
+      case 'shopping':
+        return Icons.shopping_bag_rounded;
+      case 'bills':
+        return Icons.receipt_long_rounded;
+      case 'entertainment':
+        return Icons.movie_rounded;
+      case 'health':
+        return Icons.favorite_rounded;
+      case 'education':
+        return Icons.school_rounded;
+      case 'income':
+        return Icons.payments_rounded;
+      default:
+        return Icons.circle_outlined;
     }
   }
 

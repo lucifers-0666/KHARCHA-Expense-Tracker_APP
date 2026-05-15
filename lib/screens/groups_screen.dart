@@ -126,13 +126,13 @@ class _GroupsScreenState extends State<GroupsScreen> {
           Container(
             padding: const EdgeInsets.all(30),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
               Icons.groups_rounded,
               size: 80,
-              color: AppColors.primary.withValues(alpha: 0.5),
+              color: AppColors.primary.withOpacity(0.5),
             ),
           ),
           const SizedBox(height: 24),

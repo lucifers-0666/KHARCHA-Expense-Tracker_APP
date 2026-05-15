@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
 
@@ -26,7 +26,9 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: AppTextStyles.label.copyWith(
-              color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+              color: isDark
+                  ? AppColors.textMutedDark
+                  : AppColors.textMutedLight,
               letterSpacing: 1.0,
             ),
           ),

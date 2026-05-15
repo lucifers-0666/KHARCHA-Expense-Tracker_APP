@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_theme.dart';
 import '../theme/app_radius.dart';
 import '../theme/app_spacing.dart';
 
@@ -24,8 +24,8 @@ class PremiumCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor = color ??
-        (isDark ? AppColors.cardDark : AppColors.cardLight);
+    final cardColor =
+        color ?? (isDark ? AppColors.cardDark : AppColors.cardLight);
     final border = hasBorder
         ? Border.all(
             color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
@@ -57,10 +57,7 @@ class PremiumCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(radius),
         child: Material(
           color: Colors.transparent,
-          child: InkWell(
-            onTap: onTap,
-            child: content,
-          ),
+          child: InkWell(onTap: onTap, child: content),
         ),
       );
     }
