@@ -1,45 +1,40 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isAuth() {
+    function isAuthenticated() {
       return request.auth != null;
     }
 
     function isOwner(userId) {
-      return request.auth.uid == userId;
+      return isAuthenticated() && request.auth.uid == userId;
     }
 
-    // Expenses
-    match /users/{userId}/expenses/{expenseId} {
-      allow read, write: if isAuth() && isOwner(userId);
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
     }
 
-    // Income
-    match /users/{userId}/income/{incomeId} {
-      allow read, write: if isAuth() && isOwner(userId);
+    match /expenses/{expenseId} {
+      allow read, write: if isAuthenticated();
     }
 
-    // Budgets
-    match /users/{userId}/budgets/{budgetId} {
-      allow read, write: if isAuth() && isOwner(userId);
+    match /budgets/{budgetId} {
+      allow read, write: if isAuthenticated();
     }
 
-    // Recurring expenses
-    match /users/{userId}/recurring/{recurringId} {
-      allow read, write: if isAuth() && isOwner(userId);
+    match /income/{incomeId} {
+      allow read, write: if isAuthenticated();
     }
 
-    // Groups
+    match /recurring_expenses/{recurringExpenseId} {
+      allow read, write: if isAuthenticated();
+    }
+
     match /groups/{groupId} {
-      allow read: if isAuth() && request.auth.uid in resource.data.memberIds;
-      allow create: if isAuth();
-      allow update, delete: if isAuth() && request.auth.uid == resource.data.createdBy;
-    }
+      allow read, write: if isAuthenticated();
 
-    // Top-level user docs
-    match /{collection}/{docId} {
-      allow read, write: if isAuth() && request.auth.uid == docId;
+      match /group_expenses/{groupExpenseId} {
+        allow read, write: if isAuthenticated();
+      }
     }
   }
 }

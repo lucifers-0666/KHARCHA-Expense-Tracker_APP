@@ -40,28 +40,29 @@ class DefaultFirebaseOptions {
   }
 
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
-    appId: '1:358899618997:web:24a938ed5c321fb0f81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    authDomain: 'expenses-db-afbea.firebaseapp.com',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+    apiKey: 'AIzaSyCYtz5cL9eGqcZ9jqIbmcpXUALehjrw77Q',
+    appId: '1:714588624477:web:9a8b5824fd13cc7cc75fb4',
+    messagingSenderId: '714588624477',
+    projectId: 'kharcha-tracker-2026',
+    authDomain: 'kharcha-tracker-2026.firebaseapp.com',
+    storageBucket: 'kharcha-tracker-2026.firebasestorage.app',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
-    appId: '1:358899618997:android:baac7a8682a43e95f81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+    apiKey: 'AIzaSyCIJA7ofpwg_9TNUrrAhIvypZA6eZsdNb4',
+    appId: '1:714588624477:android:4976d03a8996d985c75fb4',
+    messagingSenderId: '714588624477',
+    projectId: 'kharcha-tracker-2026',
+    storageBucket: 'kharcha-tracker-2026.firebasestorage.app',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
-    apiKey: 'AIzaSyDz_0tJxDnGTCNLpRdCJ1KljDYv4EiAlH0',
-    appId: '1:358899618997:web:60e8deb8d081538cf81afc',
-    messagingSenderId: '358899618997',
-    projectId: 'expenses-db-afbea',
-    authDomain: 'expenses-db-afbea.firebaseapp.com',
-    storageBucket: 'expenses-db-afbea.firebasestorage.app',
+    apiKey: 'AIzaSyCYtz5cL9eGqcZ9jqIbmcpXUALehjrw77Q',
+    appId: '1:714588624477:web:2be22115789f456ac75fb4',
+    messagingSenderId: '714588624477',
+    projectId: 'kharcha-tracker-2026',
+    authDomain: 'kharcha-tracker-2026.firebaseapp.com',
+    storageBucket: 'kharcha-tracker-2026.firebasestorage.app',
   );
+
 }

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_application_1/services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
@@ -18,10 +19,11 @@ class _AuthScreenState extends State<AuthScreen>
   bool _isLogin = true;
   bool _loading = false;
   String? _errorMessage;
+  final AuthService _authService = AuthService();
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
-  final _passCtrl  = TextEditingController();
-  final _nameCtrl  = TextEditingController();
+  final _passCtrl = TextEditingController();
+  final _nameCtrl = TextEditingController();
   late AnimationController _animCtrl;
   late Animation<double> _fadeAnim;
 
@@ -29,7 +31,9 @@ class _AuthScreenState extends State<AuthScreen>
   void initState() {
     super.initState();
     _animCtrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 400));
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
     _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
     _animCtrl.forward();
   }
@@ -86,27 +90,28 @@ class _AuthScreenState extends State<AuthScreen>
     });
     try {
       if (_isLogin) {
-        await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passCtrl.text,
+        await _authService.signInWithEmailAndPassword(
+          _emailCtrl.text.trim(),
+          _passCtrl.text,
         );
       } else {
-        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-          email: _emailCtrl.text.trim(),
-          password: _passCtrl.text,
+        await _authService.registerWithEmailPasswordAndName(
+          _emailCtrl.text.trim(),
+          _passCtrl.text,
+          _nameCtrl.text.trim(),
         );
-        // Update display name after registration
-        if (_nameCtrl.text.trim().isNotEmpty) {
-          await cred.user?.updateDisplayName(_nameCtrl.text.trim());
-        }
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
     } on FirebaseAuthException catch (e) {
       if (mounted) setState(() => _errorMessage = _friendlyError(e));
     } catch (e) {
       if (mounted) {
-        setState(() => _errorMessage =
-            'An unexpected error occurred. Please try again.');
+        final message = e.toString().replaceFirst('Exception: ', '').trim();
+        setState(
+          () => _errorMessage = message.isNotEmpty
+              ? message
+              : 'An unexpected error occurred. Please try again.',
+        );
       }
     } finally {
       if (mounted) setState(() => _loading = false);
@@ -166,8 +171,11 @@ class _AuthScreenState extends State<AuthScreen>
                       label: 'Full Name',
                       hint: 'Your name',
                       controller: _nameCtrl,
-                      prefixIcon: const Icon(Icons.person_outline_rounded,
-                          size: 20, color: AppColors.textMuted),
+                      prefixIcon: const Icon(
+                        Icons.person_outline_rounded,
+                        size: 20,
+                        color: AppColors.textMuted,
+                      ),
                       validator: (v) =>
                           v == null || v.isEmpty ? 'Required' : null,
                     ),
@@ -178,12 +186,14 @@ class _AuthScreenState extends State<AuthScreen>
                     hint: 'you@example.com',
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(Icons.mail_outline_rounded,
-                        size: 20, color: AppColors.textMuted),
-                    validator: (v) =>
-                        v == null || !v.contains('@')
-                            ? 'Enter valid email'
-                            : null,
+                    prefixIcon: const Icon(
+                      Icons.mail_outline_rounded,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
+                    validator: (v) => v == null || !v.contains('@')
+                        ? 'Enter valid email'
+                        : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
                   PremiumTextField(
@@ -191,12 +201,13 @@ class _AuthScreenState extends State<AuthScreen>
                     hint: 'Min 6 characters',
                     controller: _passCtrl,
                     obscureText: true,
-                    prefixIcon: const Icon(Icons.lock_outline_rounded,
-                        size: 20, color: AppColors.textMuted),
+                    prefixIcon: const Icon(
+                      Icons.lock_outline_rounded,
+                      size: 20,
+                      color: AppColors.textMuted,
+                    ),
                     validator: (v) =>
-                        v == null || v.length < 6
-                            ? 'Min 6 characters'
-                            : null,
+                        v == null || v.length < 6 ? 'Min 6 characters' : null,
                   ),
                   const SizedBox(height: AppSpacing.xl),
 
@@ -205,33 +216,42 @@ class _AuthScreenState extends State<AuthScreen>
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 12),
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
                       decoration: BoxDecoration(
                         color: AppColors.danger.withValues(alpha: 0.1),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                            color: AppColors.danger.withValues(alpha: 0.3)),
+                          color: AppColors.danger.withValues(alpha: 0.3),
+                        ),
                       ),
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(Icons.error_outline_rounded,
-                              color: AppColors.danger, size: 18),
+                          Icon(
+                            Icons.error_outline_rounded,
+                            color: AppColors.danger,
+                            size: 18,
+                          ),
                           const SizedBox(width: 10),
                           Expanded(
                             child: Text(
                               _errorMessage!,
                               style: TextStyle(
-                                  color: AppColors.danger,
-                                  fontSize: 13,
-                                  height: 1.4),
+                                color: AppColors.danger,
+                                fontSize: 13,
+                                height: 1.4,
+                              ),
                             ),
                           ),
                           GestureDetector(
-                            onTap: () =>
-                                setState(() => _errorMessage = null),
-                            child: Icon(Icons.close_rounded,
-                                color: AppColors.danger, size: 16),
+                            onTap: () => setState(() => _errorMessage = null),
+                            child: Icon(
+                              Icons.close_rounded,
+                              color: AppColors.danger,
+                              size: 16,
+                            ),
                           ),
                         ],
                       ),

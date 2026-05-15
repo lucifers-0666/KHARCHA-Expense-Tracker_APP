@@ -37,6 +37,9 @@ migrate_working_dir/
 .env
 .env.*
 !.env.example
+/service-account.json
+/firebase_config_client.json
+/firebase_config_no_key.json
 
 # Local Firebase config generated from environment values
 /firebase_config.json

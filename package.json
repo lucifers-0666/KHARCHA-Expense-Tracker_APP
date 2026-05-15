@@ -1,5 +1,28 @@
 {
   "dependencies": {
     "firebase-admin": "^13.9.0"
-  }
+  },
+  "name": "flutter_application_1",
+  "version": "1.0.0",
+  "description": "<div align=\"center\">",
+  "main": "seed.js",
+  "directories": {
+    "lib": "lib",
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lucifers-0666/KHARCHA-Expense-Tracker_APP.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/lucifers-0666/KHARCHA-Expense-Tracker_APP/issues"
+  },
+  "homepage": "https://github.com/lucifers-0666/KHARCHA-Expense-Tracker_APP#readme"
 }
