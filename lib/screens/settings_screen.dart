@@ -5,6 +5,7 @@ import '../theme/app_theme.dart';
 import '../providers/theme_provider.dart';
 import 'export_reports_screen.dart';
 import 'sms_import_screen.dart';
+import 'auth_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -29,12 +30,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final themeProvider = Provider.of<ThemeProvider>(context);
-    final bgColor   = isDark ? AppColors.bgDark : AppColors.bg;
-    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textMuted   = isDark ? AppColors.textMutedDark : AppColors.textMuted;
-    final textFaint   = isDark ? AppColors.textFaintDark : AppColors.textFaint;
+
+    // ── Use AppColors helper methods (single source of truth) ──────────
+    final bgColor     = AppColors.bgFor(isDark);
+    final cardColor   = AppColors.surfaceFor(isDark);
+    final borderColor = AppColors.borderFor(isDark);
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
+    final textFaint   = AppColors.textFaintFor(isDark);
+    // accentSoft: light mode has dedicated token; dark mode uses surfaceOffset
+    final accentSoft  = isDark ? AppColors.surfaceOffsetDark : AppColors.accentSoft;
 
     final user = FirebaseAuth.instance.currentUser;
     final initial = user?.displayName?.isNotEmpty == true
@@ -57,29 +62,29 @@ class _SettingsScreenState extends State<SettingsScreen> {
               // ── Page Title ─────────────────────────────────────────────
               Text(
                 'Settings',
-                style: TextStyle(
-                  color: textPrimary,
-                  fontSize: 24,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: -0.5,
-                ),
+                style: AppTextStyles.heading.copyWith(color: textPrimary),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
 
               // ── Profile Card ───────────────────────────────────────────
               Container(
-                padding: const EdgeInsets.all(18),
+                padding: const EdgeInsets.all(AppSpacing.cardPad),
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(color: borderColor),
-                  boxShadow: isDark ? [] : [
-                    BoxShadow(
-                      color: AppColors.shadow,
-                      blurRadius: 8,
-                      offset: const Offset(0, 2),
-                    ),
-                  ],
+                  border: Border.all(
+                    color: borderColor,
+                    width: 1,
+                  ),
+                  boxShadow: isDark
+                      ? []
+                      : [
+                          BoxShadow(
+                            color: AppColors.shadow,
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
                 ),
                 child: Row(
                   children: [
@@ -88,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: AppColors.accentSoft,
+                        color: accentSoft,
                         shape: BoxShape.circle,
                         border: Border.all(
                           color: AppColors.primary.withValues(alpha: 0.2),
@@ -98,7 +103,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       child: Center(
                         child: Text(
                           initial,
-                          style: const TextStyle(
+                          style: TextStyle(
                             color: AppColors.primary,
                             fontSize: 20,
                             fontWeight: FontWeight.w700,
@@ -106,7 +111,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 14),
+                    const SizedBox(width: AppSpacing.base),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -130,16 +135,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         ],
                       ),
                     ),
-                    // Badge
+                    // Plan badge
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 10, vertical: 4,
+                        horizontal: 10,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.accentSoft,
+                        color: accentSoft,
                         borderRadius: BorderRadius.circular(AppRadius.full),
                       ),
-                      child: const Text(
+                      child: Text(
                         'Free',
                         style: TextStyle(
                           color: AppColors.primary,
@@ -152,11 +158,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ),
               ),
 
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.sectionGap),
 
               // ── Preferences ───────────────────────────────────────────
               _SectionLabel('Preferences', isDark),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               _GroupCard(
                 isDark: isDark,
                 tiles: [
@@ -170,7 +176,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     isDark: isDark,
                     onChanged: (val) => themeProvider.setDark(val),
                   ),
-                  const _Divider(),
+                  _CardDivider(isDark: isDark),
                   // Notifications Toggle
                   _ToggleTile(
                     icon: Icons.notifications_outlined,
@@ -180,7 +186,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onChanged: (val) =>
                         setState(() => _notificationsEnabled = val),
                   ),
-                  const _Divider(),
+                  _CardDivider(isDark: isDark),
                   // Currency Selector
                   _TapTile(
                     icon: Icons.currency_rupee_rounded,
@@ -192,11 +198,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
 
               // ── Data ──────────────────────────────────────────────────
               _SectionLabel('Data', isDark),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               _GroupCard(
                 isDark: isDark,
                 tiles: [
@@ -211,7 +217,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                  const _Divider(),
+                  _CardDivider(isDark: isDark),
                   _TapTile(
                     icon: Icons.sms_outlined,
                     label: 'Import from SMS',
@@ -223,7 +229,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                   ),
-                  const _Divider(),
+                  _CardDivider(isDark: isDark),
                   _TapTile(
                     icon: Icons.delete_outline_rounded,
                     label: 'Clear All Data',
@@ -234,11 +240,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: AppSpacing.lg),
 
               // ── Account ───────────────────────────────────────────────
               _SectionLabel('Account', isDark),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
               _GroupCard(
                 isDark: isDark,
                 tiles: [
@@ -252,7 +258,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
 
-              const SizedBox(height: 36),
+              const SizedBox(height: AppSpacing.x3l),
 
               Center(
                 child: Text(
@@ -263,7 +269,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.xl),
             ],
           ),
         ),
@@ -271,34 +277,43 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ── Currency Picker Bottom Sheet ─────────────────────────────────────────
   void _showCurrencyPicker(BuildContext context, bool isDark) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
-        final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-        final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
-        final borderColor = isDark ? AppColors.borderDark : AppColors.border;
+        final cardColor   = AppColors.surfaceFor(isDark);
+        final textPrimary = AppColors.textPrimaryFor(isDark);
         return Container(
           decoration: BoxDecoration(
             color: cardColor,
-            borderRadius: BorderRadius.circular(AppRadius.x2l),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(AppRadius.x2l),
+            ),
           ),
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xl),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Select Currency',
-                style: TextStyle(
-                  color: textPrimary,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
+              // Handle bar
+              Center(
+                child: Container(
+                  width: 36,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: AppSpacing.base),
+                  decoration: BoxDecoration(
+                    color: AppColors.borderFor(isDark),
+                    borderRadius: BorderRadius.circular(AppRadius.full),
+                  ),
                 ),
               ),
-              const SizedBox(height: 16),
+              Text(
+                'Select Currency',
+                style: AppTextStyles.headline.copyWith(color: textPrimary),
+              ),
+              const SizedBox(height: AppSpacing.base),
               ..._currencies.map((c) => ListTile(
                     title: Text(
                       c,
@@ -312,8 +327,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       ),
                     ),
                     trailing: _selectedCurrency == c
-                        ? const Icon(Icons.check_rounded,
-                            color: AppColors.primary, size: 18)
+                        ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.primary,
+                            size: 18,
+                          )
                         : null,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(AppRadius.sm),
@@ -323,7 +341,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                       Navigator.pop(ctx);
                     },
                   )),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
             ],
           ),
         );
@@ -331,13 +349,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
+  // ── Sign Out Confirmation ────────────────────────────────────────────────
   Future<void> _confirmSignOut(BuildContext context, bool isDark) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
-        final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
-        final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-        final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+        final cardColor   = AppColors.surfaceFor(isDark);
+        final textPrimary = AppColors.textPrimaryFor(isDark);
+        final textMuted   = AppColors.textMutedFor(isDark);
         return AlertDialog(
           backgroundColor: cardColor,
           shape: RoundedRectangleBorder(
@@ -345,7 +364,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           title: Text(
             'Sign Out',
-            style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+            style: AppTextStyles.title.copyWith(
+              color: textPrimary,
+              fontWeight: FontWeight.w700,
+            ),
           ),
           content: Text(
             'Are you sure you want to sign out?',
@@ -372,11 +394,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
         );
       },
     );
+
     if (confirmed == true && context.mounted) {
       try {
         await FirebaseAuth.instance.signOut();
         if (context.mounted) {
-          Navigator.pushReplacementNamed(context, '/auth');
+          // Navigate to AuthScreen and clear the entire navigation stack
+          Navigator.of(context).pushAndRemoveUntil(
+            MaterialPageRoute(builder: (_) => const AuthScreen()),
+            (route) => false,
+          );
         }
       } catch (_) {
         if (context.mounted) {
@@ -390,10 +417,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     }
   }
 
+  // ── Clear All Data Dialog ────────────────────────────────────────────────
   void _showClearDialog(BuildContext context, bool isDark) {
-    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+    final cardColor   = AppColors.surfaceFor(isDark);
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -403,7 +431,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ),
         title: Text(
           'Clear All Data',
-          style: TextStyle(
+          style: AppTextStyles.title.copyWith(
             color: textPrimary,
             fontWeight: FontWeight.w700,
           ),
@@ -446,7 +474,7 @@ class _SectionLabel extends StatelessWidget {
     return Text(
       text.toUpperCase(),
       style: TextStyle(
-        color: isDark ? AppColors.textMutedDark : AppColors.textMuted,
+        color: AppColors.textMutedFor(isDark),
         fontSize: 11,
         fontWeight: FontWeight.w600,
         letterSpacing: 0.8,
@@ -463,32 +491,38 @@ class _GroupCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
     return Container(
       decoration: BoxDecoration(
-        color: cardColor,
+        color: AppColors.surfaceFor(isDark),
         borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: borderColor),
-        boxShadow: isDark ? [] : [
-          BoxShadow(
-            color: AppColors.shadow,
-            blurRadius: 6,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        border: Border.all(color: AppColors.borderFor(isDark)),
+        boxShadow: isDark
+            ? []
+            : [
+                BoxShadow(
+                  color: AppColors.shadow,
+                  blurRadius: 6,
+                  offset: const Offset(0, 1),
+                ),
+              ],
       ),
       child: Column(children: tiles),
     );
   }
 }
 
-// ── Divider ───────────────────────────────────────────────────────────────────
-class _Divider extends StatelessWidget {
-  const _Divider();
+// ── Card Divider (token-aware) ────────────────────────────────────────────────
+class _CardDivider extends StatelessWidget {
+  final bool isDark;
+  const _CardDivider({required this.isDark});
+
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 1, indent: 56);
+    return Divider(
+      height: 1,
+      indent: 56,
+      color: AppColors.borderFor(isDark),
+    );
   }
 }
 
@@ -510,14 +544,16 @@ class _ToggleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
     return ListTile(
-      leading: Icon(icon, color: textMuted, size: 20),
+      leading: Icon(
+        icon,
+        color: AppColors.textMutedFor(isDark),
+        size: 20,
+      ),
       title: Text(
         label,
         style: TextStyle(
-          color: textPrimary,
+          color: AppColors.textPrimaryFor(isDark),
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -527,11 +563,11 @@ class _ToggleTile extends StatelessWidget {
         onChanged: onChanged,
         activeColor: Colors.white,
         activeTrackColor: AppColors.primary,
-        inactiveThumbColor: textMuted,
-        inactiveTrackColor:
-            isDark ? AppColors.borderDark : AppColors.border,
+        inactiveThumbColor: AppColors.textMutedFor(isDark),
+        inactiveTrackColor: AppColors.borderFor(isDark),
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
     );
   }
 }
@@ -556,20 +592,17 @@ class _TapTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textMuted   = isDark ? AppColors.textMutedDark : AppColors.textMuted;
-    final textFaint   = isDark ? AppColors.textFaintDark : AppColors.textFaint;
     return ListTile(
       onTap: onTap,
       leading: Icon(
         icon,
-        color: labelColor ?? textMuted,
+        color: labelColor ?? AppColors.textMutedFor(isDark),
         size: 20,
       ),
       title: Text(
         label,
         style: TextStyle(
-          color: labelColor ?? textPrimary,
+          color: labelColor ?? AppColors.textPrimaryFor(isDark),
           fontSize: 14,
           fontWeight: FontWeight.w500,
         ),
@@ -580,17 +613,21 @@ class _TapTile extends StatelessWidget {
           if (value != null)
             Text(
               value!,
-              style: TextStyle(color: textMuted, fontSize: 13),
+              style: TextStyle(
+                color: AppColors.textMutedFor(isDark),
+                fontSize: 13,
+              ),
             ),
           const SizedBox(width: 4),
           Icon(
             Icons.chevron_right_rounded,
-            color: textFaint,
+            color: AppColors.textFaintFor(isDark),
             size: 18,
           ),
         ],
       ),
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
