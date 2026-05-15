@@ -1,10 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../theme/app_colors.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
-import '../theme/app_radius.dart';
-import '../widgets/premium_card.dart';
+import '../theme/app_theme.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -13,114 +9,143 @@ class SettingsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
-      appBar: AppBar(
-        title: const Text('Settings'),
-        backgroundColor: AppColors.bgPrimary,
-        elevation: 0,
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppSpacing.pagePadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Profile card
-            PremiumCard(
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 26,
-                    backgroundColor: AppColors.accentDim,
-                    child: Text(
-                      (user?.email?.isNotEmpty == true)
-                          ? user!.email![0].toUpperCase()
-                          : 'K',
-                      style: AppTextStyles.headline.copyWith(
-                        color: AppColors.accent,
+      backgroundColor: AppColors.bg,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 8),
+              const Text(
+                'Settings',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Profile card
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        gradient: const LinearGradient(
+                          colors: [AppColors.primary, AppColors.primaryDark],
+                        ),
+                      ),
+                      child: Center(
+                        child: Text(
+                          (user?.displayName?.isNotEmpty == true
+                                  ? user!.displayName![0]
+                                  : user?.email?.isNotEmpty == true
+                                      ? user!.email![0].toUpperCase()
+                                      : 'K'),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          user?.displayName ?? 'KHARCHA User',
-                          style: AppTextStyles.title,
-                        ),
-                        Text(
-                          user?.email ?? '',
-                          style: AppTextStyles.caption,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            user?.displayName ?? 'KHARCHA User',
+                            style: const TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            user?.email ?? '',
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Text(
+                        'Free',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: AppSpacing.sectionGap),
-
-            _SectionLabel('Preferences'),
-            const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(
-              items: [
+              const SizedBox(height: 24),
+              _settingsGroup('Preferences', [
                 _SettingsTile(
                   icon: Icons.currency_rupee_rounded,
                   label: 'Currency',
-                  trailing: Text('INR (₹)', style: AppTextStyles.body),
+                  value: 'INR (₹)',
+                  onTap: () {},
                 ),
                 _SettingsTile(
-                  icon: Icons.notifications_rounded,
+                  icon: Icons.notifications_outlined,
                   label: 'Notifications',
-                  trailing: Switch(
-                    value: true,
-                    onChanged: (_) {},
-                    activeThumbColor: AppColors.accent,
-                  ),
+                  onTap: () {},
                 ),
                 _SettingsTile(
-                  icon: Icons.dark_mode_rounded,
-                  label: 'Dark Mode',
-                  trailing: Switch(
-                    value: true,
-                    onChanged: (_) {},
-                    activeThumbColor: AppColors.accent,
-                  ),
+                  icon: Icons.shield_outlined,
+                  label: 'Privacy & Security',
+                  onTap: () {},
                 ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.sectionGap),
-            _SectionLabel('Data'),
-            const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(
-              items: [
+              ]),
+              const SizedBox(height: 16),
+              _settingsGroup('Data', [
                 _SettingsTile(
-                  icon: Icons.file_download_rounded,
+                  icon: Icons.upload_file_rounded,
                   label: 'Export Reports',
-                  onTap: () => Navigator.pushNamed(context, '/export'),
+                  onTap: () {},
                 ),
                 _SettingsTile(
-                  icon: Icons.sms_rounded,
+                  icon: Icons.sms_outlined,
                   label: 'Import from SMS',
-                  onTap: () => Navigator.pushNamed(context, '/sms-import'),
+                  onTap: () {},
                 ),
-              ],
-            ),
-
-            const SizedBox(height: AppSpacing.sectionGap),
-            _SectionLabel('Account'),
-            const SizedBox(height: AppSpacing.sm),
-            _SettingsGroup(
-              items: [
-                _SettingsTile(icon: Icons.shield_rounded, label: 'Security'),
+                _SettingsTile(
+                  icon: Icons.delete_outline_rounded,
+                  label: 'Clear All Data',
+                  labelColor: AppColors.expense,
+                  onTap: () => _showClearDialog(context),
+                ),
+              ]),
+              const SizedBox(height: 16),
+              _settingsGroup('Account', [
                 _SettingsTile(
                   icon: Icons.logout_rounded,
                   label: 'Sign Out',
-                  labelColor: AppColors.danger,
-                  iconColor: AppColors.danger,
+                  labelColor: AppColors.expense,
                   onTap: () async {
                     await FirebaseAuth.instance.signOut();
                     if (context.mounted) {
@@ -128,47 +153,92 @@ class SettingsScreen extends StatelessWidget {
                     }
                   },
                 ),
-              ],
-            ),
-            const SizedBox(height: 32),
-            Center(child: Text('KHARCHA v1.0.0', style: AppTextStyles.caption)),
-            const SizedBox(height: 16),
-          ],
+              ]),
+              const SizedBox(height: 32),
+              Center(
+                child: Text(
+                  'KHARCHA v1.0.0',
+                  style: TextStyle(
+                    color: AppColors.textFaint,
+                    fontSize: 12,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
       ),
     );
   }
-}
 
-class _SectionLabel extends StatelessWidget {
-  final String text;
-  const _SectionLabel(this.text);
-
-  @override
-  Widget build(BuildContext context) {
-    return Text(text.toUpperCase(), style: AppTextStyles.label);
+  Widget _settingsGroup(String title, List<Widget> tiles) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          title,
+          style: const TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.8,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: AppColors.border),
+          ),
+          child: Column(
+            children: tiles
+                .asMap()
+                .entries
+                .map((e) => Column(
+                      children: [
+                        e.value,
+                        if (e.key < tiles.length - 1)
+                          const Divider(
+                              height: 1,
+                              indent: 56,
+                              color: AppColors.border),
+                      ],
+                    ))
+                .toList(),
+          ),
+        ),
+      ],
+    );
   }
-}
 
-class _SettingsGroup extends StatelessWidget {
-  final List<Widget> items;
-  const _SettingsGroup({required this.items});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surface,
-        borderRadius: AppRadius.cardRadius,
-        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
-      ),
-      child: Column(
-        children: List.generate(items.length * 2 - 1, (i) {
-          if (i.isOdd) {
-            return const Divider(height: 1, color: AppColors.divider);
-          }
-          return items[i ~/ 2];
-        }),
+  void _showClearDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Clear All Data',
+            style: TextStyle(color: AppColors.textPrimary)),
+        content: const Text(
+          'This will permanently delete all your expenses and income records.',
+          style: TextStyle(color: AppColors.textMuted),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.expense,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Delete'),
+          ),
+        ],
       ),
     );
   }
@@ -177,41 +247,46 @@ class _SettingsGroup extends StatelessWidget {
 class _SettingsTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final Widget? trailing;
-  final VoidCallback? onTap;
+  final String? value;
   final Color? labelColor;
-  final Color? iconColor;
+  final VoidCallback? onTap;
 
   const _SettingsTile({
     required this.icon,
     required this.label,
-    this.trailing,
-    this.onTap,
+    this.value,
     this.labelColor,
-    this.iconColor,
+    this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, size: 20, color: iconColor ?? AppColors.textMuted),
+      onTap: onTap,
+      leading: Icon(icon,
+          color: labelColor ?? AppColors.textMuted, size: 22),
       title: Text(
         label,
-        style: AppTextStyles.body.copyWith(
+        style: TextStyle(
           color: labelColor ?? AppColors.textPrimary,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
       ),
-      trailing:
-          trailing ??
-          (onTap != null
-              ? const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppColors.textMuted,
-                  size: 18,
-                )
-              : null),
-      onTap: onTap,
-      shape: RoundedRectangleBorder(borderRadius: AppRadius.tileRadius),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (value != null)
+            Text(value!,
+                style: const TextStyle(
+                    color: AppColors.textMuted, fontSize: 13)),
+          const SizedBox(width: 4),
+          const Icon(Icons.chevron_right_rounded,
+              color: AppColors.textFaint, size: 18),
+        ],
+      ),
+      contentPadding:
+          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }
