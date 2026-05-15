@@ -35,19 +35,20 @@ class PremiumButton extends StatelessWidget {
         fg = Colors.white;
         break;
       case ButtonVariant.secondary:
-        bg = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
-        fg = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+        // Use existing tokens: surface for bg, textPrimary for fg
+        bg = AppColors.surfaceFor(isDark);
+        fg = AppColors.textPrimaryFor(isDark);
         border = Border.all(
-          color: isDark ? AppColors.dividerDark : AppColors.dividerLight,
+          color: AppColors.borderFor(isDark),
           width: 1.5,
         );
         break;
       case ButtonVariant.ghost:
         bg = Colors.transparent;
-        fg = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+        fg = AppColors.textPrimaryFor(isDark);
         break;
       case ButtonVariant.danger:
-        bg = AppColors.danger.withAlpha(20);
+        bg = AppColors.danger.withValues(alpha: 0.08);
         fg = AppColors.danger;
         break;
     }
@@ -77,24 +78,24 @@ class PremiumButton extends StatelessWidget {
                         height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(fg),
+                          color: fg,
                         ),
                       ),
                     )
                   : Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      mainAxisSize: fullWidth
-                          ? MainAxisSize.max
-                          : MainAxisSize.min,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        if (icon != null) ...[
-                          Icon(icon, size: 18, color: fg),
-                          const SizedBox(width: AppSpacing.sm),
-                        ],
+                        if (icon != null) ...
+                          [
+                            Icon(icon, color: fg, size: 18),
+                            const SizedBox(width: 8),
+                          ],
                         Text(
                           label,
-                          style: AppTextStyles.subtitle.copyWith(
+                          style: TextStyle(
                             color: fg,
+                            fontSize: 15,
                             fontWeight: FontWeight.w600,
                           ),
                         ),

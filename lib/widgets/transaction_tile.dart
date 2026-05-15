@@ -25,24 +25,15 @@ class TransactionTile extends StatelessWidget {
 
   IconData _categoryIcon(String cat) {
     switch (cat.toLowerCase()) {
-      case 'food':
-        return Icons.restaurant_rounded;
-      case 'transport':
-        return Icons.directions_car_rounded;
-      case 'shopping':
-        return Icons.shopping_bag_rounded;
-      case 'bills':
-        return Icons.receipt_long_rounded;
-      case 'entertainment':
-        return Icons.movie_rounded;
-      case 'health':
-        return Icons.favorite_rounded;
-      case 'education':
-        return Icons.school_rounded;
-      case 'income':
-        return Icons.payments_rounded;
-      default:
-        return Icons.circle_outlined;
+      case 'food':       return Icons.restaurant_rounded;
+      case 'transport':  return Icons.directions_car_rounded;
+      case 'shopping':   return Icons.shopping_bag_rounded;
+      case 'bills':      return Icons.receipt_long_rounded;
+      case 'entertainment': return Icons.movie_rounded;
+      case 'health':     return Icons.favorite_rounded;
+      case 'education':  return Icons.school_rounded;
+      case 'income':     return Icons.payments_rounded;
+      default:           return Icons.circle_outlined;
     }
   }
 
@@ -55,11 +46,13 @@ class TransactionTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final catColor = AppColors.categoryColor(category);
-    final amountColor = isExpense ? AppColors.expense : AppColors.income;
-    final prefix = isExpense ? '- ' : '+ ';
-    final bgColor = catColor.withAlpha(isDark ? 30 : 20);
+    final isDark       = Theme.of(context).brightness == Brightness.dark;
+    final catColor     = AppColors.categoryColor(category);
+    final amountColor  = isExpense ? AppColors.expense : AppColors.income;
+    final prefix       = isExpense ? '- ' : '+ ';
+    final bgColor      = catColor.withValues(alpha: isDark ? 0.12 : 0.08);
+    final textPrimary  = AppColors.textPrimaryFor(isDark);
+    final textMuted    = AppColors.textMutedFor(isDark);
 
     return InkWell(
       onTap: onTap,
@@ -89,22 +82,14 @@ class TransactionTile extends StatelessWidget {
                 children: [
                   Text(
                     title,
-                    style: AppTextStyles.subtitle.copyWith(
-                      color: isDark
-                          ? AppColors.textPrimaryDark
-                          : AppColors.textPrimaryLight,
-                    ),
+                    style: AppTextStyles.subtitle.copyWith(color: textPrimary),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                   ),
                   const SizedBox(height: 2),
                   Text(
                     category,
-                    style: AppTextStyles.caption.copyWith(
-                      color: isDark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMutedLight,
-                    ),
+                    style: AppTextStyles.caption.copyWith(color: textMuted),
                   ),
                 ],
               ),
@@ -124,11 +109,7 @@ class TransactionTile extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   _formatTime(date),
-                  style: AppTextStyles.caption.copyWith(
-                    color: isDark
-                        ? AppColors.textMutedDark
-                        : AppColors.textMutedLight,
-                  ),
+                  style: AppTextStyles.caption.copyWith(color: textMuted),
                 ),
               ],
             ),

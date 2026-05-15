@@ -24,9 +24,7 @@ class SectionHeader extends StatelessWidget {
           Text(
             title.toUpperCase(),
             style: AppTextStyles.label.copyWith(
-              color: isDark
-                  ? AppColors.textMutedDark
-                  : AppColors.textMutedLight,
+              color: AppColors.textMutedFor(isDark),
               letterSpacing: 1.0,
             ),
           ),
@@ -36,7 +34,7 @@ class SectionHeader extends StatelessWidget {
               child: Text(
                 actionLabel!,
                 style: AppTextStyles.caption.copyWith(
-                  color: isDark ? AppColors.mutedOlive : AppColors.charcoal,
+                  color: AppColors.primary,
                   fontWeight: FontWeight.w600,
                 ),
               ),

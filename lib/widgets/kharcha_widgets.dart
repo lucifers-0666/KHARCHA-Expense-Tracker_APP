@@ -23,9 +23,9 @@ class KpiCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardColor   = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
-    final textMuted   = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+    final cardColor   = AppColors.surfaceFor(isDark);
+    final borderColor = AppColors.borderFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -109,12 +109,13 @@ class TransactionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final catColor = AppColors.categoryColors[category] ?? AppColors.textMuted;
-    final catIcon  = AppColors.categoryIcons[category] ?? Icons.category_rounded;
-    final cardColor   = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textFaint   = isDark ? AppColors.textFaintDark : AppColors.textFaint;
+    final catColor    = AppColors.categoryColors[category] ?? AppColors.textMuted;
+    final catIcon     = AppColors.categoryIcons[category] ?? Icons.category_rounded;
+    final cardColor   = AppColors.surfaceFor(isDark);
+    final borderColor = AppColors.borderFor(isDark);
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
+    final textFaint   = AppColors.textFaintFor(isDark);
 
     return GestureDetector(
       onTap: onTap,
@@ -135,7 +136,6 @@ class TransactionTile extends StatelessWidget {
         ),
         child: Row(
           children: [
-            // Category icon
             Container(
               width: 40,
               height: 40,
@@ -163,12 +163,7 @@ class TransactionTile extends StatelessWidget {
                   const SizedBox(height: 2),
                   Text(
                     '$category · $date',
-                    style: TextStyle(
-                      color: isDark
-                          ? AppColors.textMutedDark
-                          : AppColors.textMuted,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: textMuted, fontSize: 12),
                   ),
                 ],
               ),
@@ -221,7 +216,7 @@ class SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textPrimary = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
+    final textPrimary = AppColors.textPrimaryFor(isDark);
     return Row(
       children: [
         Text(
@@ -251,6 +246,14 @@ class SectionHeader extends StatelessWidget {
 }
 
 // ─── Empty State ───────────────────────────────────────────────────────────────
+/// Usage:
+/// EmptyStateWidget(
+///   icon: Icons.receipt_long_rounded,
+///   title: 'No transactions yet',
+///   subtitle: 'Add your first expense to get started',
+///   buttonLabel: 'Add Expense',   // optional
+///   onButton: () {},              // optional
+/// )
 class EmptyStateWidget extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -258,4 +261,143 @@ class EmptyStateWidget extends StatelessWidget {
   final String? buttonLabel;
   final VoidCallback? onButton;
 
-  const EmptyState
+  const EmptyStateWidget({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.subtitle,
+    this.buttonLabel,
+    this.onButton,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
+    final textFaint   = AppColors.textFaintFor(isDark);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 40, horizontal: 24),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceOffsetFor(isDark),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, size: 28, color: textFaint),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            title,
+            style: TextStyle(
+              color: textPrimary,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            subtitle,
+            style: TextStyle(
+              color: textMuted,
+              fontSize: 13,
+            ),
+            textAlign: TextAlign.center,
+          ),
+          if (buttonLabel != null && onButton != null) ...
+            [
+              const SizedBox(height: 20),
+              OutlinedButton(
+                onPressed: onButton,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24, vertical: 12,
+                  ),
+                ),
+                child: Text(
+                  buttonLabel!,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
+              ),
+            ],
+        ],
+      ),
+    );
+  }
+}
+
+// ─── Budget Progress Bar ───────────────────────────────────────────────────────
+/// Used in analytics_dashboard_screen.dart and budget_setup_screen.dart
+/// BudgetProgressBar(label: 'Food', spent: 3500, limit: 5000)
+class BudgetProgressBar extends StatelessWidget {
+  final String label;
+  final double spent;
+  final double limit;
+  final Color? color;
+
+  const BudgetProgressBar({
+    super.key,
+    required this.label,
+    required this.spent,
+    required this.limit,
+    this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isDark  = Theme.of(context).brightness == Brightness.dark;
+    final pct     = limit > 0 ? (spent / limit).clamp(0.0, 1.0) : 0.0;
+    final barColor = color ?? (pct >= 0.9 ? AppColors.danger : pct >= 0.7 ? AppColors.warning : AppColors.primary);
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted   = AppColors.textMutedFor(isDark);
+    final trackColor  = AppColors.borderFor(isDark);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                label,
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                '₹${spent.toStringAsFixed(0)} / ₹${limit.toStringAsFixed(0)}',
+                style: TextStyle(color: textMuted, fontSize: 12),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(AppRadius.full),
+            child: LinearProgressIndicator(
+              value: pct,
+              minHeight: 6,
+              backgroundColor: trackColor,
+              valueColor: AlwaysStoppedAnimation<Color>(barColor),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}

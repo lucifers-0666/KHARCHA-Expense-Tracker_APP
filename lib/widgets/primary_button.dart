@@ -1,138 +1,83 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
 
-enum ButtonVariant { primary, secondary, ghost, danger, outlined }
-
-class PrimaryButton extends StatefulWidget {
+/// A primary CTA button using AppColors tokens.
+/// Replaces any reference to AppColors.surfaceElevated.
+class PrimaryButton extends StatelessWidget {
   final String label;
   final VoidCallback? onPressed;
-  final ButtonVariant variant;
-  final bool isLoading;
+  final bool loading;
   final bool fullWidth;
-  final IconData? icon;
-  final double? height;
+  final IconData? prefixIcon;
+  final double height;
+  final Color? backgroundColor;
+  final Color? foregroundColor;
 
   const PrimaryButton({
     super.key,
     required this.label,
     this.onPressed,
-    this.variant = ButtonVariant.primary,
-    this.isLoading = false,
+    this.loading = false,
     this.fullWidth = true,
-    this.icon,
-    this.height,
+    this.prefixIcon,
+    this.height = 52,
+    this.backgroundColor,
+    this.foregroundColor,
   });
 
   @override
-  State<PrimaryButton> createState() => _PrimaryButtonState();
-}
-
-class _PrimaryButtonState extends State<PrimaryButton>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _scale;
-
-  @override
-  void initState() {
-    super.initState();
-    _ctrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 100),
-    );
-    _scale = Tween(
-      begin: 1.0,
-      end: 0.96,
-    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
-  }
-
-  @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  Color get _bg {
-    switch (widget.variant) {
-      case ButtonVariant.primary:
-        return AppColors.accent;
-      case ButtonVariant.secondary:
-        return AppColors.surfaceElevated;
-      case ButtonVariant.ghost:
-        return Colors.transparent;
-      case ButtonVariant.danger:
-        return AppColors.dangerSoft;
-      case ButtonVariant.outlined:
-        return Colors.transparent;
-    }
-  }
-
-  Color get _fg {
-    switch (widget.variant) {
-      case ButtonVariant.primary:
-        return AppColors.bgPrimary;
-      case ButtonVariant.secondary:
-        return AppColors.textPrimary;
-      case ButtonVariant.ghost:
-        return AppColors.accent;
-      case ButtonVariant.danger:
-        return AppColors.danger;
-      case ButtonVariant.outlined:
-        return AppColors.accent;
-    }
-  }
-
-  Border? get _border {
-    if (widget.variant == ButtonVariant.outlined) {
-      return Border.all(color: AppColors.border);
-    }
-    return null;
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTapDown: (_) => _ctrl.forward(),
-      onTapUp: (_) {
-        _ctrl.reverse();
-        if (!widget.isLoading) widget.onPressed?.call();
-      },
-      onTapCancel: () => _ctrl.reverse(),
-      child: ScaleTransition(
-        scale: _scale,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          width: widget.fullWidth ? double.infinity : null,
-          height: widget.height ?? 50,
-          decoration: BoxDecoration(
-            color: _bg,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // Use surface2 as the elevated surface (replaces missing surfaceElevated)
+    final bg = backgroundColor ??
+        (isDark ? AppColors.surface2Dark : AppColors.surface2);
+    final fg = foregroundColor ?? AppColors.textPrimaryFor(isDark);
+
+    return SizedBox(
+      height: height,
+      width: fullWidth ? double.infinity : null,
+      child: ElevatedButton(
+        onPressed: loading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: bg,
+          foregroundColor: fg,
+          elevation: 0,
+          shadowColor: Colors.transparent,
+          shape: RoundedRectangleBorder(
             borderRadius: AppRadius.buttonRadius,
-            border: _border,
           ),
-          child: Center(
-            child: widget.isLoading
-                ? SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(_fg),
-                    ),
-                  )
-                : Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      if (widget.icon != null) ...[
-                        Icon(widget.icon, size: 18, color: _fg),
-                        const SizedBox(width: 8),
-                      ],
-                      Text(
-                        widget.label,
-                        style: AppTextStyles.button.copyWith(color: _fg),
-                      ),
-                    ],
-                  ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
           ),
         ),
+        child: loading
+            ? SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: fg,
+                ),
+              )
+            : Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (prefixIcon != null) ...
+                    [
+                      Icon(prefixIcon, size: 18),
+                      const SizedBox(width: 8),
+                    ],
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
       ),
     );
   }
