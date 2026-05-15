@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:intl/intl.dart';
 import '../models/budget.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
@@ -14,60 +15,81 @@ class BudgetSetupScreen extends StatefulWidget {
 
 class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
   final _service = FirestoreServices();
-  final _ctrl = TextEditingController();
+  final _limitCtrl = TextEditingController();
+  final Map<String, TextEditingController> _catCtrls = {};
   bool _loading = false;
-  DateTime _month = DateTime.now();
+  final _fmt = NumberFormat('#,##,###', 'en_IN');
 
-  static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun',
-    'Jul','Aug','Sep','Oct','Nov','Dec'
+  static const _categories = [
+    'Food', 'Transport', 'Shopping', 'Bills',
+    'Entertainment', 'Health', 'Education', 'Other',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    for (final c in _categories) {
+      _catCtrls[c] = TextEditingController();
+    }
+    _loadExisting();
+  }
+
+  Future<void> _loadExisting() async {
+    final now = DateTime.now();
+    _service.getBudgetForMonth(now.year, now.month).first.then((b) {
+      if (b != null && mounted) {
+        setState(() {
+          _limitCtrl.text = b.monthlyLimit.toStringAsFixed(0);
+          for (final c in _categories) {
+            final v = b.categoryLimits[c];
+            if (v != null) _catCtrls[c]!.text = v.toStringAsFixed(0);
+          }
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _limitCtrl.dispose();
+    for (final c in _catCtrls.values) c.dispose();
+    super.dispose();
+  }
+
   Future<void> _save() async {
-    final val = double.tryParse(_ctrl.text.trim());
-    if (val == null || val <= 0) {
+    final limit = double.tryParse(_limitCtrl.text.replaceAll(',', '')) ?? 0;
+    if (limit <= 0) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter a valid budget amount'),
-          backgroundColor: AppColors.expense,
-        ),
+        const SnackBar(content: Text('Please enter a valid monthly limit')),
       );
       return;
     }
     setState(() => _loading = true);
+    final catLimits = <String, double>{};
+    for (final c in _categories) {
+      final v = double.tryParse(_catCtrls[c]!.text.replaceAll(',', ''));
+      if (v != null && v > 0) catLimits[c] = v;
+    }
+    final now = DateTime.now();
+    final budget = Budget(
+      id: '${now.year}-${now.month.toString().padLeft(2, '0')}',
+      monthlyLimit: limit,
+      categoryLimits: catLimits,
+      month: now.month,
+      year: now.year,
+    );
     try {
-      // Budget model uses 'monthlyLimit' and 'categoryLimits'
-      final budget = Budget(
-        id: '',
-        monthlyLimit: val,
-        categoryLimits: {},
-        year: _month.year,
-        month: _month.month,
-      );
       await _service.saveBudget(budget);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(children: [
-              Icon(Icons.check_circle_rounded,
-                  color: Colors.white, size: 18),
-              SizedBox(width: 8),
-              Text('Budget saved!'),
-            ]),
-            backgroundColor: AppColors.income,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(10)),
-          ),
+          const SnackBar(content: Text('Budget saved successfully')),
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-              content: Text('Error: $e'),
-              backgroundColor: AppColors.expense),
+          SnackBar(content: Text('Unable to save budget. Please try again.')),
         );
       }
     } finally {
@@ -76,217 +98,251 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
   }
 
   @override
-  void dispose() {
-    _ctrl.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bg;
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted = AppColors.textMutedFor(isDark);
+    final cardColor = AppColors.surfaceFor(isDark);
+    final borderColor = AppColors.borderFor(isDark);
+
     return Scaffold(
-      backgroundColor: AppColors.bg,
+      backgroundColor: bgColor,
       appBar: AppBar(
-        title: const Text('Set Budget'),
-        backgroundColor: AppColors.bg,
+        backgroundColor: bgColor,
+        elevation: 0,
+        surfaceTintColor: Colors.transparent,
+        title: Text(
+          'Budget Setup',
+          style: TextStyle(
+            color: textPrimary,
+            fontSize: 17,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded,
-              color: AppColors.textPrimary, size: 20),
+          icon: Icon(Icons.arrow_back_ios_rounded, color: textPrimary, size: 18),
           onPressed: () => Navigator.pop(context),
         ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Month selector
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(14),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_month_rounded,
-                        color: AppColors.textMuted, size: 20),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${_months[_month.month - 1]} ${_month.year}',
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    GestureDetector(
-                      onTap: () => setState(() => _month =
-                          DateTime(_month.year, _month.month - 1)),
-                      child: const Icon(Icons.chevron_left_rounded,
-                          color: AppColors.textMuted),
-                    ),
-                    GestureDetector(
-                      onTap: () {
-                        final next =
-                            DateTime(_month.year, _month.month + 1);
-                        if (!next.isAfter(DateTime(
-                            _month.year + 1, _month.month)))
-                          setState(() => _month = next);
-                      },
-                      child: const Icon(Icons.chevron_right_rounded,
-                          color: AppColors.textMuted),
-                    ),
-                  ],
-                ),
+        actions: [
+          TextButton(
+            onPressed: _loading ? null : _save,
+            child: Text(
+              'Save',
+              style: TextStyle(
+                color: AppColors.primary,
+                fontWeight: FontWeight.w600,
               ),
-              const SizedBox(height: 24),
-              // Big amount input
-              Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(color: AppColors.border),
-                ),
-                child: Column(
-                  children: [
-                    const Text('Monthly Budget',
+            ),
+          ),
+        ],
+      ),
+      body: StreamBuilder<Budget?>(
+        stream: _service.getBudgetForMonth(
+          DateTime.now().year,
+          DateTime.now().month,
+        ),
+        builder: (context, snapshot) {
+          final budget = snapshot.data;
+          return SingleChildScrollView(
+            padding: const EdgeInsets.all(AppSpacing.pageHPad),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Monthly limit card
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(AppRadius.lg),
+                    border: Border.all(color: borderColor),
+                    boxShadow: isDark ? [] : [
+                      BoxShadow(
+                        color: AppColors.shadow,
+                        blurRadius: 6,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'MONTHLY LIMIT',
                         style: TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 13)),
-                    const SizedBox(height: 12),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('\u20b9',
+                          color: textMuted,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.8,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Row(
+                        children: [
+                          Text(
+                            '₹',
                             style: TextStyle(
-                                color: AppColors.primary,
-                                fontSize: 28,
-                                fontWeight: FontWeight.w600)),
-                        IntrinsicWidth(
-                          child: TextField(
-                            controller: _ctrl,
-                            keyboardType:
-                                const TextInputType.numberWithOptions(
-                                    decimal: true),
-                            inputFormatters: [
-                              FilteringTextInputFormatter.allow(
-                                  RegExp(r'[\d.]'))
-                            ],
-                            style: const TextStyle(
-                              color: AppColors.textPrimary,
-                              fontSize: 44,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: -1,
+                              color: AppColors.primary,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w600,
                             ),
-                            textAlign: TextAlign.center,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              enabledBorder: InputBorder.none,
-                              focusedBorder: InputBorder.none,
-                              filled: false,
-                              hintText: '0',
-                              hintStyle: TextStyle(
-                                color: AppColors.textFaint,
-                                fontSize: 44,
-                                fontWeight: FontWeight.w800,
+                          ),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: TextField(
+                              controller: _limitCtrl,
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [
+                                FilteringTextInputFormatter.digitsOnly,
+                              ],
+                              style: TextStyle(
+                                color: textPrimary,
+                                fontSize: 24,
+                                fontWeight: FontWeight.w700,
                               ),
-                              contentPadding: EdgeInsets.zero,
+                              decoration: InputDecoration(
+                                hintText: '0',
+                                hintStyle: TextStyle(color: AppColors.textFaintFor(isDark)),
+                                border: InputBorder.none,
+                                isDense: true,
+                                contentPadding: EdgeInsets.zero,
+                              ),
                             ),
+                          ),
+                        ],
+                      ),
+                      if (budget != null) ...
+                        [
+                          const SizedBox(height: 14),
+                          StreamBuilder<Map<String, double>>(
+                            stream: _service.getCategoryTotalsByMonth(DateTime.now()),
+                            builder: (ctx, snap) {
+                              final spent = snap.data?.values.fold(0.0, (a, b) => a + b) ?? 0.0;
+                              return BudgetProgressBar(
+                                  label: 'Budget',
+                                  spent: spent,
+                                  limit: budget.monthlyLimit);
+                            },
+                          ),
+                        ],
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'CATEGORY LIMITS',
+                  style: TextStyle(
+                    color: textMuted,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    letterSpacing: 0.8,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                ...List.generate(_categories.length, (idx) {
+                  final cat = _categories[idx];
+                  final catColor = AppColors.categoryColor(cat);
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: cardColor,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 34,
+                          height: 34,
+                          decoration: BoxDecoration(
+                            color: catColor.withValues(alpha: 0.10),
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                          ),
+                          child: Icon(
+                            AppColors.categoryIcons[cat] ?? Icons.category_rounded,
+                            color: catColor,
+                            size: 16,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                cat,
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              TextField(
+                                controller: _catCtrls[cat],
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                style: TextStyle(color: textPrimary, fontSize: 14),
+                                decoration: InputDecoration(
+                                  hintText: 'No limit',
+                                  hintStyle: TextStyle(
+                                    color: AppColors.textFaintFor(isDark),
+                                    fontSize: 13,
+                                  ),
+                                  prefixText: '₹ ',
+                                  prefixStyle: TextStyle(color: textMuted, fontSize: 13),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ],
                     ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 20),
-              // Current status
-              StreamBuilder<Budget?>(
-                stream: _service.getBudgetForMonth(
-                    _month.year, _month.month),
-                builder: (ctx, snap) {
-                  if (!snap.hasData || snap.data == null) {
-                    return Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(14),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Row(
-                        children: [
-                          Icon(Icons.info_outline_rounded,
-                              color: AppColors.textMuted, size: 18),
-                          SizedBox(width: 10),
-                          Text('No budget set for this month',
-                              style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 13)),
-                        ],
-                      ),
-                    );
-                  }
-                  final budget = snap.data!;
-                  return StreamBuilder<double>(
-                    stream: _service.getTotalExpensesByMonth(_month),
-                    builder: (ctx2, expSnap) {
-                      final spent = expSnap.data ?? 0;
-                      return Container(
-                        padding: const EdgeInsets.all(18),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface,
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(color: AppColors.border),
-                        ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            const Text('Current Month Progress',
-                                style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                )),
-                            const SizedBox(height: 14),
-                            BudgetProgressBar(
-                                spent: spent,
-                                total: budget.monthlyLimit), // correct field
-                          ],
-                        ),
-                      );
-                    },
                   );
-                },
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton(
-                  onPressed: _loading ? null : _save,
-                  child: _loading
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Text('Save Budget',
-                          style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700)),
+                }),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  height: 50,
+                  child: ElevatedButton(
+                    onPressed: _loading ? null : _save,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      elevation: 0,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                      ),
+                    ),
+                    child: _loading
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
+                        : const Text(
+                            'Save Budget',
+                            style: TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
-          ),
-        ),
+                const SizedBox(height: 40),
+              ],
+            ),
+          );
+        },
       ),
     );
   }
