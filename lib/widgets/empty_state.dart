@@ -1,57 +1,79 @@
 import 'package:flutter/material.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
-import 'primary_button.dart';
+import '../theme/app_spacing.dart';
+import 'premium_button.dart';
 
 class EmptyState extends StatelessWidget {
   final IconData icon;
   final String title;
-  final String message;
-  final String? actionLabel;
-  final VoidCallback? onAction;
+  final String subtitle;
+  final String? ctaLabel;
+  final VoidCallback? onCta;
 
   const EmptyState({
     super.key,
     required this.icon,
     required this.title,
-    required this.message,
-    this.actionLabel,
-    this.onAction,
+    required this.subtitle,
+    this.ctaLabel,
+    this.onCta,
   });
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.x3l,
+          vertical: AppSpacing.x4l,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              padding: const EdgeInsets.all(20),
+              width: 72,
+              height: 72,
               decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
+                color: isDark
+                    ? AppColors.surfaceDark
+                    : AppColors.surfaceLight,
+                borderRadius: BorderRadius.circular(24),
               ),
-              child: Icon(icon, size: 32, color: AppColors.textMuted),
+              child: Icon(
+                icon,
+                size: 32,
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: AppSpacing.lg),
             Text(
               title,
-              style: AppTextStyles.title,
+              style: AppTextStyles.title.copyWith(
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
+              ),
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: AppSpacing.sm),
             Text(
-              message,
-              style: AppTextStyles.body,
+              subtitle,
+              style: AppTextStyles.body.copyWith(
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
+              ),
               textAlign: TextAlign.center,
             ),
-            if (actionLabel != null && onAction != null) ...[
-              const SizedBox(height: 24),
-              PrimaryButton(
-                label: actionLabel!,
-                onPressed: onAction,
+            if (ctaLabel != null && onCta != null) ...[
+              const SizedBox(height: AppSpacing.xl),
+              PremiumButton(
+                label: ctaLabel!,
+                onPressed: onCta,
                 fullWidth: false,
               ),
             ],

@@ -4,96 +4,94 @@ import 'app_colors.dart';
 class AppTextStyles {
   AppTextStyles._();
 
-  static const TextStyle _base = TextStyle(fontFamily: 'PlusJakartaSans');
+  static const String _font = 'PlusJakartaSans';
 
-  static TextStyle displayLarge = _base.copyWith(
+  // Display
+  static const TextStyle display = TextStyle(
+    fontFamily: _font,
     fontSize: 32,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.2,
-    letterSpacing: -0.5,
+    letterSpacing: -0.8,
+    height: 1.15,
+    color: AppColors.textPrimaryLight,
   );
 
-  static TextStyle displayMedium = _base.copyWith(
-    fontSize: 26,
+  // Headline
+  static const TextStyle headline = TextStyle(
+    fontFamily: _font,
+    fontSize: 24,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.25,
+    letterSpacing: -0.5,
+    height: 1.2,
+    color: AppColors.textPrimaryLight,
+  );
+
+  // Title
+  static const TextStyle title = TextStyle(
+    fontFamily: _font,
+    fontSize: 18,
+    fontWeight: FontWeight.w600,
     letterSpacing: -0.3,
-  );
-
-  static TextStyle headline = _base.copyWith(
-    fontSize: 20,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     height: 1.3,
-    letterSpacing: -0.2,
+    color: AppColors.textPrimaryLight,
   );
 
-  static TextStyle title = _base.copyWith(
-    fontSize: 16,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
+  // Subtitle
+  static const TextStyle subtitle = TextStyle(
+    fontFamily: _font,
+    fontSize: 15,
+    fontWeight: FontWeight.w500,
+    letterSpacing: -0.1,
     height: 1.4,
+    color: AppColors.textPrimaryLight,
   );
 
-  static TextStyle titleMedium = _base.copyWith(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
-    height: 1.4,
-  );
-
-  static TextStyle body = _base.copyWith(
+  // Body
+  static const TextStyle body = TextStyle(
+    fontFamily: _font,
     fontSize: 14,
     fontWeight: FontWeight.w400,
-    color: AppColors.textSecondary,
-    height: 1.5,
+    height: 1.55,
+    color: AppColors.textPrimaryLight,
   );
 
-  static TextStyle bodyMedium = _base.copyWith(
-    fontSize: 13,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textSecondary,
-    height: 1.5,
-  );
-
-  static TextStyle caption = _base.copyWith(
-    fontSize: 11,
-    fontWeight: FontWeight.w500,
-    color: AppColors.textMuted,
-    height: 1.4,
-    letterSpacing: 0.2,
-  );
-
-  static TextStyle label = _base.copyWith(
+  // Caption
+  static const TextStyle caption = TextStyle(
+    fontFamily: _font,
     fontSize: 12,
-    fontWeight: FontWeight.w600,
-    color: AppColors.textMuted,
-    height: 1.4,
-    letterSpacing: 0.5,
-  );
-
-  static TextStyle amount = _base.copyWith(
-    fontSize: 28,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.1,
-    letterSpacing: -0.5,
-  );
-
-  static TextStyle amountSmall = _base.copyWith(
-    fontSize: 18,
-    fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
-    height: 1.2,
-    letterSpacing: -0.3,
-  );
-
-  static TextStyle button = _base.copyWith(
-    fontSize: 14,
-    fontWeight: FontWeight.w600,
+    fontWeight: FontWeight.w400,
     letterSpacing: 0.1,
+    height: 1.4,
+    color: AppColors.textMutedLight,
+  );
+
+  // Label
+  static const TextStyle label = TextStyle(
+    fontFamily: _font,
+    fontSize: 11,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.6,
+    height: 1.2,
+    color: AppColors.textMutedLight,
+  );
+
+  // Amount large
+  static const TextStyle amountLarge = TextStyle(
+    fontFamily: _font,
+    fontSize: 36,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -1.0,
     height: 1.0,
+    color: AppColors.textPrimaryLight,
+  );
+
+  // Amount medium
+  static const TextStyle amountMedium = TextStyle(
+    fontFamily: _font,
+    fontSize: 20,
+    fontWeight: FontWeight.w700,
+    letterSpacing: -0.5,
+    height: 1.1,
+    color: AppColors.textPrimaryLight,
   );
 }

@@ -1,54 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-enum ThemePreference { light, dark, system }
-
-class ThemeProvider with ChangeNotifier {
-  ThemePreference _themePreference = ThemePreference.system;
-  static const String _themeKey = 'theme_preference';
-
-  ThemePreference get themePreference => _themePreference;
+class ThemeProvider extends ChangeNotifier {
+  ThemeMode _themeMode = ThemeMode.system;
+  ThemeMode get themeMode => _themeMode;
 
   ThemeProvider() {
-    _loadThemePreference();
+    _load();
   }
 
-  ThemeMode get themeMode {
-    switch (_themePreference) {
-      case ThemePreference.light:
-        return ThemeMode.light;
-      case ThemePreference.dark:
-        return ThemeMode.dark;
-      case ThemePreference.system:
-        return ThemeMode.system;
-    }
-  }
-
-  Future<void> _loadThemePreference() async {
-    final prefs = await SharedPreferences.getInstance();
-    final savedTheme = prefs.getString(_themeKey);
-
-    if (savedTheme != null) {
-      _themePreference = ThemePreference.values.firstWhere(
-        (e) => e.toString() == savedTheme,
-        orElse: () => ThemePreference.system,
-      );
+  Future<void> _load() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final val = prefs.getString('theme_mode') ?? 'system';
+      _themeMode = _fromString(val);
       notifyListeners();
-    }
+    } catch (_) {}
   }
 
-  Future<void> setThemePreference(ThemePreference preference) async {
-    _themePreference = preference;
+  Future<void> setThemeMode(ThemeMode mode) async {
+    _themeMode = mode;
     notifyListeners();
-
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_themeKey, preference.toString());
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('theme_mode', _toString(mode));
+    } catch (_) {}
   }
 
-  bool isDarkMode(BuildContext context) {
-    if (_themePreference == ThemePreference.system) {
-      return MediaQuery.of(context).platformBrightness == Brightness.dark;
+  void toggleTheme() {
+    setThemeMode(_themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark);
+  }
+
+  bool get isDark => _themeMode == ThemeMode.dark;
+
+  static ThemeMode _fromString(String s) {
+    switch (s) {
+      case 'light': return ThemeMode.light;
+      case 'dark':  return ThemeMode.dark;
+      default:      return ThemeMode.system;
     }
-    return _themePreference == ThemePreference.dark;
+  }
+
+  static String _toString(ThemeMode m) {
+    switch (m) {
+      case ThemeMode.light: return 'light';
+      case ThemeMode.dark:  return 'dark';
+      default:              return 'system';
+    }
   }
 }

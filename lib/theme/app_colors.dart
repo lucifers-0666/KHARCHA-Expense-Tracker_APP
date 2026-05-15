@@ -3,85 +3,60 @@ import 'package:flutter/material.dart';
 class AppColors {
   AppColors._();
 
-  // ── Backgrounds ──────────────────────────────────────────────
-  static const Color bgPrimary        = Color(0xFF102321);
-  static const Color bgSecondary      = Color(0xFF18312E);
-  static const Color surface          = Color(0xFF223C39);
-  static const Color surfaceElevated  = Color(0xFF2A4541);
-  static const Color surfaceHigh      = Color(0xFF324F4B);
+  // ── Light Mode Surfaces ──────────────────────────────────────────
+  static const Color bgLight          = Color(0xFFF8F7F4);
+  static const Color surfaceLight     = Color(0xFFF2F1EC);
+  static const Color surfaceOffLight  = Color(0xFFECE9E1);
+  static const Color cardLight        = Color(0xFFFFFFFF);
 
-  // ── Primary aliases (used across many screens) ───────────────
-  /// Main brand primary = bgSecondary (dark green-navy)
-  static const Color primary          = Color(0xFF18312E);
-  /// Darker shade of primary for gradients
-  static const Color primaryDark      = Color(0xFF102321);
+  // ── Dark Mode Surfaces ───────────────────────────────────────────
+  static const Color bgDark           = Color(0xFF111111);
+  static const Color surfaceDark      = Color(0xFF1C1C1C);
+  static const Color surfaceOffDark   = Color(0xFF252525);
+  static const Color cardDark         = Color(0xFF232323);
 
-  // ── Accent ───────────────────────────────────────────────────
-  static const Color accent           = Color(0xFF7BAE9E);
-  static const Color accentSoft       = Color(0xFFA8CFC2);
-  static const Color accentDim        = Color(0x337BAE9E);
+  // ── Text ──────────────────────────────────────────────────────────
+  static const Color textPrimaryLight  = Color(0xFF1E1E1E);
+  static const Color textSecondaryLight= Color(0xFF4A4A4A);
+  static const Color textMutedLight    = Color(0xFF8A8A8A);
 
-  // ── Text ─────────────────────────────────────────────────────
-  static const Color textPrimary      = Color(0xFFFAF7F2);
-  static const Color textSecondary    = Color(0xFFD6D0C4);
-  static const Color textMuted        = Color(0xFF8A9A96);
-  static const Color textDisabled     = Color(0xFF4A5E5A);
+  static const Color textPrimaryDark   = Color(0xFFF5F5F5);
+  static const Color textSecondaryDark = Color(0xFFCFCFCF);
+  static const Color textMutedDark     = Color(0xFF888888);
 
-  // ── Borders ──────────────────────────────────────────────────
-  static const Color border           = Color(0xFF35524D);
-  static const Color borderSoft       = Color(0x1AFFFFFF);
-  static const Color divider          = Color(0x14FFFFFF);
+  // ── Accents ───────────────────────────────────────────────────────
+  static const Color charcoal         = Color(0xFF1E1E1E);
+  static const Color graphite         = Color(0xFF2D2D2D);
+  static const Color slate            = Color(0xFF4A4A4A);
+  static const Color luxuryAccent     = Color(0xFF7C8C7A);
+  static const Color mutedOlive       = Color(0xFFA4B494);
 
-  // ── Semantic ─────────────────────────────────────────────────
+  // ── Semantic ──────────────────────────────────────────────────────
   static const Color success          = Color(0xFF4CAF7D);
-  static const Color successSoft      = Color(0x334CAF7D);
   static const Color warning          = Color(0xFFD9A441);
-  static const Color warningSoft      = Color(0x33D9A441);
   static const Color danger           = Color(0xFFD96C6C);
-  static const Color dangerSoft       = Color(0x33D96C6C);
-  /// Info alias — maps to catEducation blue
-  static const Color info             = Color(0xFF5B9BD6);
+  static const Color income           = Color(0xFF4CAF7D);
+  static const Color expense          = Color(0xFFD96C6C);
 
-  static const Color income           = success;
-  static const Color expense          = danger;
+  // ── Utility ───────────────────────────────────────────────────────
+  static const Color dividerLight     = Color(0x0F000000);
+  static const Color dividerDark      = Color(0x14FFFFFF);
+  static const Color shadowColor      = Color(0x14000000);
+  static const Color transparent      = Colors.transparent;
 
-  // ── Category Colors ──────────────────────────────────────────
-  static const Color catFood          = Color(0xFFE8845C);
-  static const Color catTransport     = Color(0xFF5B8ED6);
-  static const Color catShopping      = Color(0xFFD4865A);
-  static const Color catEntertain     = Color(0xFF8B72D4);
-  static const Color catBills         = Color(0xFF4BADB5);
-  static const Color catHealth        = Color(0xFF4CAF7D);
-  static const Color catEducation     = Color(0xFF5B9BD6);
-  static const Color catOther         = Color(0xFF8A9A96);
+  // ── Category Colors ───────────────────────────────────────────────
+  static const Map<String, Color> categoryColors = {
+    'Food':          Color(0xFFD9A441),
+    'Transport':     Color(0xFF7C8C7A),
+    'Shopping':      Color(0xFFA4B494),
+    'Bills':         Color(0xFF4A4A4A),
+    'Entertainment': Color(0xFF8C7A7C),
+    'Health':        Color(0xFF4CAF7D),
+    'Education':     Color(0xFF6A8CAF),
+    'Income':        Color(0xFF4CAF7D),
+    'Other':         Color(0xFF9A9A9A),
+  };
 
-  // ── Shadow ───────────────────────────────────────────────────
-  static const Color shadowColor      = Color(0x33000000);
-
-  // ── Helpers ──────────────────────────────────────────────────
-  static Color categoryColor(String category) {
-    return {
-      'Food':          catFood,
-      'Transport':     catTransport,
-      'Shopping':      catShopping,
-      'Entertainment': catEntertain,
-      'Bills':         catBills,
-      'Health':        catHealth,
-      'Education':     catEducation,
-      'Other':         catOther,
-    }[category] ?? catOther;
-  }
-
-  static IconData categoryIcon(String category) {
-    return {
-      'Food':          Icons.restaurant_rounded,
-      'Transport':     Icons.directions_car_rounded,
-      'Shopping':      Icons.shopping_bag_rounded,
-      'Entertainment': Icons.movie_rounded,
-      'Bills':         Icons.receipt_long_rounded,
-      'Health':        Icons.favorite_rounded,
-      'Education':     Icons.school_rounded,
-      'Other':         Icons.category_rounded,
-    }[category] ?? Icons.category_rounded;
-  }
+  static Color categoryColor(String cat) =>
+      categoryColors[cat] ?? const Color(0xFF9A9A9A);
 }
