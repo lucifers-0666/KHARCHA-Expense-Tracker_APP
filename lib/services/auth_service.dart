@@ -27,61 +27,32 @@ class AuthService {
     }
   }
 
-  // Register with email and password
-  Future<UserCredential?> registerWithEmailAndPassword(
-    String email,
-    String password,
-  ) async {
-    try {
-      final credential = await _auth.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      final user = credential.user;
-      if (user != null) {
-        final fallbackName = _deriveNameFromEmail(email);
-        await user.updateDisplayName(fallbackName);
-
-        await _firestore.collection('users').doc(user.uid).set({
-          'uid': user.uid,
-          'fullName': fallbackName,
-          'email': user.email ?? email,
-          'createdAt': FieldValue.serverTimestamp(),
-          'profileImageUrl': null,
-          'totalMonthlyBudget': 0.0,
-        }, SetOptions(merge: true));
-      }
-
-      return credential;
-    } on FirebaseAuthException catch (e) {
-      throw _handleAuthException(e);
-    }
-  }
-
+  // Register with full name — saves user profile to Firestore
+  // Rolls back auth user if Firestore write fails
   Future<UserCredential?> registerWithEmailPasswordAndName(
     String email,
     String password,
     String fullName,
   ) async {
+    User? createdUser;
     try {
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
 
-      final user = credential.user;
-      if (user == null) {
+      createdUser = credential.user;
+      if (createdUser == null) {
         throw 'Unable to create user account.';
       }
 
       final normalizedName = fullName.trim();
-      await user.updateDisplayName(normalizedName);
+      await createdUser.updateDisplayName(normalizedName);
 
-      await _firestore.collection('users').doc(user.uid).set({
-        'uid': user.uid,
+      await _firestore.collection('users').doc(createdUser.uid).set({
+        'uid': createdUser.uid,
         'fullName': normalizedName,
-        'email': user.email ?? email,
+        'email': createdUser.email ?? email,
         'createdAt': FieldValue.serverTimestamp(),
         'profileImageUrl': null,
         'totalMonthlyBudget': 0.0,
@@ -91,16 +62,28 @@ class AuthService {
     } on FirebaseAuthException catch (e) {
       throw _handleAuthException(e);
     } on FirebaseException catch (e) {
-      throw e.message ?? 'Failed to save user profile.';
+      // Firestore write failed — roll back the created auth user
+      // so user doesn't get stuck in a half-created state
+      await createdUser?.delete();
+      throw e.message ?? 'Failed to save user profile. Please try again.';
+    } catch (e) {
+      await createdUser?.delete();
+      rethrow;
     }
   }
 
+  // Fetch user profile from Firestore
   Future<UserModel?> getUserProfile(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
-    if (!doc.exists) return null;
-    return UserModel.fromFirestore(doc);
+    try {
+      final doc = await _firestore.collection('users').doc(uid).get();
+      if (!doc.exists) return null;
+      return UserModel.fromFirestore(doc);
+    } catch (_) {
+      return null;
+    }
   }
 
+  // Update user profile in Firestore
   Future<void> updateUserProfile(UserModel user) async {
     await _firestore
         .collection('users')
@@ -113,11 +96,11 @@ class AuthService {
     await _auth.signOut();
   }
 
-  // Handle auth exceptions
+  // Handle FirebaseAuth exceptions — returns human-readable message
   String _handleAuthException(FirebaseAuthException e) {
     switch (e.code) {
       case 'user-not-found':
-        return 'No user found with this email.';
+        return 'No account found with this email.';
       case 'wrong-password':
         return 'Wrong password provided.';
       case 'email-already-in-use':
@@ -131,23 +114,13 @@ class AuthService {
       case 'too-many-requests':
         return 'Too many attempts. Please try again later.';
       case 'operation-not-allowed':
-        return 'Email/password sign-in is not enabled for this project.';
+        return 'Email/password sign-in is not enabled. Please contact support.';
       case 'user-disabled':
         return 'This user account has been disabled.';
       case 'invalid-credential':
-        return 'Invalid credentials. Please verify email and password.';
+        return 'Invalid credentials. Please verify your email and password.';
       default:
         return 'An error occurred. Please try again.';
     }
-  }
-
-  String _deriveNameFromEmail(String email) {
-    final localPart = email.split('@').first.trim();
-    if (localPart.isEmpty) return 'KHARCHA User';
-    return localPart
-        .split(RegExp(r'[._-]+'))
-        .where((part) => part.isNotEmpty)
-        .map((part) => '${part[0].toUpperCase()}${part.substring(1)}')
-        .join(' ');
   }
 }

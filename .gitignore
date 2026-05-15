@@ -48,6 +48,10 @@ migrate_working_dir/
 /android/app/google-services.json
 /ios/Runner/GoogleService-Info.plist
 
+# Node / seed script dependencies
+node_modules/
+npm-debug.log*
+
 # Symbolication related
 app.*.symbols
 

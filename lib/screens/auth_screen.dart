@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_application_1/services/auth_service.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -56,32 +55,6 @@ class _AuthScreenState extends State<AuthScreen>
     _animCtrl.forward();
   }
 
-  String _friendlyError(FirebaseAuthException e) {
-    switch (e.code) {
-      case 'user-not-found':
-        return 'No account found with this email.';
-      case 'wrong-password':
-      case 'invalid-credential':
-        return 'Incorrect email or password.';
-      case 'email-already-in-use':
-        return 'An account already exists with this email.';
-      case 'invalid-email':
-        return 'Please enter a valid email address.';
-      case 'weak-password':
-        return 'Password must be at least 6 characters.';
-      case 'too-many-requests':
-        return 'Too many attempts. Please try again later.';
-      case 'user-disabled':
-        return 'This account has been disabled.';
-      case 'network-request-failed':
-        return 'No internet connection. Please check your network and try again.';
-      case 'operation-not-allowed':
-        return 'Email/password login is not enabled. Contact support.';
-      default:
-        return 'Something went wrong. Please try again.';
-    }
-  }
-
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() {
@@ -102,8 +75,6 @@ class _AuthScreenState extends State<AuthScreen>
         );
       }
       if (mounted) Navigator.pushReplacementNamed(context, '/home');
-    } on FirebaseAuthException catch (e) {
-      if (mounted) setState(() => _errorMessage = _friendlyError(e));
     } catch (e) {
       if (mounted) {
         final message = e.toString().replaceFirst('Exception: ', '').trim();
@@ -165,7 +136,7 @@ class _AuthScreenState extends State<AuthScreen>
                   ),
                   const SizedBox(height: AppSpacing.xxxl),
 
-                  // Fields
+                  // Name field (signup only)
                   if (!_isLogin) ...[
                     PremiumTextField(
                       label: 'Full Name',
@@ -181,6 +152,7 @@ class _AuthScreenState extends State<AuthScreen>
                     ),
                     const SizedBox(height: AppSpacing.lg),
                   ],
+
                   PremiumTextField(
                     label: 'Email',
                     hint: 'you@example.com',
@@ -196,6 +168,7 @@ class _AuthScreenState extends State<AuthScreen>
                         : null,
                   ),
                   const SizedBox(height: AppSpacing.lg),
+
                   PremiumTextField(
                     label: 'Password',
                     hint: 'Min 6 characters',
