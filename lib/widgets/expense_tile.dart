@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:intl/intl.dart';
 import '../models/expense.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
 
 /// Alias so screens that import ExpenseCard still work
 typedef ExpenseCard = ExpenseTile;
@@ -75,7 +72,7 @@ class ExpenseTile extends StatelessWidget {
       background: Container(
         margin: const EdgeInsets.only(bottom: AppSpacing.sm),
         decoration: BoxDecoration(
-          color: AppColors.danger.withOpacity(0.15),
+          color: AppColors.danger.withValues(alpha: 0.15),
           borderRadius: AppRadius.tileRadius,
         ),
         alignment: Alignment.centerRight,
@@ -105,14 +102,14 @@ class ExpenseTile extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius: AppRadius.tileRadius,
-          border: Border.all(color: AppColors.border.withOpacity(0.5)),
+          border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
         ),
         child: Material(
           color: Colors.transparent,
           child: InkWell(
             onTap: onEdit,
             borderRadius: AppRadius.tileRadius,
-            splashColor: color.withOpacity(0.08),
+            splashColor: color.withValues(alpha: 0.08),
             child: Padding(
               padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.lg,
@@ -125,7 +122,7 @@ class ExpenseTile extends StatelessWidget {
                     width: 44,
                     height: 44,
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.15),
+                      color: color.withValues(alpha: 0.15),
                       borderRadius: BorderRadius.circular(13),
                     ),
                     child: Icon(icon, color: color, size: 20),
@@ -151,7 +148,7 @@ class ExpenseTile extends StatelessWidget {
                                 vertical: 2,
                               ),
                               decoration: BoxDecoration(
-                                color: color.withOpacity(0.12),
+                                color: color.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(5),
                               ),
                               child: Text(

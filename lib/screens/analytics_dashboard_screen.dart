@@ -89,9 +89,9 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: AppColors.primary.withOpacity(0.1),
+              color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withOpacity(0.3)),
+              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
             ),
             child: Row(
               children: [
@@ -317,7 +317,7 @@ class _ExpensesTab extends StatelessWidget {
                                 width: 36,
                                 height: 36,
                                 decoration: BoxDecoration(
-                                  color: color.withOpacity(0.12),
+                                  color: color.withValues(alpha: 0.12),
                                   borderRadius: BorderRadius.circular(10),
                                 ),
                                 child: Icon(icon, color: color, size: 18),
@@ -424,7 +424,7 @@ class _TrendsTab extends StatelessWidget {
                           amount: '\u20b9${inc.toStringAsFixed(0)}',
                           amountColor: AppColors.income,
                           icon: Icons.arrow_downward_rounded,
-                          iconBg: AppColors.income.withOpacity(0.1),
+                          iconBg: AppColors.income.withValues(alpha: 0.1),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -434,7 +434,7 @@ class _TrendsTab extends StatelessWidget {
                           amount: '\u20b9${exp.toStringAsFixed(0)}',
                           amountColor: AppColors.expense,
                           icon: Icons.arrow_upward_rounded,
-                          iconBg: AppColors.expense.withOpacity(0.1),
+                          iconBg: AppColors.expense.withValues(alpha: 0.1),
                         ),
                       ),
                     ],

@@ -308,7 +308,7 @@ class _AddExpenseScreenState extends State<AddExpenseScreen> {
                         ),
                         decoration: BoxDecoration(
                           color: isSelected
-                              ? color.withOpacity(0.15)
+                              ? color.withValues(alpha: 0.15)
                               : AppColors.surface,
                           borderRadius: BorderRadius.circular(30),
                           border: Border.all(

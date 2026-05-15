@@ -3,9 +3,6 @@ import 'package:flutter/services.dart';
 import '../models/expense.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
 import '../widgets/primary_button.dart';
 
 void showQuickAddSheet(BuildContext context, {VoidCallback? onAdded}) {
@@ -96,7 +93,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
       decoration: BoxDecoration(
         color: AppColors.bgSecondary,
         borderRadius: AppRadius.sheetRadius,
-        border: Border.all(color: AppColors.border.withOpacity(0.5)),
+        border: Border.all(color: AppColors.border.withValues(alpha: 0.5)),
       ),
       padding: EdgeInsets.fromLTRB(
         AppSpacing.pagePadding,
@@ -288,7 +285,7 @@ class _CategoryGrid extends StatelessWidget {
                 height: itemH,
                 decoration: BoxDecoration(
                   color: isSelected
-                      ? color.withOpacity(0.20)
+                      ? color.withValues(alpha: 0.20)
                       : AppColors.surface,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(

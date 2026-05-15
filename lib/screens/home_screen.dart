@@ -72,7 +72,7 @@ class _HomeScreenState extends State<HomeScreen> {
         selectedIndex: _navIndex,
         onDestinationSelected: (i) => setState(() => _navIndex = i),
         backgroundColor: Colors.transparent,
-        indicatorColor: AppColors.primary.withOpacity(0.12),
+        indicatorColor: AppColors.primary.withValues(alpha: 0.12),
         labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
         destinations: const [
           NavigationDestination(
@@ -205,12 +205,12 @@ class _DashboardPage extends StatelessWidget {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.primaryDark.withOpacity(0.8),
+                              AppColors.primaryDark.withValues(alpha: 0.8),
                               const Color(0xFF0D1A1F),
                             ],
                           ),
                           border: Border.all(
-                            color: AppColors.primary.withOpacity(0.2),
+                            color: AppColors.primary.withValues(alpha: 0.2),
                           ),
                         ),
                         child: Column(
@@ -219,7 +219,7 @@ class _DashboardPage extends StatelessWidget {
                             Text(
                               _monthLabel(month),
                               style: TextStyle(
-                                color: AppColors.primary.withOpacity(0.9),
+                                color: AppColors.primary.withValues(alpha: 0.9),
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 letterSpacing: 1,
@@ -293,7 +293,7 @@ class _DashboardPage extends StatelessWidget {
                           icon:
                               AppColors.categoryIcons[topCat] ??
                               Icons.category_rounded,
-                          iconBg: AppColors.primary.withOpacity(0.1),
+                          iconBg: AppColors.primary.withValues(alpha: 0.1),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -303,7 +303,7 @@ class _DashboardPage extends StatelessWidget {
                           amount: cats.length.toString(),
                           amountColor: AppColors.warning,
                           icon: Icons.grid_view_rounded,
-                          iconBg: AppColors.warning.withOpacity(0.1),
+                          iconBg: AppColors.warning.withValues(alpha: 0.1),
                         ),
                       ),
                     ],

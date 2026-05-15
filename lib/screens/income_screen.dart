@@ -56,10 +56,10 @@ class _IncomeScreenState extends State<IncomeScreen> {
                       padding: const EdgeInsets.symmetric(
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
-                        color: AppColors.income.withOpacity(0.12),
+                        color: AppColors.income.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
-                            color: AppColors.income.withOpacity(0.3)),
+                            color: AppColors.income.withValues(alpha: 0.3)),
                       ),
                       child: const Row(
                         children: [
@@ -121,12 +121,12 @@ class _IncomeScreenState extends State<IncomeScreen> {
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                         colors: [
-                          AppColors.income.withOpacity(0.15),
-                          AppColors.income.withOpacity(0.04),
+                          AppColors.income.withValues(alpha: 0.15),
+                          AppColors.income.withValues(alpha: 0.04),
                         ],
                       ),
                       border: Border.all(
-                          color: AppColors.income.withOpacity(0.2)),
+                          color: AppColors.income.withValues(alpha: 0.2)),
                     ),
                     child: Row(
                       children: [
@@ -134,7 +134,7 @@ class _IncomeScreenState extends State<IncomeScreen> {
                           width: 48,
                           height: 48,
                           decoration: BoxDecoration(
-                            color: AppColors.income.withOpacity(0.12),
+                            color: AppColors.income.withValues(alpha: 0.12),
                             borderRadius: BorderRadius.circular(14),
                           ),
                           child: const Icon(
@@ -397,7 +397,7 @@ class _AddIncomeSheetState extends State<_AddIncomeSheet> {
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? color.withOpacity(0.15)
+                            ? color.withValues(alpha: 0.15)
                             : AppColors.surfaceOffset,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(

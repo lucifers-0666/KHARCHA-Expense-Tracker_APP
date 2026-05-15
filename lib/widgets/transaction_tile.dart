@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_text_styles.dart';
-import '../theme/app_spacing.dart';
-import '../theme/app_radius.dart';
 
 class TransactionTile extends StatelessWidget {
   final String title;

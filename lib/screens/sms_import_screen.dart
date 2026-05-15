@@ -312,7 +312,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
         margin: const EdgeInsets.only(bottom: 12),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(16),
         ),
         child: Column(
@@ -346,7 +346,7 @@ class _SmsImportScreenState extends State<SmsImportScreen>
               Icon(
                 isNewTab ? Icons.inbox_rounded : Icons.check_circle_outline,
                 size: 48,
-                color: Colors.white.withOpacity(0.7),
+                color: Colors.white.withValues(alpha: 0.7),
               ),
               const SizedBox(height: 16),
               Text(
@@ -416,7 +416,7 @@ class _SuggestionCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.06),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),

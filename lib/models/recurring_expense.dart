@@ -1,4 +1,4 @@
-﻿class RecurringExpense {
+class RecurringExpense {
   final String id;
   final String title;
   final double amount;

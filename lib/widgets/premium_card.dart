@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import '../theme/app_radius.dart';
-import '../theme/app_spacing.dart';
 
 class PremiumCard extends StatelessWidget {
   final Widget child;

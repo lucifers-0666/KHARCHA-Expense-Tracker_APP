@@ -74,7 +74,7 @@ class RecurringExpensesScreen extends StatelessWidget {
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child:
@@ -133,7 +133,7 @@ class RecurringExpensesScreen extends StatelessWidget {
                                 horizontal: 10, vertical: 4),
                             decoration: BoxDecoration(
                               color: r.isActive
-                                  ? AppColors.income.withOpacity(0.1)
+                                  ? AppColors.income.withValues(alpha: 0.1)
                                   : AppColors.border,
                               borderRadius: BorderRadius.circular(20),
                             ),
@@ -166,7 +166,7 @@ class RecurringExpensesScreen extends StatelessWidget {
       padding:
           const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withValues(alpha: 0.1),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(label,
@@ -334,7 +334,7 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
                           horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? AppColors.primary.withOpacity(0.15)
+                            ? AppColors.primary.withValues(alpha: 0.15)
                             : AppColors.surfaceOffset,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
@@ -382,7 +382,7 @@ class _AddRecurringSheetState extends State<_AddRecurringSheet> {
                           horizontal: 14, vertical: 8),
                       decoration: BoxDecoration(
                         color: isSelected
-                            ? color.withOpacity(0.15)
+                            ? color.withValues(alpha: 0.15)
                             : AppColors.surfaceOffset,
                         borderRadius: BorderRadius.circular(20),
                         border: Border.all(
