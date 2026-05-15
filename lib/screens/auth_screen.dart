@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_application_1/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_spacing.dart';
+import '../widgets/premium_button.dart';
 import '../widgets/premium_textfield.dart';
-import '../widgets/primary_button.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -17,251 +17,228 @@ class _AuthScreenState extends State<AuthScreen>
     with SingleTickerProviderStateMixin {
   bool _isLogin = true;
   bool _loading = false;
-  String? _errorMessage;
-  final AuthService _authService = AuthService();
+  bool _obscure = true;
+  String? _error;
+
   final _formKey = GlobalKey<FormState>();
   final _emailCtrl = TextEditingController();
-  final _passCtrl = TextEditingController();
-  final _nameCtrl = TextEditingController();
-  late AnimationController _animCtrl;
-  late Animation<double> _fadeAnim;
+  final _passCtrl  = TextEditingController();
+  final _nameCtrl  = TextEditingController();
+
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
 
   @override
   void initState() {
     super.initState();
-    _animCtrl = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 400),
-    );
-    _fadeAnim = CurvedAnimation(parent: _animCtrl, curve: Curves.easeOut);
-    _animCtrl.forward();
+    _ctrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 600));
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _ctrl.forward();
   }
 
   @override
   void dispose() {
+    _ctrl.dispose();
     _emailCtrl.dispose();
     _passCtrl.dispose();
     _nameCtrl.dispose();
-    _animCtrl.dispose();
     super.dispose();
   }
 
-  void _toggle() {
-    _animCtrl.reset();
-    setState(() {
-      _isLogin = !_isLogin;
-      _errorMessage = null;
-    });
-    _animCtrl.forward();
-  }
-
   Future<void> _submit() async {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() {
-      _loading = true;
-      _errorMessage = null;
-    });
+    if (!(_formKey.currentState?.validate() ?? false)) return;
+    setState(() { _loading = true; _error = null; });
     try {
       if (_isLogin) {
-        await _authService.signInWithEmailAndPassword(
-          _emailCtrl.text.trim(),
-          _passCtrl.text,
+        await FirebaseAuth.instance.signInWithEmailAndPassword(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
         );
       } else {
-        await _authService.registerWithEmailPasswordAndName(
-          _emailCtrl.text.trim(),
-          _passCtrl.text,
-          _nameCtrl.text.trim(),
+        final cred = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+          email: _emailCtrl.text.trim(),
+          password: _passCtrl.text,
         );
+        if (_nameCtrl.text.trim().isNotEmpty) {
+          await cred.user?.updateDisplayName(_nameCtrl.text.trim());
+        }
       }
-      if (mounted) Navigator.pushReplacementNamed(context, '/home');
-    } catch (e) {
-      if (mounted) {
-        final message = e.toString().replaceFirst('Exception: ', '').trim();
-        setState(
-          () => _errorMessage = message.isNotEmpty
-              ? message
-              : 'An unexpected error occurred. Please try again.',
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) Navigator.of(context).pushReplacementNamed('/home');
+    } on FirebaseAuthException catch (e) {
+      setState(() {
+        _error = _friendlyAuthError(e.code);
+        _loading = false;
+      });
+    } catch (_) {
+      setState(() {
+        _error = 'Something went wrong. Please try again.';
+        _loading = false;
+      });
     }
+  }
+
+  String _friendlyAuthError(String code) {
+    switch (code) {
+      case 'user-not-found':    return 'No account found with this email.';
+      case 'wrong-password':    return 'Incorrect password. Please try again.';
+      case 'email-already-in-use': return 'An account already exists with this email.';
+      case 'weak-password':     return 'Password must be at least 6 characters.';
+      case 'invalid-email':     return 'Please enter a valid email address.';
+      case 'too-many-requests': return 'Too many attempts. Please wait and try again.';
+      default: return 'Authentication failed. Please try again.';
+    }
+  }
+
+  void _toggleMode() {
+    setState(() { _isLogin = !_isLogin; _error = null; });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textPri = isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight;
+    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMutedLight;
+
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.pagePadding,
-            vertical: AppSpacing.xxxl,
-          ),
-          child: FadeTransition(
-            opacity: _fadeAnim,
+        child: FadeTransition(
+          opacity: _fade,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.pageHPad,
+              vertical: AppSpacing.pageVPad,
+            ),
             child: Form(
               key: _formKey,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const SizedBox(height: 24),
+                  const SizedBox(height: AppSpacing.x3l),
                   // Logo
                   Container(
-                    width: 52,
-                    height: 52,
+                    width: 48,
+                    height: 48,
                     decoration: BoxDecoration(
-                      color: AppColors.surface,
+                      color: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
                       borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: AppColors.border),
+                      border: Border.all(
+                          color: isDark ? AppColors.dividerDark : AppColors.dividerLight),
                     ),
-                    child: const Icon(
+                    child: Icon(
                       Icons.account_balance_wallet_rounded,
-                      color: AppColors.accent,
-                      size: 28,
+                      color: isDark ? AppColors.mutedOlive : AppColors.charcoal,
+                      size: 22,
                     ),
                   ),
-                  const SizedBox(height: AppSpacing.xxxl),
+                  const SizedBox(height: AppSpacing.x2l),
                   Text(
-                    _isLogin ? 'Welcome\nback.' : 'Create\naccount.',
-                    style: AppTextStyles.displayLarge,
+                    _isLogin ? 'Welcome back.' : 'Create account.',
+                    style: AppTextStyles.display.copyWith(color: textPri),
                   ),
                   const SizedBox(height: AppSpacing.sm),
                   Text(
                     _isLogin
-                        ? 'Sign in to continue tracking your expenses.'
-                        : 'Start your financial journey today.',
-                    style: AppTextStyles.body,
+                        ? 'Sign in to continue tracking your finances.'
+                        : 'Start your expense intelligence journey.',
+                    style: AppTextStyles.body.copyWith(color: textMuted),
                   ),
-                  const SizedBox(height: AppSpacing.xxxl),
+                  const SizedBox(height: AppSpacing.x3l),
 
-                  // Name field (signup only)
+                  // Fields
                   if (!_isLogin) ...[
                     PremiumTextField(
                       label: 'Full Name',
                       hint: 'Your name',
                       controller: _nameCtrl,
-                      prefixIcon: const Icon(
-                        Icons.person_outline_rounded,
-                        size: 20,
-                        color: AppColors.textMuted,
-                      ),
+                      textInputAction: TextInputAction.next,
                       validator: (v) =>
-                          v == null || v.isEmpty ? 'Required' : null,
+                          (v?.isEmpty ?? true) ? 'Name is required' : null,
                     ),
-                    const SizedBox(height: AppSpacing.lg),
+                    const SizedBox(height: AppSpacing.base),
                   ],
-
                   PremiumTextField(
                     label: 'Email',
                     hint: 'you@example.com',
                     controller: _emailCtrl,
                     keyboardType: TextInputType.emailAddress,
-                    prefixIcon: const Icon(
-                      Icons.mail_outline_rounded,
-                      size: 20,
-                      color: AppColors.textMuted,
-                    ),
-                    validator: (v) => v == null || !v.contains('@')
-                        ? 'Enter valid email'
-                        : null,
+                    textInputAction: TextInputAction.next,
+                    validator: (v) =>
+                        (v?.isEmpty ?? true) ? 'Email is required' : null,
                   ),
-                  const SizedBox(height: AppSpacing.lg),
-
+                  const SizedBox(height: AppSpacing.base),
                   PremiumTextField(
                     label: 'Password',
-                    hint: 'Min 6 characters',
+                    hint: 'Min. 6 characters',
                     controller: _passCtrl,
-                    obscureText: true,
-                    prefixIcon: const Icon(
-                      Icons.lock_outline_rounded,
-                      size: 20,
-                      color: AppColors.textMuted,
+                    obscureText: _obscure,
+                    textInputAction: TextInputAction.done,
+                    onFieldSubmitted: (_) => _submit(),
+                    suffix: IconButton(
+                      icon: Icon(
+                        _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
+                        size: 18,
+                        color: textMuted,
+                      ),
+                      onPressed: () => setState(() => _obscure = !_obscure),
                     ),
                     validator: (v) =>
-                        v == null || v.length < 6 ? 'Min 6 characters' : null,
+                        (v?.length ?? 0) < 6 ? 'Min. 6 characters' : null,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
 
-                  // Error Banner
-                  if (_errorMessage != null) ...[
+                  // Error
+                  if (_error != null) ...[
+                    const SizedBox(height: AppSpacing.base),
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
+                      padding: const EdgeInsets.all(AppSpacing.md),
                       decoration: BoxDecoration(
-                        color: AppColors.danger.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: AppColors.danger.withValues(alpha: 0.3),
-                        ),
+                        color: AppColors.danger.withAlpha(15),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.danger.withAlpha(40)),
                       ),
                       child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Icon(
-                            Icons.error_outline_rounded,
-                            color: AppColors.danger,
-                            size: 18,
-                          ),
-                          const SizedBox(width: 10),
+                          Icon(Icons.error_outline_rounded,
+                              size: 16, color: AppColors.danger),
+                          const SizedBox(width: 8),
                           Expanded(
-                            child: Text(
-                              _errorMessage!,
-                              style: TextStyle(
-                                color: AppColors.danger,
-                                fontSize: 13,
-                                height: 1.4,
-                              ),
-                            ),
-                          ),
-                          GestureDetector(
-                            onTap: () => setState(() => _errorMessage = null),
-                            child: Icon(
-                              Icons.close_rounded,
-                              color: AppColors.danger,
-                              size: 16,
-                            ),
+                            child: Text(_error!,
+                                style: AppTextStyles.caption
+                                    .copyWith(color: AppColors.danger)),
                           ),
                         ],
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.lg),
                   ],
 
-                  PrimaryButton(
+                  const SizedBox(height: AppSpacing.x2l),
+                  PremiumButton(
                     label: _isLogin ? 'Sign In' : 'Create Account',
-                    isLoading: _loading,
                     onPressed: _submit,
+                    loading: _loading,
                   ),
-                  const SizedBox(height: AppSpacing.xl),
-
-                  Center(
-                    child: GestureDetector(
-                      onTap: _toggle,
-                      child: RichText(
-                        text: TextSpan(
-                          style: AppTextStyles.body,
-                          children: [
-                            TextSpan(
-                              text: _isLogin
-                                  ? "Don't have an account? "
-                                  : 'Already have an account? ',
-                            ),
-                            TextSpan(
-                              text: _isLogin ? 'Sign Up' : 'Sign In',
-                              style: AppTextStyles.body.copyWith(
-                                color: AppColors.accent,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ],
+                  const SizedBox(height: AppSpacing.base),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        _isLogin ? "Don't have an account? " : 'Already have an account? ',
+                        style: AppTextStyles.body.copyWith(color: textMuted),
+                      ),
+                      GestureDetector(
+                        onTap: _toggleMode,
+                        child: Text(
+                          _isLogin ? 'Sign Up' : 'Sign In',
+                          style: AppTextStyles.body.copyWith(
+                            color: textPri,
+                            fontWeight: FontWeight.w700,
+                            decoration: TextDecoration.underline,
+                            decorationColor: textPri,
+                          ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
                 ],
               ),

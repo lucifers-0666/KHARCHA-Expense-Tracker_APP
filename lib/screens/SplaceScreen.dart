@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -13,34 +12,33 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _fade;
-  late Animation<double> _slide;
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<Offset> _slide;
 
   @override
   void initState() {
     super.initState();
-    SystemChrome.setSystemUIOverlayStyle(const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.light,
-    ));
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 1000),
     );
-    _fade = CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.6, curve: Curves.easeOut));
-    _slide = Tween<double>(begin: 24, end: 0).animate(
-      CurvedAnimation(parent: _ctrl, curve: const Interval(0.0, 0.6, curve: Curves.easeOut)),
-    );
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeOut);
+    _slide = Tween<Offset>(
+      begin: const Offset(0, 0.08),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
     _ctrl.forward();
     _navigate();
   }
 
   Future<void> _navigate() async {
-    await Future.delayed(const Duration(milliseconds: 2200));
+    await Future.delayed(const Duration(milliseconds: 2000));
     if (!mounted) return;
     final user = FirebaseAuth.instance.currentUser;
-    Navigator.of(context).pushReplacementNamed(user != null ? '/home' : '/auth');
+    Navigator.of(context).pushReplacementNamed(
+      user != null ? '/home' : '/auth',
+    );
   }
 
   @override
@@ -51,60 +49,81 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppColors.bgPrimary,
+      backgroundColor:
+          isDark ? AppColors.bgDark : AppColors.bgLight,
       body: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (context, _) => Opacity(
-            opacity: _fade.value,
-            child: Transform.translate(
-              offset: Offset(0, _slide.value),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Logo mark
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: AppColors.border),
+        child: FadeTransition(
+          opacity: _fade,
+          child: SlideTransition(
+            position: _slide,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Logo mark
+                Container(
+                  width: 68,
+                  height: 68,
+                  decoration: BoxDecoration(
+                    color: isDark ? AppColors.surfaceDark : AppColors.cardLight,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: isDark
+                          ? AppColors.dividerDark
+                          : AppColors.dividerLight,
                     ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: AppColors.accent,
-                      size: 36,
+                    boxShadow: isDark
+                        ? null
+                        : [
+                            BoxShadow(
+                              color: AppColors.shadowColor,
+                              blurRadius: 16,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                  ),
+                  child: Icon(
+                    Icons.account_balance_wallet_rounded,
+                    size: 32,
+                    color: isDark
+                        ? AppColors.mutedOlive
+                        : AppColors.charcoal,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                Text(
+                  'KHARCHA',
+                  style: AppTextStyles.headline.copyWith(
+                    color: isDark
+                        ? AppColors.textPrimaryDark
+                        : AppColors.textPrimaryLight,
+                    letterSpacing: 4,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Expense Intelligence',
+                  style: AppTextStyles.caption.copyWith(
+                    color: isDark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
+                    letterSpacing: 1.5,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 1.5,
+                    valueColor: AlwaysStoppedAnimation(
+                      isDark ? AppColors.mutedOlive : AppColors.slate,
                     ),
                   ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'KHARCHA',
-                    style: AppTextStyles.displayMedium.copyWith(
-                      letterSpacing: 4,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Smart expense tracking',
-                    style: AppTextStyles.body.copyWith(
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor:
-                          const AlwaysStoppedAnimation<Color>(AppColors.accent),
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ),
