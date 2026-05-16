@@ -179,8 +179,8 @@ class _MonthSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final surface = AppColors.surfaceFor(isDark);
-    final border  = AppColors.borderFor(isDark);
+    final surface     = AppColors.surfaceFor(isDark);
+    final border      = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted   = AppColors.textMutedFor(isDark);
 
@@ -300,7 +300,7 @@ class _ExpensesTab extends StatelessWidget {
         }
         final data = snap.data ?? {};
         if (data.isEmpty) {
-          return EmptyStateWidget(
+          return const EmptyStateWidget(
             icon: Icons.pie_chart_outline_rounded,
             title: 'No expenses this month',
             subtitle: 'Add some expenses to see category breakdown',
@@ -309,8 +309,8 @@ class _ExpensesTab extends StatelessWidget {
         final entries = data.entries.toList()
           ..sort((a, b) => b.value.compareTo(a.value));
         final total = entries.fold(0.0, (s, e) => s + e.value);
-        final surface  = AppColors.surfaceFor(isDark);
-        final border   = AppColors.borderFor(isDark);
+        final surface     = AppColors.surfaceFor(isDark);
+        final border      = AppColors.borderFor(isDark);
         final textPrimary = AppColors.textPrimaryFor(isDark);
         final textMuted   = AppColors.textMutedFor(isDark);
 
@@ -382,18 +382,17 @@ class _ExpensesTab extends StatelessWidget {
                                 ),
                               ),
                               if (touchedIndex >= 0 &&
-                                  touchedIndex < entries.length) ...
-                                [
-                                  const SizedBox(height: 4),
-                                  Text(
-                                    entries[touchedIndex].key,
-                                    style: TextStyle(
-                                        color: AppColors.categoryColor(
-                                            entries[touchedIndex].key),
-                                        fontSize: 11,
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                                ],
+                                  touchedIndex < entries.length) ...[
+                                const SizedBox(height: 4),
+                                Text(
+                                  entries[touchedIndex].key,
+                                  style: TextStyle(
+                                      color: AppColors.categoryColor(
+                                          entries[touchedIndex].key),
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ],
                           ),
                         ],
@@ -479,9 +478,9 @@ class _ExpensesTab extends StatelessWidget {
                 ),
                 child: Column(
                   children: entries.asMap().entries.map((entry) {
-                    final cat  = entry.value.key;
-                    final amt  = entry.value.value;
-                    final pct  = total > 0 ? amt / total : 0.0;
+                    final cat   = entry.value.key;
+                    final amt   = entry.value.value;
+                    final pct   = total > 0 ? amt / total : 0.0;
                     final color = AppColors.categoryColor(cat);
                     final icon  = AppColors.categoryIcon(cat);
                     return Column(
@@ -586,9 +585,9 @@ class _TrendsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fmt = NumberFormat('#,##,###', 'en_IN');
-    final surface  = AppColors.surfaceFor(isDark);
-    final border   = AppColors.borderFor(isDark);
+    final fmt         = NumberFormat('#,##,###', 'en_IN');
+    final surface     = AppColors.surfaceFor(isDark);
+    final border      = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted   = AppColors.textMutedFor(isDark);
 
@@ -598,17 +597,17 @@ class _TrendsTab extends StatelessWidget {
         return StreamBuilder<double>(
           stream: service.getTotalIncomeByMonth(month),
           builder: (ctx2, incSnap) {
-            final exp     = expSnap.data ?? 0.0;
-            final inc     = incSnap.data ?? 0.0;
-            final savings = inc - exp;
+            final exp      = expSnap.data ?? 0.0;
+            final inc      = incSnap.data ?? 0.0;
+            final savings  = inc - exp;
             final savingsPct = inc > 0
                 ? ((savings / inc) * 100).clamp(0.0, 100.0)
                 : 0.0;
             final Color savingsColor = savingsPct >= 20
                 ? AppColors.income
                 : savingsPct >= 10
-                ? AppColors.warning
-                : AppColors.expense;
+                    ? AppColors.warning
+                    : AppColors.expense;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
@@ -788,8 +787,8 @@ class _TrendsTab extends StatelessWidget {
                           value: savingsPct >= 20
                               ? 'Great 🟢'
                               : savingsPct >= 10
-                              ? 'Good 🟡'
-                              : 'Watch 🔴',
+                                  ? 'Good 🟡'
+                                  : 'Watch 🔴',
                           color: savingsColor,
                           isDark: isDark,
                         ),
@@ -806,7 +805,6 @@ class _TrendsTab extends StatelessWidget {
                       final incomes = incList.data ?? [];
                       if (incomes.isEmpty) return const SizedBox.shrink();
 
-                      // group by source/category
                       final sourceMap = <String, double>{};
                       for (final i in incomes) {
                         sourceMap[i.source] =
@@ -894,8 +892,7 @@ class _TrendsTab extends StatelessWidget {
                                               const SizedBox(height: 5),
                                               ClipRRect(
                                                 borderRadius:
-                                                    BorderRadius.circular(
-                                                        4),
+                                                    BorderRadius.circular(4),
                                                 child:
                                                     LinearProgressIndicator(
                                                   value: pct,
@@ -975,7 +972,6 @@ class _SixMonthTab extends StatefulWidget {
 }
 
 class _SixMonthTabState extends State<_SixMonthTab> {
-  // Future list of (expense, income) per month for last 6 months
   late final Future<List<_MonthData>> _future;
   final _fmt = NumberFormat('#,##,###', 'en_IN');
 
@@ -1001,8 +997,8 @@ class _SixMonthTabState extends State<_SixMonthTab> {
 
   @override
   Widget build(BuildContext context) {
-    final surface  = AppColors.surfaceFor(widget.isDark);
-    final border   = AppColors.borderFor(widget.isDark);
+    final surface     = AppColors.surfaceFor(widget.isDark);
+    final border      = AppColors.borderFor(widget.isDark);
     final textPrimary = AppColors.textPrimaryFor(widget.isDark);
     final textMuted   = AppColors.textMutedFor(widget.isDark);
 
@@ -1018,24 +1014,21 @@ class _SixMonthTabState extends State<_SixMonthTab> {
         final allValues = months
             .expand((m) => [m.expense, m.income])
             .toList();
-        final maxY =
-            allValues.isEmpty ? 1000.0 : allValues.reduce((a, b) => a > b ? a : b) * 1.25 + 1;
+        final maxY = allValues.isEmpty
+            ? 1000.0
+            : allValues.reduce((a, b) => a > b ? a : b) * 1.25 + 1;
 
-        // Build line chart spots
         final expSpots = months
             .asMap()
             .entries
-            .map((e) =>
-                FlSpot(e.key.toDouble(), e.value.expense))
+            .map((e) => FlSpot(e.key.toDouble(), e.value.expense))
             .toList();
         final incSpots = months
             .asMap()
             .entries
-            .map((e) =>
-                FlSpot(e.key.toDouble(), e.value.income))
+            .map((e) => FlSpot(e.key.toDouble(), e.value.income))
             .toList();
 
-        // Month labels
         final labels = months
             .map((m) => [
                   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -1092,6 +1085,8 @@ class _SixMonthTabState extends State<_SixMonthTab> {
                           maxY: maxY,
                           lineTouchData: LineTouchData(
                             touchTooltipData: LineTouchTooltipData(
+                              getTooltipColor: (spot) =>
+                                  AppColors.surfaceOffsetFor(widget.isDark),
                               getTooltipItems: (spots) => spots
                                   .map(
                                     (s) => LineTooltipItem(
@@ -1131,8 +1126,7 @@ class _SixMonthTabState extends State<_SixMonthTab> {
                                 interval: 1,
                                 getTitlesWidget: (v, _) {
                                   final idx = v.toInt();
-                                  if (idx < 0 ||
-                                      idx >= labels.length) {
+                                  if (idx < 0 || idx >= labels.length) {
                                     return const SizedBox.shrink();
                                   }
                                   return Padding(
