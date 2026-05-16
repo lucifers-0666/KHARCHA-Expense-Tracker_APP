@@ -77,7 +77,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
               onNext: _isCurrentMonth ? null : _nextMonth,
               isDark: isDark,
             ),
-            _TabBar(controller: _tabCtrl, isDark: isDark),
+            _SegmentedTabBar(controller: _tabCtrl, isDark: isDark),
             Expanded(
               child: TabBarView(
                 controller: _tabCtrl,
@@ -229,40 +229,109 @@ class _MonthSelector extends StatelessWidget {
   }
 }
 
-// ─── TabBar ──────────────────────────────────────────────────────────────────
-class _TabBar extends StatelessWidget {
+// ─── Segmented Tab Bar (Custom — fixes all layout & overflow issues) ──────────
+class _SegmentedTabBar extends StatefulWidget {
   final TabController controller;
   final bool isDark;
-  const _TabBar({required this.controller, required this.isDark});
+  const _SegmentedTabBar({required this.controller, required this.isDark});
+
+  @override
+  State<_SegmentedTabBar> createState() => _SegmentedTabBarState();
+}
+
+class _SegmentedTabBarState extends State<_SegmentedTabBar> {
+  static const _tabs = ['Expenses', 'Overview', '6 Months'];
+
+  // Active tab background: use AppColors.primaryDark for the dark-green look
+  // shown in the screenshot, which matches the KHARCHA teal palette.
+  static const _activeColor = Color(0xFF2F6B57);
+
+  int get _selectedIndex => widget.controller.index;
+
+  @override
+  void initState() {
+    super.initState();
+    widget.controller.addListener(_onTabChange);
+  }
+
+  void _onTabChange() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    widget.controller.removeListener(_onTabChange);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Outer pill track color: slightly different per theme
+    final trackColor = widget.isDark
+        ? AppColors.surfaceFor(widget.isDark)
+        : const Color(0xFFF3F4F6);
+    final borderColor = AppColors.borderFor(widget.isDark);
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
       child: Container(
-        height: 40,
+        height: 56,
         decoration: BoxDecoration(
-          color: AppColors.surfaceFor(isDark),
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.borderFor(isDark)),
+          color: trackColor,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: borderColor),
         ),
-        child: TabBar(
-          controller: controller,
-          indicator: BoxDecoration(
-            color: AppColors.primary,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          indicatorPadding: const EdgeInsets.all(3),
-          dividerColor: Colors.transparent,
-          labelColor: Colors.white,
-          unselectedLabelColor: AppColors.textMutedFor(isDark),
-          labelStyle: const TextStyle(
-              fontSize: 12, fontWeight: FontWeight.w600),
-          tabs: const [
-            Tab(text: 'Expenses'),
-            Tab(text: 'Overview'),
-            Tab(text: '6 Months'),
-          ],
+        padding: const EdgeInsets.all(6),
+        child: Row(
+          children: List.generate(_tabs.length, (index) {
+            final isSelected = index == _selectedIndex;
+            return Expanded(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  widget.controller.animateTo(index);
+                },
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeInOut,
+                  decoration: BoxDecoration(
+                    color: isSelected ? _activeColor : Colors.transparent,
+                    borderRadius: BorderRadius.circular(14),
+                    boxShadow: isSelected
+                        ? [
+                            BoxShadow(
+                              color: _activeColor.withValues(alpha: 0.30),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            ),
+                          ]
+                        : null,
+                  ),
+                  alignment: Alignment.center,
+                  child: AnimatedDefaultTextStyle(
+                    duration: const Duration(milliseconds: 250),
+                    curve: Curves.easeInOut,
+                    style: TextStyle(
+                      color: isSelected
+                          ? Colors.white
+                          : const Color(0xFF6B7280),
+                      fontSize: 13,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      letterSpacing: -0.1,
+                    ),
+                    child: Text(
+                      _tabs[index],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+              ),
+            );
+          }),
         ),
       ),
     );
