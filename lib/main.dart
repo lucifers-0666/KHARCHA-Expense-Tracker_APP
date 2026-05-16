@@ -3,18 +3,40 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:workmanager/workmanager.dart';
 import 'firebase_options.dart';
 import 'screens/SplaceScreen.dart';
 import 'screens/home_screen.dart';
 import 'screens/auth_screen.dart';
 import 'theme/app_theme.dart';
 import 'providers/theme_provider.dart';
+import 'services/smart_insights_service.dart';
+import 'services/weekly_digest_service.dart';
+
+@pragma('vm:entry-point')
+void callbackDispatcher() {
+  Workmanager().executeTask((task, _) async {
+    WidgetsFlutterBinding.ensureInitialized();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    if (task == 'kharcha_weekly_digest') {
+      await executeWeeklyDigest();
+    }
+
+    return Future.value(true);
+  });
+}
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  registerWeeklyDigest();
+  SmartInsightsService().start();
   final prefs = await SharedPreferences.getInstance();
   final savedDark = prefs.getBool('isDarkMode') ?? false;
   runApp(KharchaApp(initialDark: savedDark));
@@ -36,7 +58,6 @@ class KharchaApp extends StatelessWidget {
             theme: AppTheme.lightTheme,
             darkTheme: AppTheme.darkTheme,
             themeMode: themeProvider.themeMode,
-            // ── centralised routing ──────────────────────────────────────────
             initialRoute: '/',
             routes: {
               '/': (_) => const SplashScreen(),
@@ -77,18 +98,15 @@ class KharchaApp extends StatelessWidget {
   }
 }
 
-// ─── Auth helpers ────────────────────────────────────────────────────────────
 User? get currentUser => FirebaseAuth.instance.currentUser;
 Stream<User?> get authStateStream => FirebaseAuth.instance.authStateChanges();
 
-// ─── Legacy MainShell — not used in nav, kept for compat ────────────────────
 class MainShell extends StatelessWidget {
   const MainShell({super.key});
   @override
   Widget build(BuildContext context) => const HomeScreen();
 }
 
-// ─── 404 Fallback Screen ──────────────────────────────────────────────────────
 class _NotFoundScreen extends StatelessWidget {
   const _NotFoundScreen();
   @override

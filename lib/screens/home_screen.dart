@@ -3,7 +3,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
+import '../widgets/burn_rate_card.dart';
 import '../widgets/kharcha_widgets.dart';
+import '../widgets/smart_insights_card.dart';
 import 'add_expense.dart';
 import 'analytics_dashboard_screen.dart';
 import 'settings_screen.dart';
@@ -52,7 +54,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   void _onNavTap(int index) {
     if (index == _navIndex) return;
-    // Animate FAB out/in on tab change
     if (index == 0) {
       _fabCtrl.forward(from: 0);
     } else {
@@ -81,16 +82,15 @@ class _HomeScreenState extends State<HomeScreen>
                 pageBuilder: (_, a1, a2) => const AddExpenseScreen(),
                 transitionsBuilder: (_, a1, a2, child) {
                   return SlideTransition(
-                    position:
-                        Tween<Offset>(
-                          begin: const Offset(0, 1),
-                          end: Offset.zero,
-                        ).animate(
-                          CurvedAnimation(
-                            parent: a1,
-                            curve: Curves.easeOutCubic,
-                          ),
-                        ),
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 1),
+                      end: Offset.zero,
+                    ).animate(
+                      CurvedAnimation(
+                        parent: a1,
+                        curve: Curves.easeOutCubic,
+                      ),
+                    ),
                     child: child,
                   );
                 },
@@ -171,7 +171,6 @@ String _fmtDate(DateTime d) {
   return DateFormat('d MMM').format(d);
 }
 
-// ── Dashboard Page ─────────────────────────────────────────────────────────────
 class _DashboardPage extends StatelessWidget {
   final DateTime month;
   final FirestoreServices service;
@@ -199,7 +198,6 @@ class _DashboardPage extends StatelessWidget {
         child: CustomScrollView(
           physics: const BouncingScrollPhysics(),
           slivers: [
-            // ── Header ──────────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
@@ -245,8 +243,6 @@ class _DashboardPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Balance Card ─────────────────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
@@ -279,8 +275,26 @@ class _DashboardPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── KPI Row ──────────────────────────────────────────────────────
+            const SliverToBoxAdapter(child: SmartInsightsCard()),
+            SliverToBoxAdapter(
+              child: StreamBuilder<List<dynamic>>(
+                stream: StreamZip<dynamic>([
+                  service.getExpensesByMonth(month),
+                  service.getBudgetForMonth(month.year, month.month),
+                ]),
+                builder: (context, snapshot) {
+                  if (!snapshot.hasData) return const SizedBox.shrink();
+                  final data = snapshot.data!;
+                  final expenses = List.from(data[0]);
+                  final budget = data[1];
+                  if (budget == null) return const SizedBox.shrink();
+                  return BurnRateCard(
+                    expenses: expenses.cast(),
+                    monthlyBudget: budget.monthlyLimit,
+                  );
+                },
+              ),
+            ),
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
@@ -326,8 +340,6 @@ class _DashboardPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Recent Transactions header ────────────────────────────────────
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 22, 20, 0),
@@ -338,8 +350,6 @@ class _DashboardPage extends StatelessWidget {
                 ),
               ),
             ),
-
-            // ── Transaction list ────────────────────────────────────────────
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 100),
               sliver: StreamBuilder(
@@ -402,7 +412,6 @@ class _DashboardPage extends StatelessWidget {
   }
 }
 
-// ── Balance Card widget ────────────────────────────────────────────────────────
 class _BalanceCard extends StatelessWidget {
   final bool isDark;
   final Color cardColor, borderColor, textPrimary, textMuted, textFaint;
@@ -450,7 +459,6 @@ class _BalanceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Month + badge row
           Row(
             children: [
               Text(
@@ -483,12 +491,9 @@ class _BalanceCard extends StatelessWidget {
               ),
             ],
           ),
-
           const SizedBox(height: 4),
           Text('Net Balance', style: TextStyle(color: textFaint, fontSize: 12)),
           const SizedBox(height: 6),
-
-          // Big balance amount
           AnimatedDefaultTextStyle(
             duration: const Duration(milliseconds: 400),
             curve: Curves.easeOutCubic,
@@ -501,7 +506,6 @@ class _BalanceCard extends StatelessWidget {
             ),
             child: Text('₹${fmt.format(savings.abs().toInt())}'),
           ),
-
           const SizedBox(height: 18),
           Divider(
             color: isDark ? AppColors.borderDark : AppColors.border,
@@ -509,8 +513,6 @@ class _BalanceCard extends StatelessWidget {
             thickness: 0.8,
           ),
           const SizedBox(height: 14),
-
-          // Income / Expense mini row
           Row(
             children: [
               Expanded(
@@ -544,7 +546,6 @@ class _BalanceCard extends StatelessWidget {
   }
 }
 
-// ── Mini stat inside balance card ──────────────────────────────────────────────
 class _MiniStat extends StatelessWidget {
   final String label, value;
   final Color color;
@@ -597,7 +598,6 @@ class _MiniStat extends StatelessWidget {
   }
 }
 
-// ── Animated list tile entry ───────────────────────────────────────────────────
 class _AnimatedTile extends StatelessWidget {
   final int index;
   final Widget child;
@@ -619,7 +619,6 @@ class _AnimatedTile extends StatelessWidget {
   }
 }
 
-// ── Shimmer loading list ───────────────────────────────────────────────────────
 class _ShimmerList extends StatelessWidget {
   final bool isDark;
   const _ShimmerList({required this.isDark});
@@ -738,7 +737,6 @@ class _ShimmerTileState extends State<_ShimmerTile>
   }
 }
 
-// ── Tappable icon button ───────────────────────────────────────────────────────
 class _TappableIconButton extends StatefulWidget {
   final IconData icon;
   final Color color;

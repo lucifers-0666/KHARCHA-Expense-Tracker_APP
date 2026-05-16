@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/theme_provider.dart';
+import 'emi_tracker_screen.dart';
 import 'export_reports_screen.dart';
 import 'sms_import_screen.dart';
 import 'auth_screen.dart';
@@ -43,8 +44,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final initial = user?.displayName?.isNotEmpty == true
         ? user!.displayName![0].toUpperCase()
         : user?.email?.isNotEmpty == true
-        ? user!.email![0].toUpperCase()
-        : 'K';
+            ? user!.email![0].toUpperCase()
+            : 'K';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -58,14 +59,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Page Title ───────────────────────────────────────────────
               Text(
                 'Settings',
                 style: AppTextStyles.heading.copyWith(color: textPrimary),
               ),
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Profile Card ─────────────────────────────────────────────
               _profileCard(
                 context: context,
                 isDark: isDark,
@@ -77,10 +75,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 user: user,
                 initial: initial,
               ),
-
               const SizedBox(height: AppSpacing.sectionGap),
-
-              // ── Preferences ──────────────────────────────────────────────
               _SectionLabel('Preferences', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
@@ -129,10 +124,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Data ─────────────────────────────────────────────────────
               _SectionLabel('Data', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
@@ -140,6 +132,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 cardColor: cardColor,
                 borderColor: borderColor,
                 tiles: [
+                  _TapTile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'EMI Tracker',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const EmiTrackerScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
                   _TapTile(
                     icon: Icons.upload_file_rounded,
                     label: 'Export Reports',
@@ -181,10 +185,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: AppSpacing.lg),
-
-              // ── Account ──────────────────────────────────────────────────
               _SectionLabel('Account', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
@@ -209,7 +210,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   ),
                 ],
               ),
-
               const SizedBox(height: AppSpacing.x3l),
               Center(
                 child: Text(
@@ -225,7 +225,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Profile card builder ──────────────────────────────────────────────────
   Widget _profileCard({
     required BuildContext context,
     required bool isDark,
@@ -259,7 +258,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Avatar
           Container(
             width: 50,
             height: 50,
@@ -283,7 +281,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          // Name + email — Expanded fixes email overflow
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -310,7 +307,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ),
           ),
           const SizedBox(width: 8),
-          // Plan badge — fixed width prevents squeeze
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
             decoration: BoxDecoration(
@@ -331,7 +327,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Currency picker ───────────────────────────────────────────────────────
   void _showCurrencyPicker(
     BuildContext context,
     bool isDark,
@@ -393,7 +388,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Clear data dialog ─────────────────────────────────────────────────────
   void _showClearDialog(
     BuildContext context,
     bool isDark,
@@ -439,7 +433,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Sign out confirm ──────────────────────────────────────────────────────
   void _confirmSignOut(
     BuildContext context,
     bool isDark,
@@ -495,7 +488,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  // ── Slide page transition ─────────────────────────────────────────────────
   PageRouteBuilder<T> _slideRoute<T>(Widget page) {
     return PageRouteBuilder<T>(
       pageBuilder: (_, a1, a2) => page,
@@ -513,7 +505,6 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
 }
 
-// ── Helpers ────────────────────────────────────────────────────────────────────
 class _SectionLabel extends StatelessWidget {
   final String text;
   final Color color;
