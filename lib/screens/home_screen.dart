@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:async/async.dart';
 import 'package:intl/intl.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
@@ -82,15 +83,16 @@ class _HomeScreenState extends State<HomeScreen>
                 pageBuilder: (_, a1, a2) => const AddExpenseScreen(),
                 transitionsBuilder: (_, a1, a2, child) {
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(
-                      CurvedAnimation(
-                        parent: a1,
-                        curve: Curves.easeOutCubic,
-                      ),
-                    ),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: a1,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   );
                 },

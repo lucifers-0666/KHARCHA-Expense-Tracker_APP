@@ -31,10 +31,8 @@ void callbackDispatcher() {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  await Workmanager().initialize(callbackDispatcher, isInDebugMode: false);
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  await Workmanager().initialize(callbackDispatcher);
   registerWeeklyDigest();
   SmartInsightsService().start();
   final prefs = await SharedPreferences.getInstance();
@@ -88,9 +86,8 @@ class KharchaApp extends StatelessWidget {
                   );
               }
             },
-            onUnknownRoute: (settings) => MaterialPageRoute(
-              builder: (_) => const _NotFoundScreen(),
-            ),
+            onUnknownRoute: (settings) =>
+                MaterialPageRoute(builder: (_) => const _NotFoundScreen()),
           );
         },
       ),
@@ -117,8 +114,11 @@ class _NotFoundScreen extends StatelessWidget {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(Icons.error_outline_rounded,
-                color: AppColors.primary, size: 48),
+            const Icon(
+              Icons.error_outline_rounded,
+              color: AppColors.primary,
+              size: 48,
+            ),
             const SizedBox(height: 16),
             const Text(
               'Page not found',
@@ -130,10 +130,12 @@ class _NotFoundScreen extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Navigator.pushNamedAndRemoveUntil(
-                context, '/', (r) => false),
-              child: const Text('Go Home',
-                  style: TextStyle(color: AppColors.primary)),
+              onPressed: () =>
+                  Navigator.pushNamedAndRemoveUntil(context, '/', (r) => false),
+              child: const Text(
+                'Go Home',
+                style: TextStyle(color: AppColors.primary),
+              ),
             ),
           ],
         ),
