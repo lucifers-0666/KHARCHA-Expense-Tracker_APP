@@ -4,6 +4,11 @@ import '../models/budget.dart';
 import '../models/expense.dart';
 import '../models/income.dart';
 import '../models/recurring_expense.dart';
+import '../models/savings_goal.dart';
+import '../models/wallet.dart';
+import '../models/subscription_model.dart';
+import '../models/emi.dart';
+import '../models/badge.dart';
 
 class FirestoreServices {
   static final FirestoreServices _instance = FirestoreServices._internal();
@@ -15,20 +20,30 @@ class FirestoreServices {
   FirestoreServices._internal();
 
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  // ==================== COLLECTION PATHS ====================
   static const String collectionPath = 'expenses';
   static const String budgetCollectionPath = 'budgets';
   static const String recurringCollectionPath = 'recurring_expenses';
   static const String incomeCollectionPath = 'income';
+  static const String savingsGoalsPath = 'savings_goals';
+  static const String payLaterPath = 'pay_later';
+  static const String walletPath = 'wallet';
+  static const String subscriptionsPath = 'subscriptions';
+  static const String emisPath = 'emis';
+  static const String badgesPath = 'badges';
 
+  // ==================== HELPERS ====================
   String _monthDocId(int year, int month) =>
       '$year-${month.toString().padLeft(2, '0')}';
 
   DateTime _startOfMonth(DateTime date) => DateTime(date.year, date.month, 1);
   DateTime _endOfMonth(DateTime date) =>
       DateTime(date.year, date.month + 1, 0, 23, 59, 59);
-
   DateTime _dateOnly(DateTime date) =>
       DateTime(date.year, date.month, date.day);
+
+  // ==================== EXPENSES ====================
 
   Stream<List<Expense>> getAllExpenses() {
     return _db
@@ -153,24 +168,22 @@ class FirestoreServices {
     await _db.collection(collectionPath).doc(id).delete();
   }
 
+  // ==================== BUDGETS ====================
+
   Stream<Budget?> getBudgetForMonth(int year, int month) {
     final docId = _monthDocId(year, month);
-    return _db.collection(budgetCollectionPath).doc(docId).snapshots().map((
-      doc,
-    ) {
-      if (!doc.exists) {
-        return null;
-      }
-      return Budget.fromFirestore(doc);
-    });
+    return _db.collection(budgetCollectionPath).doc(docId).snapshots().map(
+      (doc) {
+        if (!doc.exists) return null;
+        return Budget.fromFirestore(doc);
+      },
+    );
   }
 
   Future<Budget?> fetchBudgetForMonth(int year, int month) async {
     final docId = _monthDocId(year, month);
     final doc = await _db.collection(budgetCollectionPath).doc(docId).get();
-    if (!doc.exists) {
-      return null;
-    }
+    if (!doc.exists) return null;
     return Budget.fromFirestore(doc);
   }
 
@@ -181,6 +194,8 @@ class FirestoreServices {
         .doc(docId)
         .set(budget.copyWith(id: docId).toFirestore(), SetOptions(merge: true));
   }
+
+  // ==================== RECURRING EXPENSES ====================
 
   Stream<List<RecurringExpense>> getRecurringExpenses() {
     return _db
@@ -225,9 +240,10 @@ class FirestoreServices {
   }
 
   Future<void> updateRecurringStatus(String id, bool isActive) async {
-    await _db.collection(recurringCollectionPath).doc(id).update({
-      'isActive': isActive,
-    });
+    await _db
+        .collection(recurringCollectionPath)
+        .doc(id)
+        .update({'isActive': isActive});
   }
 
   DateTime _nextDateByFrequency(DateTime source, String frequency) {
@@ -280,7 +296,10 @@ class FirestoreServices {
       }
 
       if (createdAt != null || nextDue != _dateOnly(recurring.nextDueDate)) {
-        await _db.collection(recurringCollectionPath).doc(recurring.id).update({
+        await _db
+            .collection(recurringCollectionPath)
+            .doc(recurring.id)
+            .update({
           'nextDueDate': nextDue.toIso8601String(),
           'lastCreatedDate': createdAt?.toIso8601String(),
         });
@@ -299,11 +318,9 @@ class FirestoreServices {
     final dueSoon = <RecurringExpense>[];
     for (final doc in snapshot.docs) {
       final recurring = RecurringExpense.fromFirestore(doc.data(), doc.id);
-      final daysUntilDue = _dateOnly(
-        recurring.nextDueDate,
-      ).difference(runAt).inDays;
-      final alreadyRemindedToday =
-          recurring.lastReminderDate != null &&
+      final daysUntilDue =
+          _dateOnly(recurring.nextDueDate).difference(runAt).inDays;
+      final alreadyRemindedToday = recurring.lastReminderDate != null &&
           _dateOnly(recurring.lastReminderDate!).isAtSameMomentAs(runAt);
 
       if (daysUntilDue == 2 && !alreadyRemindedToday) {
@@ -320,7 +337,7 @@ class FirestoreServices {
     });
   }
 
-  // ==================== INCOME METHODS ====================
+  // ==================== INCOME ====================
 
   Stream<List<Income>> getAllIncome() {
     return _db
@@ -384,7 +401,6 @@ class FirestoreServices {
     await _db.collection(incomeCollectionPath).doc(id).delete();
   }
 
-  // Get net cash flow (income - expenses)
   Stream<double> getNetCashFlow(DateTime month) {
     return getTotalIncomeByMonth(month).asyncMap((totalIncome) async {
       final totalExpense = await getTotalExpensesByMonth(month).first;
@@ -392,7 +408,6 @@ class FirestoreServices {
     });
   }
 
-  // Get savings rate percentage
   Stream<double> getSavingsRate(DateTime month) {
     return getTotalIncomeByMonth(month).asyncMap((totalIncome) async {
       if (totalIncome <= 0) return 0.0;
@@ -400,5 +415,210 @@ class FirestoreServices {
       final savings = totalIncome - totalExpense;
       return (savings / totalIncome) * 100;
     });
+  }
+
+  // ==================== SAVINGS GOALS ====================
+
+  Stream<List<SavingsGoal>> getSavingsGoals() {
+    return _db
+        .collection(savingsGoalsPath)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => SavingsGoal.fromFirestore(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> addSavingsGoal(SavingsGoal goal) async {
+    final ref = _db.collection(savingsGoalsPath).doc();
+    await ref.set(goal.copyWith(id: ref.id).toFirestore());
+  }
+
+  Future<void> updateSavingsGoal(SavingsGoal goal) async {
+    await _db
+        .collection(savingsGoalsPath)
+        .doc(goal.id)
+        .update(goal.toFirestore());
+  }
+
+  Future<void> deleteSavingsGoal(String id) async {
+    await _db.collection(savingsGoalsPath).doc(id).delete();
+  }
+
+  Future<void> addToSavingsGoal(String id, double amount) async {
+    await _db.collection(savingsGoalsPath).doc(id).update({
+      'savedAmount': FieldValue.increment(amount),
+    });
+  }
+
+  // ==================== PAY LATER ====================
+
+  Stream<List<Map<String, dynamic>>> getPayLaterEntries() {
+    return _db
+        .collection(payLaterPath)
+        .orderBy('dueDate')
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => {...doc.data(), 'id': doc.id})
+              .toList(),
+        );
+  }
+
+  Future<void> addPayLaterEntry(Map<String, dynamic> data) async {
+    await _db.collection(payLaterPath).add(data);
+  }
+
+  Future<void> markPayLaterPaid(String id) async {
+    await _db.collection(payLaterPath).doc(id).update({'isPaid': true});
+  }
+
+  Future<void> deletePayLaterEntry(String id) async {
+    await _db.collection(payLaterPath).doc(id).delete();
+  }
+
+  Future<void> updatePayLaterEntry(
+      String id, Map<String, dynamic> data) async {
+    await _db.collection(payLaterPath).doc(id).update(data);
+  }
+
+  // ==================== WALLET ====================
+
+  Stream<Wallet?> getWallet() {
+    return _db
+        .collection(walletPath)
+        .limit(1)
+        .snapshots()
+        .map((snap) {
+      if (snap.docs.isEmpty) return null;
+      final doc = snap.docs.first;
+      return Wallet.fromFirestore(doc.data(), doc.id);
+    });
+  }
+
+  Future<void> saveWallet(Wallet wallet) async {
+    if (wallet.id.isEmpty) {
+      final ref = _db.collection(walletPath).doc();
+      await ref.set(wallet.copyWith(id: ref.id).toFirestore());
+    } else {
+      await _db
+          .collection(walletPath)
+          .doc(wallet.id)
+          .set(wallet.toFirestore(), SetOptions(merge: true));
+    }
+  }
+
+  Future<void> updateWalletBalance(String id, double newBalance) async {
+    await _db.collection(walletPath).doc(id).update({'balance': newBalance});
+  }
+
+  // ==================== SUBSCRIPTIONS ====================
+
+  Stream<List<SubscriptionModel>> getSubscriptions() {
+    return _db
+        .collection(subscriptionsPath)
+        .orderBy('nextBillingDate')
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map(
+                  (doc) => SubscriptionModel.fromFirestore(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> addSubscription(SubscriptionModel sub) async {
+    final ref = _db.collection(subscriptionsPath).doc();
+    await ref.set(sub.copyWith(id: ref.id).toFirestore());
+  }
+
+  Future<void> updateSubscription(SubscriptionModel sub) async {
+    await _db
+        .collection(subscriptionsPath)
+        .doc(sub.id)
+        .update(sub.toFirestore());
+  }
+
+  Future<void> deleteSubscription(String id) async {
+    await _db.collection(subscriptionsPath).doc(id).delete();
+  }
+
+  Future<void> toggleSubscriptionActive(String id, bool isActive) async {
+    await _db
+        .collection(subscriptionsPath)
+        .doc(id)
+        .update({'isActive': isActive});
+  }
+
+  // ==================== EMI / LOANS ====================
+
+  Stream<List<Emi>> getEmis() {
+    return _db
+        .collection(emisPath)
+        .orderBy('nextDueDate')
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => Emi.fromFirestore(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> addEmi(Emi emi) async {
+    final ref = _db.collection(emisPath).doc();
+    await ref.set(emi.copyWith(id: ref.id).toFirestore());
+  }
+
+  Future<void> updateEmi(Emi emi) async {
+    await _db.collection(emisPath).doc(emi.id).update(emi.toFirestore());
+  }
+
+  Future<void> deleteEmi(String id) async {
+    await _db.collection(emisPath).doc(id).delete();
+  }
+
+  Future<void> recordEmiPayment(String id) async {
+    final doc = await _db.collection(emisPath).doc(id).get();
+    if (!doc.exists) return;
+    final emi = Emi.fromFirestore(doc.data()!, id);
+    final newPaid = emi.paidMonths + 1;
+    // Advance next due date by one month
+    final next = DateTime(
+      emi.nextDueDate.month == 12
+          ? emi.nextDueDate.year + 1
+          : emi.nextDueDate.year,
+      emi.nextDueDate.month == 12 ? 1 : emi.nextDueDate.month + 1,
+      emi.nextDueDate.day,
+    );
+    await _db.collection(emisPath).doc(id).update({
+      'paidMonths': newPaid,
+      'nextDueDate': next.toIso8601String(),
+    });
+  }
+
+  // ==================== BADGES / ACHIEVEMENTS ====================
+
+  Stream<List<BadgeModel>> getBadges() {
+    return _db
+        .collection(badgesPath)
+        .orderBy('unlockedAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs
+              .map((doc) => BadgeModel.fromFirestore(doc.data(), doc.id))
+              .toList(),
+        );
+  }
+
+  Future<void> unlockBadge(BadgeModel badge) async {
+    final ref = _db.collection(badgesPath).doc(badge.id.isEmpty ? null : badge.id);
+    await ref.set(badge.toFirestore(), SetOptions(merge: true));
+  }
+
+  Future<bool> isBadgeUnlocked(String badgeId) async {
+    final doc = await _db.collection(badgesPath).doc(badgeId).get();
+    return doc.exists;
   }
 }
