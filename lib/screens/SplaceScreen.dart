@@ -2,8 +2,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../theme/app_theme.dart';
-import 'auth_screen.dart';
-import 'home_screen.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -14,52 +12,35 @@ class SplashScreen extends StatefulWidget {
 
 class _SplashScreenState extends State<SplashScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double> _fade;
-  late Animation<double> _scale;
-  late Animation<double> _slide;
+  late final AnimationController _ctrl;
+  late final Animation<double> _fade;
+  late final Animation<double> _scale;
 
   @override
   void initState() {
     super.initState();
     _ctrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1800),
+      duration: const Duration(milliseconds: 1200),
     );
-
-    _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.6, curve: Curves.easeOut),
-      ),
+    _fade = CurvedAnimation(parent: _ctrl, curve: Curves.easeIn);
+    _scale = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _ctrl, curve: Curves.easeOutBack),
     );
-
-    _scale = Tween<double>(begin: 0.8, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.0, 0.6, curve: Curves.elasticOut),
-      ),
-    );
-
-    _slide = Tween<double>(begin: 20, end: 0).animate(
-      CurvedAnimation(
-        parent: _ctrl,
-        curve: const Interval(0.4, 1.0, curve: Curves.easeOut),
-      ),
-    );
-
     _ctrl.forward();
+    _navigate();
+  }
 
-    Timer(const Duration(seconds: 3), () {
-      if (!mounted) return;
-      final user = FirebaseAuth.instance.currentUser;
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) =>
-              user != null ? const HomeScreen() : const AuthScreen(),
-        ),
-      );
-    });
+  Future<void> _navigate() async {
+    await Future.delayed(const Duration(seconds: 3));
+    if (!mounted) return;
+    final user = FirebaseAuth.instance.currentUser;
+    if (!mounted) return;
+    if (user != null) {
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (r) => false);
+    } else {
+      Navigator.pushNamedAndRemoveUntil(context, '/auth', (r) => false);
+    }
   }
 
   @override
@@ -73,104 +54,59 @@ class _SplashScreenState extends State<SplashScreen>
     return Scaffold(
       backgroundColor: AppColors.bg,
       body: Center(
-        child: AnimatedBuilder(
-          animation: _ctrl,
-          builder: (_, __) => Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              FadeTransition(
-                opacity: _fade,
-                child: ScaleTransition(
-                  scale: _scale,
-                  child: Container(
-                    width: 100,
-                    height: 100,
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primaryDark,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(28),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.4),
-                          blurRadius: 30,
-                          offset: const Offset(0, 12),
-                        ),
-                      ],
-                    ),
-                    child: const Icon(
-                      Icons.account_balance_wallet_rounded,
-                      color: Colors.white,
-                      size: 44,
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(22),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.25),
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              FadeTransition(
-                opacity: _fade,
-                child: Transform.translate(
-                  offset: Offset(0, _slide.value),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'KHARCHA',
-                        style: TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 32,
-                          fontWeight: FontWeight.w800,
-                          letterSpacing: 4,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        'Smart Expense Tracker',
-                        style: TextStyle(
-                          color: AppColors.textMuted.withValues(alpha: 0.8),
-                          fontSize: 14,
-                          fontWeight: FontWeight.w400,
-                          letterSpacing: 0.5,
-                        ),
-                      ),
-                    ],
+                  child: const Icon(
+                    Icons.account_balance_wallet_rounded,
+                    color: AppColors.primary,
+                    size: 38,
                   ),
                 ),
-              ),
-              const SizedBox(height: 60),
-              FadeTransition(
-                opacity: _fade,
-                child: Transform.translate(
-                  offset: Offset(0, _slide.value),
-                  child: Column(
-                    children: [
-                      SizedBox(
-                        width: 32,
-                        height: 32,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.5,
-                          valueColor: AlwaysStoppedAnimation(
-                            AppColors.primary.withValues(alpha: 0.7),
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 12),
-                      Text(
-                        'Loading...',
-                        style: TextStyle(
-                          color: AppColors.textFaint.withValues(alpha: 0.6),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 20),
+                const Text(
+                  'KHARCHA',
+                  style: TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: 3.0,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 6),
+                const Text(
+                  'Track every rupee',
+                  style: TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 13,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+                const SizedBox(height: 48),
+                SizedBox(
+                  width: 24,
+                  height: 24,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
