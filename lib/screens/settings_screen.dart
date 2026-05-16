@@ -3,10 +3,25 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:provider/provider.dart';
 import '../theme/app_theme.dart';
 import '../providers/theme_provider.dart';
+
+// Existing screens
 import 'emi_tracker_screen.dart';
 import 'export_reports_screen.dart';
 import 'sms_import_screen.dart';
 import 'auth_screen.dart';
+import 'budget_setup_screen.dart';
+import 'recurring_expenses_screen.dart';
+import 'groups_screen.dart';
+
+// Phase 3 screens
+import 'savings_goals_screen.dart';
+import 'wallet_screen.dart';
+import 'subscriptions_screen.dart';
+import 'financial_health_screen.dart';
+import 'ai_coach_screen.dart';
+import 'pay_later_screen.dart';
+import 'badges_screen.dart';
+import 'cashflow_forecast_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -76,6 +91,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 initial: initial,
               ),
               const SizedBox(height: AppSpacing.sectionGap),
+
+              // ── Preferences ──────────────────────────────────────────
               _SectionLabel('Preferences', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
@@ -125,6 +142,115 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
+
+              // ── Smart Finance (Phase 3) ───────────────────────────────
+              _SectionLabel('Smart Finance', textMuted),
+              const SizedBox(height: AppSpacing.sm),
+              _GroupCard(
+                isDark: isDark,
+                cardColor: cardColor,
+                borderColor: borderColor,
+                tiles: [
+                  _TapTile(
+                    icon: Icons.savings_outlined,
+                    label: 'Savings Goals',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const SavingsGoalsScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.account_balance_wallet_outlined,
+                    label: 'My Wallets',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const WalletScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.subscriptions_outlined,
+                    label: 'Subscriptions',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const SubscriptionsScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.favorite_outline_rounded,
+                    label: 'Financial Health',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const FinancialHealthScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.smart_toy_outlined,
+                    label: 'AI Coach',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const AiCoachScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.credit_card_outlined,
+                    label: 'Pay Later / Credit',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const PayLaterScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.emoji_events_outlined,
+                    label: 'Badges & Rewards',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const BadgesScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.waterfall_chart_outlined,
+                    label: 'Cashflow Forecast',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const CashflowForecastScreen()),
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+
+              // ── Data ─────────────────────────────────────────────────
               _SectionLabel('Data', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
@@ -141,6 +267,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () => Navigator.push(
                       context,
                       _slideRoute(const EmiTrackerScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.repeat_rounded,
+                    label: 'Recurring Expenses',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const RecurringExpensesScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.pie_chart_outline_rounded,
+                    label: 'Budget Setup',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const BudgetSetupScreen()),
+                    ),
+                  ),
+                  _Divider(isDark: isDark, borderColor: borderColor),
+                  _TapTile(
+                    icon: Icons.group_outlined,
+                    label: 'Groups & Split',
+                    isDark: isDark,
+                    textPrimary: textPrimary,
+                    textMuted: textMuted,
+                    onTap: () => Navigator.push(
+                      context,
+                      _slideRoute(const GroupsScreen()),
                     ),
                   ),
                   _Divider(isDark: isDark, borderColor: borderColor),
@@ -186,6 +348,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
+
+              // ── Account ───────────────────────────────────────────────
               _SectionLabel('Account', textMuted),
               const SizedBox(height: AppSpacing.sm),
               _GroupCard(
