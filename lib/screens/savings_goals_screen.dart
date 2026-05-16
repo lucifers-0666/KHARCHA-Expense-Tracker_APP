@@ -3,6 +3,8 @@ import 'package:intl/intl.dart';
 import '../models/savings_goal.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
+import '../widgets/premium_textfield.dart';
+import '../widgets/primary_button.dart';
 import '../widgets/kharcha_widgets.dart';
 
 class SavingsGoalsScreen extends StatefulWidget {
@@ -31,19 +33,31 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
         backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Savings Goals',
-          style: AppTextStyles.heading.copyWith(color: textPrimary, fontSize: 18),
+          style: AppTextStyles.heading.copyWith(
+            color: textPrimary,
+            fontSize: 18,
+          ),
         ),
         actions: [
           IconButton(
             icon: Icon(Icons.add_rounded, color: AppColors.primary),
-            onPressed: () => _showAddGoalSheet(context, isDark, card, border,
-                textPrimary, textMuted),
+            onPressed: () => _showAddGoalSheet(
+              context,
+              isDark,
+              card,
+              border,
+              textPrimary,
+              textMuted,
+            ),
           ),
         ],
       ),
@@ -52,8 +66,11 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.primary, strokeWidth: 2));
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
+            );
           }
           final goals = snap.data ?? [];
           if (goals.isEmpty) {
@@ -62,8 +79,14 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
               title: 'No savings goals yet',
               subtitle: 'Tap + to set your first goal',
               buttonLabel: 'Add Goal',
-              onButton: () => _showAddGoalSheet(context, isDark, card, border,
-                  textPrimary, textMuted),
+              onButton: () => _showAddGoalSheet(
+                context,
+                isDark,
+                card,
+                border,
+                textPrimary,
+                textMuted,
+              ),
             );
           }
           return ListView.separated(
@@ -95,12 +118,15 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: card,
-      shape: const RoundedRectangleBorder(
-          borderRadius: AppRadius.sheetRadius),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheetRadius),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => Padding(
           padding: EdgeInsets.fromLTRB(
-              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 20),
+            20,
+            20,
+            20,
+            MediaQuery.of(ctx).viewInsets.bottom + 20,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -116,28 +142,34 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
                   ),
                 ),
               ),
-              Text('New Savings Goal',
-                  style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700)),
+              Text(
+                'New Savings Goal',
+                style: TextStyle(
+                  color: textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
               const SizedBox(height: 16),
               PremiumTextField(
-                  controller: nameCtrl,
-                  label: 'Goal Name',
-                  hint: 'e.g. Emergency Fund'),
+                controller: nameCtrl,
+                label: 'Goal Name',
+                hint: 'e.g. Emergency Fund',
+              ),
               const SizedBox(height: 12),
               PremiumTextField(
-                  controller: amountCtrl,
-                  label: 'Current Saved (₹)',
-                  hint: '0',
-                  keyboardType: TextInputType.number),
+                controller: amountCtrl,
+                label: 'Current Saved (₹)',
+                hint: '0',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
               PremiumTextField(
-                  controller: targetCtrl,
-                  label: 'Target Amount (₹)',
-                  hint: '50000',
-                  keyboardType: TextInputType.number),
+                controller: targetCtrl,
+                label: 'Target Amount (₹)',
+                hint: '50000',
+                keyboardType: TextInputType.number,
+              ),
               const SizedBox(height: 12),
               GestureDetector(
                 onTap: () async {
@@ -151,17 +183,24 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 14),
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceOffsetFor(isDark),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
-                        color: AppColors.borderFor(isDark), width: 0.8),
+                      color: AppColors.borderFor(isDark),
+                      width: 0.8,
+                    ),
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.calendar_today_outlined,
-                          color: AppColors.primary, size: 18),
+                      const Icon(
+                        Icons.calendar_today_outlined,
+                        color: AppColors.primary,
+                        size: 18,
+                      ),
                       const SizedBox(width: 10),
                       Text(
                         'Deadline: ${DateFormat('d MMM yyyy').format(deadline)}',
@@ -181,13 +220,12 @@ class _SavingsGoalsScreenState extends State<SavingsGoalsScreen> {
                   if (name.isEmpty || target <= 0) return;
                   final goal = SavingsGoal(
                     id: '',
-                    name: name,
+                    title: name,
+                    type: GoalType.custom,
                     targetAmount: target,
                     savedAmount: saved,
-                    deadline: deadline,
+                    targetDate: deadline,
                     createdAt: DateTime.now(),
-                    color: AppColors.primary.value.toRadixString(16),
-                    icon: 'savings',
                   );
                   await _service.addSavingsGoal(goal);
                   if (ctx.mounted) Navigator.pop(ctx);
@@ -206,8 +244,11 @@ class _GoalCard extends StatelessWidget {
   final bool isDark;
   final NumberFormat fmt;
 
-  const _GoalCard(
-      {required this.goal, required this.isDark, required this.fmt});
+  const _GoalCard({
+    required this.goal,
+    required this.isDark,
+    required this.fmt,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -215,11 +256,11 @@ class _GoalCard extends StatelessWidget {
     final border = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
-    final progress =
-        goal.targetAmount > 0 ? goal.savedAmount / goal.targetAmount : 0.0;
+    final progress = goal.targetAmount > 0
+        ? goal.savedAmount / goal.targetAmount
+        : 0.0;
     final pct = (progress * 100).clamp(0, 100).toStringAsFixed(1);
-    final daysLeft =
-        goal.deadline.difference(DateTime.now()).inDays;
+    final daysLeft = goal.targetDate.difference(DateTime.now()).inDays;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -231,8 +272,10 @@ class _GoalCard extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                    color: AppColors.shadow, blurRadius: 8,
-                    offset: const Offset(0, 2)),
+                  color: AppColors.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
       ),
       child: Column(
@@ -247,25 +290,30 @@ class _GoalCard extends StatelessWidget {
                   color: AppColors.primary.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
-                child: const Icon(Icons.savings_outlined,
-                    color: AppColors.primary, size: 18),
+                child: const Icon(
+                  Icons.savings_outlined,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: Text(
-                  goal.name,
+                  goal.title,
                   style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600),
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
               Text(
                 '$pct%',
                 style: TextStyle(
-                    color: AppColors.primary,
-                    fontSize: 13,
-                    fontWeight: FontWeight.w700),
+                  color: AppColors.primary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -275,10 +323,10 @@ class _GoalCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: progress.clamp(0, 1).toDouble(),
               minHeight: 6,
-              backgroundColor:
-                  AppColors.primary.withValues(alpha: 0.12),
-              valueColor:
-                  const AlwaysStoppedAnimation<Color>(AppColors.primary),
+              backgroundColor: AppColors.primary.withValues(alpha: 0.12),
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                AppColors.primary,
+              ),
             ),
           ),
           const SizedBox(height: 8),
@@ -287,25 +335,26 @@ class _GoalCard extends StatelessWidget {
               Text(
                 '₹${fmt.format(goal.savedAmount.toInt())}',
                 style: TextStyle(
-                    color: AppColors.success,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600),
+                  color: AppColors.success,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
               Text(
                 ' / ₹${fmt.format(goal.targetAmount.toInt())}',
                 style: TextStyle(color: textMuted, fontSize: 12),
               ),
               const Spacer(),
-              Icon(Icons.schedule_rounded,
-                  color: textMuted, size: 12),
+              Icon(Icons.schedule_rounded, color: textMuted, size: 12),
               const SizedBox(width: 3),
               Text(
                 daysLeft >= 0
                     ? '$daysLeft days left'
                     : '${(-daysLeft)} days overdue',
                 style: TextStyle(
-                    color: daysLeft >= 0 ? textMuted : AppColors.danger,
-                    fontSize: 11),
+                  color: daysLeft >= 0 ? textMuted : AppColors.danger,
+                  fontSize: 11,
+                ),
               ),
             ],
           ),

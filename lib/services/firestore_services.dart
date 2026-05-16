@@ -1,5 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+import '../models/cashflow_forecast.dart';
+import '../models/coach_insight.dart';
+import '../models/badge.dart';
 import '../models/budget.dart';
 import '../models/expense.dart';
 import '../models/income.dart';
@@ -8,7 +11,6 @@ import '../models/savings_goal.dart';
 import '../models/wallet.dart';
 import '../models/subscription_model.dart';
 import '../models/emi.dart';
-import '../models/badge.dart';
 
 class FirestoreServices {
   static final FirestoreServices _instance = FirestoreServices._internal();
@@ -172,12 +174,12 @@ class FirestoreServices {
 
   Stream<Budget?> getBudgetForMonth(int year, int month) {
     final docId = _monthDocId(year, month);
-    return _db.collection(budgetCollectionPath).doc(docId).snapshots().map(
-      (doc) {
-        if (!doc.exists) return null;
-        return Budget.fromFirestore(doc);
-      },
-    );
+    return _db.collection(budgetCollectionPath).doc(docId).snapshots().map((
+      doc,
+    ) {
+      if (!doc.exists) return null;
+      return Budget.fromFirestore(doc);
+    });
   }
 
   Future<Budget?> fetchBudgetForMonth(int year, int month) async {
@@ -240,10 +242,9 @@ class FirestoreServices {
   }
 
   Future<void> updateRecurringStatus(String id, bool isActive) async {
-    await _db
-        .collection(recurringCollectionPath)
-        .doc(id)
-        .update({'isActive': isActive});
+    await _db.collection(recurringCollectionPath).doc(id).update({
+      'isActive': isActive,
+    });
   }
 
   DateTime _nextDateByFrequency(DateTime source, String frequency) {
@@ -296,10 +297,7 @@ class FirestoreServices {
       }
 
       if (createdAt != null || nextDue != _dateOnly(recurring.nextDueDate)) {
-        await _db
-            .collection(recurringCollectionPath)
-            .doc(recurring.id)
-            .update({
+        await _db.collection(recurringCollectionPath).doc(recurring.id).update({
           'nextDueDate': nextDue.toIso8601String(),
           'lastCreatedDate': createdAt?.toIso8601String(),
         });
@@ -318,9 +316,11 @@ class FirestoreServices {
     final dueSoon = <RecurringExpense>[];
     for (final doc in snapshot.docs) {
       final recurring = RecurringExpense.fromFirestore(doc.data(), doc.id);
-      final daysUntilDue =
-          _dateOnly(recurring.nextDueDate).difference(runAt).inDays;
-      final alreadyRemindedToday = recurring.lastReminderDate != null &&
+      final daysUntilDue = _dateOnly(
+        recurring.nextDueDate,
+      ).difference(runAt).inDays;
+      final alreadyRemindedToday =
+          recurring.lastReminderDate != null &&
           _dateOnly(recurring.lastReminderDate!).isAtSameMomentAs(runAt);
 
       if (daysUntilDue == 2 && !alreadyRemindedToday) {
@@ -425,15 +425,14 @@ class FirestoreServices {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map(
-          (snap) => snap.docs
-              .map((doc) => SavingsGoal.fromFirestore(doc.data(), doc.id))
-              .toList(),
+          (snap) =>
+              snap.docs.map((doc) => SavingsGoal.fromFirestore(doc)).toList(),
         );
   }
 
   Future<void> addSavingsGoal(SavingsGoal goal) async {
     final ref = _db.collection(savingsGoalsPath).doc();
-    await ref.set(goal.copyWith(id: ref.id).toFirestore());
+    await ref.set(goal.toFirestore());
   }
 
   Future<void> updateSavingsGoal(SavingsGoal goal) async {
@@ -461,9 +460,8 @@ class FirestoreServices {
         .orderBy('dueDate')
         .snapshots()
         .map(
-          (snap) => snap.docs
-              .map((doc) => {...doc.data(), 'id': doc.id})
-              .toList(),
+          (snap) =>
+              snap.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList(),
         );
   }
 
@@ -479,29 +477,43 @@ class FirestoreServices {
     await _db.collection(payLaterPath).doc(id).delete();
   }
 
-  Future<void> updatePayLaterEntry(
-      String id, Map<String, dynamic> data) async {
+  Future<void> updatePayLaterEntry(String id, Map<String, dynamic> data) async {
     await _db.collection(payLaterPath).doc(id).update(data);
   }
 
   // ==================== WALLET ====================
 
   Stream<Wallet?> getWallet() {
-    return _db
-        .collection(walletPath)
-        .limit(1)
-        .snapshots()
-        .map((snap) {
+    return _db.collection(walletPath).limit(1).snapshots().map((snap) {
       if (snap.docs.isEmpty) return null;
       final doc = snap.docs.first;
-      return Wallet.fromFirestore(doc.data(), doc.id);
+      return Wallet.fromFirestore(doc);
     });
+  }
+
+  Stream<List<Wallet>> getWallets() {
+    return _db
+        .collection(walletPath)
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map(
+          (snap) => snap.docs.map((doc) => Wallet.fromFirestore(doc)).toList(),
+        );
+  }
+
+  Future<void> addWallet(Wallet wallet) async {
+    final ref = _db.collection(walletPath).doc();
+    await ref.set(wallet.toFirestore());
+  }
+
+  Future<void> deleteWallet(String id) async {
+    await _db.collection(walletPath).doc(id).delete();
   }
 
   Future<void> saveWallet(Wallet wallet) async {
     if (wallet.id.isEmpty) {
       final ref = _db.collection(walletPath).doc();
-      await ref.set(wallet.copyWith(id: ref.id).toFirestore());
+      await ref.set(wallet.toFirestore());
     } else {
       await _db
           .collection(walletPath)
@@ -519,19 +531,18 @@ class FirestoreServices {
   Stream<List<SubscriptionModel>> getSubscriptions() {
     return _db
         .collection(subscriptionsPath)
-        .orderBy('nextBillingDate')
+        .orderBy('nextRenewal')
         .snapshots()
         .map(
           (snap) => snap.docs
-              .map(
-                  (doc) => SubscriptionModel.fromFirestore(doc.data(), doc.id))
+              .map((doc) => SubscriptionModel.fromFirestore(doc))
               .toList(),
         );
   }
 
   Future<void> addSubscription(SubscriptionModel sub) async {
     final ref = _db.collection(subscriptionsPath).doc();
-    await ref.set(sub.copyWith(id: ref.id).toFirestore());
+    await ref.set(sub.toFirestore());
   }
 
   Future<void> updateSubscription(SubscriptionModel sub) async {
@@ -546,10 +557,9 @@ class FirestoreServices {
   }
 
   Future<void> toggleSubscriptionActive(String id, bool isActive) async {
-    await _db
-        .collection(subscriptionsPath)
-        .doc(id)
-        .update({'isActive': isActive});
+    await _db.collection(subscriptionsPath).doc(id).update({
+      'isActive': isActive,
+    });
   }
 
   // ==================== EMI / LOANS ====================
@@ -568,7 +578,7 @@ class FirestoreServices {
 
   Future<void> addEmi(Emi emi) async {
     final ref = _db.collection(emisPath).doc();
-    await ref.set(emi.copyWith(id: ref.id).toFirestore());
+    await ref.set(emi.toFirestore());
   }
 
   Future<void> updateEmi(Emi emi) async {
@@ -600,25 +610,147 @@ class FirestoreServices {
 
   // ==================== BADGES / ACHIEVEMENTS ====================
 
-  Stream<List<BadgeModel>> getBadges() {
+  Stream<List<Badge>> getBadges() {
     return _db
         .collection(badgesPath)
-        .orderBy('unlockedAt', descending: true)
+        .orderBy('earnedAt', descending: true)
         .snapshots()
         .map(
           (snap) => snap.docs
-              .map((doc) => BadgeModel.fromFirestore(doc.data(), doc.id))
+              .map((doc) => Badge.fromMap({...doc.data(), 'id': doc.id}))
               .toList(),
         );
   }
 
-  Future<void> unlockBadge(BadgeModel badge) async {
-    final ref = _db.collection(badgesPath).doc(badge.id.isEmpty ? null : badge.id);
-    await ref.set(badge.toFirestore(), SetOptions(merge: true));
+  Future<void> unlockBadge(String badgeId, Badge badge) async {
+    await _db.collection(badgesPath).doc(badgeId).set(badge.toMap());
   }
 
   Future<bool> isBadgeUnlocked(String badgeId) async {
     final doc = await _db.collection(badgesPath).doc(badgeId).get();
     return doc.exists;
+  }
+
+  // ==================== CASHFLOW FORECAST ====================
+
+  Stream<List<CashflowForecast>> getCashflowForecasts() async* {
+    final now = DateTime.now();
+    final currentBalance = await getWallet().first.then(
+      (wallet) => wallet?.balance ?? 0.0,
+    );
+    final currentIncome = await getTotalIncomeByMonth(now).first;
+    final currentExpense = await getTotalExpensesByMonth(now).first;
+    final monthlyNet = currentIncome - currentExpense;
+
+    final forecasts = <CashflowForecast>[];
+    for (var i = 0; i < 6; i++) {
+      final month = DateTime(now.year, now.month + i, 1);
+      final projectedMonthEnd = currentBalance + (monthlyNet * (i + 1));
+      final dailyStep = monthlyNet / 30.0;
+      final days = <DailyForecast>[];
+      var running = currentBalance + (monthlyNet * i);
+
+      for (var d = 0; d < 30; d++) {
+        final date = DateTime(month.year, month.month, d + 1);
+        running += dailyStep;
+        days.add(DailyForecast(date: date, projectedBalance: running));
+      }
+
+      final lowBalanceThreshold = 5000.0;
+      DailyForecast? lowBalanceDay;
+      for (final day in days) {
+        if (day.projectedBalance < lowBalanceThreshold) {
+          lowBalanceDay = day;
+          break;
+        }
+      }
+
+      final warnings = <String>[];
+      if (monthlyNet < 0) {
+        warnings.add('Spending is higher than income this month.');
+      }
+      if (projectedMonthEnd < 0) {
+        warnings.add('Projected balance turns negative by month end.');
+      }
+
+      forecasts.add(
+        CashflowForecast(
+          days: days,
+          currentBalance: currentBalance,
+          projectedMonthEnd: projectedMonthEnd,
+          lowBalanceDate: lowBalanceDay?.date,
+          lowBalanceThreshold: lowBalanceThreshold,
+          warnings: warnings,
+        ),
+      );
+    }
+
+    yield forecasts;
+  }
+
+  // ==================== AI COACH ====================
+
+  Stream<List<CoachInsight>> getCoachInsights() async* {
+    final now = DateTime.now();
+    final income = await getTotalIncomeByMonth(now).first;
+    final expense = await getTotalExpensesByMonth(now).first;
+    final savings = income - expense;
+    final savingsRate = income <= 0 ? 0.0 : (savings / income) * 100;
+
+    final insights = <CoachInsight>[];
+
+    if (income <= 0) {
+      insights.add(
+        CoachInsight.from(
+          id: 'coach-income-setup',
+          message:
+              'Add your income sources so KHARCHA can calculate savings more accurately.',
+          priority: InsightPriority.medium,
+          category: InsightCategory.cashflow,
+          emoji: '💡',
+          actionLabel: 'Add income',
+        ),
+      );
+    } else if (savingsRate < 10) {
+      insights.add(
+        CoachInsight.from(
+          id: 'coach-savings-rate',
+          message:
+              'Your savings rate is below 10%. Try trimming one recurring expense.',
+          priority: InsightPriority.high,
+          category: InsightCategory.savings,
+          emoji: '⚠️',
+          actionLabel: 'Review expenses',
+        ),
+      );
+    } else {
+      insights.add(
+        CoachInsight.from(
+          id: 'coach-savings-win',
+          message:
+              'Nice work — you are keeping a healthy savings buffer this month.',
+          priority: InsightPriority.low,
+          category: InsightCategory.savings,
+          emoji: '🎉',
+          actionLabel: 'Keep it up',
+        ),
+      );
+    }
+
+    if (expense > income) {
+      insights.add(
+        CoachInsight.from(
+          id: 'coach-overbudget',
+          message:
+              'Spending has crossed income. Consider pausing optional purchases.',
+          priority: InsightPriority.high,
+          category: InsightCategory.budget,
+          emoji: '🧯',
+          actionLabel: 'Tighten budget',
+        ),
+      );
+    }
+
+    yield insights;
   }
 }

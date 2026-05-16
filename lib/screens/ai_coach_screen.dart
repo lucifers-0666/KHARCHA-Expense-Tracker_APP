@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import '../models/coach_insight.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
@@ -12,7 +13,6 @@ class AiCoachScreen extends StatelessWidget {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = AppColors.bgFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
-    final textMuted = AppColors.textMutedFor(isDark);
     final service = FirestoreServices();
 
     return Scaffold(
@@ -21,21 +21,31 @@ class AiCoachScreen extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('AI Finance Coach',
-            style: AppTextStyles.heading
-                .copyWith(color: textPrimary, fontSize: 18)),
+        title: Text(
+          'AI Finance Coach',
+          style: AppTextStyles.heading.copyWith(
+            color: textPrimary,
+            fontSize: 18,
+          ),
+        ),
       ),
       body: StreamBuilder<List<CoachInsight>>(
         stream: service.getCoachInsights(),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.primary, strokeWidth: 2));
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
+            );
           }
           final insights = snap.data ?? [];
           if (insights.isEmpty) {
@@ -52,8 +62,8 @@ class AiCoachScreen extends StatelessWidget {
             padding: const EdgeInsets.all(20),
             itemCount: insights.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
-            itemBuilder: (_, i) => _InsightCard(
-                insight: insights[i], isDark: isDark),
+            itemBuilder: (_, i) =>
+                _InsightCard(insight: insights[i], isDark: isDark),
           );
         },
       ),
@@ -68,28 +78,34 @@ class _InsightCard extends StatelessWidget {
   const _InsightCard({required this.insight, required this.isDark});
 
   Color get _typeColor {
-    switch (insight.type) {
-      case 'warning':
+    switch (insight.priority) {
+      case InsightPriority.high:
         return AppColors.danger;
-      case 'tip':
-        return AppColors.primary;
-      case 'achievement':
-        return AppColors.success;
-      default:
+      case InsightPriority.medium:
         return AppColors.warning;
+      case InsightPriority.low:
+        return AppColors.success;
     }
   }
 
   IconData get _typeIcon {
-    switch (insight.type) {
-      case 'warning':
-        return Icons.warning_amber_rounded;
-      case 'tip':
+    switch (insight.category) {
+      case InsightCategory.budget:
+        return Icons.account_balance_wallet_outlined;
+      case InsightCategory.savings:
+        return Icons.savings_outlined;
+      case InsightCategory.emi:
+        return Icons.receipt_long_outlined;
+      case InsightCategory.subscription:
+        return Icons.subscriptions_outlined;
+      case InsightCategory.goal:
+        return Icons.flag_outlined;
+      case InsightCategory.cashflow:
+        return Icons.show_chart_rounded;
+      case InsightCategory.weekly:
+        return Icons.calendar_month_outlined;
+      case InsightCategory.spending:
         return Icons.lightbulb_outline_rounded;
-      case 'achievement':
-        return Icons.emoji_events_outlined;
-      default:
-        return Icons.info_outline_rounded;
     }
   }
 
@@ -111,9 +127,10 @@ class _InsightCard extends StatelessWidget {
             ? []
             : [
                 BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2)),
+                  color: AppColors.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
       ),
       child: Row(
@@ -133,17 +150,30 @@ class _InsightCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
-                  insight.title,
-                  style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600),
-                ),
-                const SizedBox(height: 4),
+                Text(insight.emoji, style: const TextStyle(fontSize: 18)),
+                const SizedBox(height: 8),
                 Text(
                   insight.message,
-                  style: TextStyle(color: textMuted, fontSize: 13, height: 1.4),
+                  style: TextStyle(
+                    color: textPrimary,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                if (insight.actionLabel != null)
+                  Text(
+                    insight.actionLabel!,
+                    style: TextStyle(
+                      color: c,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                const SizedBox(height: 4),
+                Text(
+                  '${insight.category.name.toUpperCase()} • ${DateFormat('d MMM').format(insight.generatedAt)}',
+                  style: TextStyle(color: textMuted, fontSize: 11, height: 1.3),
                 ),
               ],
             ),

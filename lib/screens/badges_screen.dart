@@ -20,21 +20,31 @@ class BadgesScreen extends StatelessWidget {
         backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new_rounded,
-              color: textPrimary, size: 20),
+          icon: Icon(
+            Icons.arrow_back_ios_new_rounded,
+            color: textPrimary,
+            size: 20,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Badges & Achievements',
-            style: AppTextStyles.heading
-                .copyWith(color: textPrimary, fontSize: 18)),
+        title: Text(
+          'Badges & Achievements',
+          style: AppTextStyles.heading.copyWith(
+            color: textPrimary,
+            fontSize: 18,
+          ),
+        ),
       ),
       body: StreamBuilder<List<kbadge.Badge>>(
         stream: service.getBadges(),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
-                child: CircularProgressIndicator(
-                    color: AppColors.primary, strokeWidth: 2));
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2,
+              ),
+            );
           }
           final badges = snap.data ?? [];
           if (badges.isEmpty) {
@@ -48,16 +58,14 @@ class BadgesScreen extends StatelessWidget {
           }
           return GridView.builder(
             padding: const EdgeInsets.all(20),
-            gridDelegate:
-                const SliverGridDelegateWithFixedCrossAxisCount(
+            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 2,
               crossAxisSpacing: 12,
               mainAxisSpacing: 12,
               childAspectRatio: 1.1,
             ),
             itemCount: badges.length,
-            itemBuilder: (_, i) =>
-                _BadgeCard(badge: badges[i], isDark: isDark),
+            itemBuilder: (_, i) => _BadgeCard(badge: badges[i], isDark: isDark),
           );
         },
       ),
@@ -77,8 +85,8 @@ class _BadgeCard extends StatelessWidget {
     final border = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
-    final earned = badge.earnedAt != null;
-    final color = earned ? AppColors.gold : AppColors.textFaintFor(isDark);
+    final color = AppColors.gold;
+    final highlighted = badge.isNew;
 
     return Container(
       padding: const EdgeInsets.all(16),
@@ -86,17 +94,17 @@ class _BadgeCard extends StatelessWidget {
         color: card,
         borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(
-            color: earned
-                ? AppColors.gold.withValues(alpha: 0.40)
-                : border,
-            width: 0.8),
+          color: highlighted ? AppColors.gold.withValues(alpha: 0.40) : border,
+          width: 0.8,
+        ),
         boxShadow: isDark
             ? []
             : [
                 BoxShadow(
-                    color: AppColors.shadow,
-                    blurRadius: 8,
-                    offset: const Offset(0, 2)),
+                  color: AppColors.shadow,
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
               ],
       ),
       child: Column(
@@ -113,21 +121,20 @@ class _BadgeCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            badge.title,
+            badge.type.title,
             style: TextStyle(
-                color: textPrimary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600),
+              color: textPrimary,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
             textAlign: TextAlign.center,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const SizedBox(height: 3),
           Text(
-            earned ? 'Earned!' : badge.description,
-            style: TextStyle(
-                color: earned ? AppColors.gold : textMuted,
-                fontSize: 11),
+            badge.type.description,
+            style: TextStyle(color: textMuted, fontSize: 11),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
