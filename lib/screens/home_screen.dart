@@ -25,7 +25,7 @@ class _HomeScreenState extends State<HomeScreen>
 
   late final List<Widget> _pages;
   late final AnimationController _fabCtrl;
-  late final Animation<double>   _fabScale;
+  late final Animation<double> _fabScale;
 
   @override
   void initState() {
@@ -63,10 +63,10 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final isDark  = Theme.of(context).brightness == Brightness.dark;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final bgColor = isDark ? AppColors.bgDark : AppColors.bg;
-    final navBg   = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final navBdr  = isDark ? AppColors.borderDark : AppColors.border;
+    final navBg = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final navBdr = isDark ? AppColors.borderDark : AppColors.border;
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -81,13 +81,16 @@ class _HomeScreenState extends State<HomeScreen>
                 pageBuilder: (_, a1, a2) => const AddExpenseScreen(),
                 transitionsBuilder: (_, a1, a2, child) {
                   return SlideTransition(
-                    position: Tween<Offset>(
-                      begin: const Offset(0, 1),
-                      end: Offset.zero,
-                    ).animate(CurvedAnimation(
-                      parent: a1,
-                      curve: Curves.easeOutCubic,
-                    )),
+                    position:
+                        Tween<Offset>(
+                          begin: const Offset(0, 1),
+                          end: Offset.zero,
+                        ).animate(
+                          CurvedAnimation(
+                            parent: a1,
+                            curve: Curves.easeOutCubic,
+                          ),
+                        ),
                     child: child,
                   );
                 },
@@ -177,16 +180,18 @@ class _DashboardPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark       = Theme.of(context).brightness == Brightness.dark;
-    final user         = FirebaseAuth.instance.currentUser;
-    final bgColor      = isDark ? AppColors.bgDark : AppColors.bg;
-    final cardColor    = isDark ? AppColors.surfaceDark : AppColors.surface;
-    final borderColor  = isDark ? AppColors.borderDark : AppColors.border;
-    final textPrimary  = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
-    final textMuted    = isDark ? AppColors.textMutedDark : AppColors.textMuted;
-    final textFaint    = isDark ? AppColors.textFaintDark : AppColors.textFaint;
-    final monthFmt     = DateFormat('MMMM yyyy').format(month);
-    final fmt          = NumberFormat('#,##,###');
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final user = FirebaseAuth.instance.currentUser;
+    final bgColor = isDark ? AppColors.bgDark : AppColors.bg;
+    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surface;
+    final borderColor = isDark ? AppColors.borderDark : AppColors.border;
+    final textPrimary = isDark
+        ? AppColors.textPrimaryDark
+        : AppColors.textPrimary;
+    final textMuted = isDark ? AppColors.textMutedDark : AppColors.textMuted;
+    final textFaint = isDark ? AppColors.textFaintDark : AppColors.textFaint;
+    final monthFmt = DateFormat('MMMM yyyy').format(month);
+    final fmt = NumberFormat('#,##,###');
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -232,7 +237,7 @@ class _DashboardPage extends StatelessWidget {
                       onTap: () => Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => const SearchFilterScreen(),
+                          builder: (_) => const SearchAndFilterScreen(),
                         ),
                       ),
                     ),
@@ -245,35 +250,28 @@ class _DashboardPage extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
-                child: StreamBuilder<List<dynamic>>(
-                  stream: service.getAllExpenses().map((e) => e),
-                  builder: (ctx, _) {
+                child: StreamBuilder<double>(
+                  stream: service.getTotalExpensesByMonth(month),
+                  builder: (ctx2, expSnap) {
                     return StreamBuilder<double>(
-                      stream: service.getTotalExpenses(),
-                      builder: (ctx2, expSnap) {
-                        return StreamBuilder<double>(
-                          stream: service.getTotalIncome != null
-                              ? service.getTotalIncome!()
-                              : Stream.value(0.0),
-                          builder: (ctx3, incSnap) {
-                            final exp     = expSnap.data ?? 0.0;
-                            final inc     = incSnap.data ?? 0.0;
-                            final savings = inc - exp;
+                      stream: service.getTotalIncomeByMonth(month),
+                      builder: (ctx3, incSnap) {
+                        final exp = expSnap.data ?? 0.0;
+                        final inc = incSnap.data ?? 0.0;
+                        final savings = inc - exp;
 
-                            return _BalanceCard(
-                              isDark: isDark,
-                              cardColor: cardColor,
-                              borderColor: borderColor,
-                              textPrimary: textPrimary,
-                              textMuted: textMuted,
-                              textFaint: textFaint,
-                              monthFmt: monthFmt,
-                              savings: savings,
-                              inc: inc,
-                              exp: exp,
-                              fmt: fmt,
-                            );
-                          },
+                        return _BalanceCard(
+                          isDark: isDark,
+                          cardColor: cardColor,
+                          borderColor: borderColor,
+                          textPrimary: textPrimary,
+                          textMuted: textMuted,
+                          textFaint: textFaint,
+                          monthFmt: monthFmt,
+                          savings: savings,
+                          inc: inc,
+                          exp: exp,
+                          fmt: fmt,
                         );
                       },
                     );
@@ -289,7 +287,7 @@ class _DashboardPage extends StatelessWidget {
                 child: StreamBuilder<Map<String, double>>(
                   stream: service.getCategoryTotalsByMonth(month),
                   builder: (ctx, snap) {
-                    final cats   = snap.data ?? {};
+                    final cats = snap.data ?? {};
                     final topCat = cats.isNotEmpty
                         ? cats.entries
                               .reduce((a, b) => a.value > b.value ? a : b)
@@ -302,7 +300,8 @@ class _DashboardPage extends StatelessWidget {
                             title: 'Top Category',
                             amount: topCat,
                             amountColor: AppColors.primary,
-                            icon: AppColors.categoryIcons[topCat] ??
+                            icon:
+                                AppColors.categoryIcons[topCat] ??
                                 Icons.category_rounded,
                             iconBg: isDark
                                 ? AppColors.primary.withValues(alpha: 0.15)
@@ -376,25 +375,22 @@ class _DashboardPage extends StatelessWidget {
                     );
                   }
                   return SliverList(
-                    delegate: SliverChildBuilderDelegate(
-                      (ctx, i) {
-                        final e = expenses[i];
-                        return _AnimatedTile(
-                          index: i,
-                          child: TransactionTile(
-                            title: e.title,
-                            category: e.category,
-                            amount: e.amount.toStringAsFixed(0),
-                            isExpense: true,
-                            date: _fmtDate(e.date),
-                            onDelete: () async {
-                              await service.deleteExpense(e.id);
-                            },
-                          ),
-                        );
-                      },
-                      childCount: expenses.length,
-                    ),
+                    delegate: SliverChildBuilderDelegate((ctx, i) {
+                      final e = expenses[i];
+                      return _AnimatedTile(
+                        index: i,
+                        child: TransactionTile(
+                          title: e.title,
+                          category: e.category,
+                          amount: e.amount.toStringAsFixed(0),
+                          isExpense: true,
+                          date: _fmtDate(e.date),
+                          onDelete: () async {
+                            await service.deleteExpense(e.id);
+                          },
+                        ),
+                      );
+                    }, childCount: expenses.length),
                   );
                 },
               ),
@@ -489,10 +485,7 @@ class _BalanceCard extends StatelessWidget {
           ),
 
           const SizedBox(height: 4),
-          Text(
-            'Net Balance',
-            style: TextStyle(color: textFaint, fontSize: 12),
-          ),
+          Text('Net Balance', style: TextStyle(color: textFaint, fontSize: 12)),
           const SizedBox(height: 6),
 
           // Big balance amount
@@ -586,10 +579,7 @@ class _MiniStat extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: TextStyle(color: textFaint, fontSize: 11),
-              ),
+              Text(label, style: TextStyle(color: textFaint, fontSize: 11)),
               Text(
                 value,
                 style: TextStyle(
@@ -622,10 +612,7 @@ class _AnimatedTile extends StatelessWidget {
       curve: Curves.easeOutCubic,
       builder: (_, v, c) => Opacity(
         opacity: v,
-        child: Transform.translate(
-          offset: Offset(0, (1 - v) * 12),
-          child: c,
-        ),
+        child: Transform.translate(offset: Offset(0, (1 - v) * 12), child: c),
       ),
       child: child,
     );
@@ -681,8 +668,12 @@ class _ShimmerTileState extends State<_ShimmerTile>
 
   @override
   Widget build(BuildContext context) {
-    final base  = widget.isDark ? AppColors.surfaceDark : AppColors.surfaceOffset;
-    final shine = widget.isDark ? AppColors.surface2Dark : AppColors.bgSecondary;
+    final base = widget.isDark
+        ? AppColors.surfaceDark
+        : AppColors.surfaceOffset;
+    final shine = widget.isDark
+        ? AppColors.surface2Dark
+        : AppColors.bgSecondary;
     return AnimatedBuilder(
       animation: _anim,
       builder: (_, __) => Container(
@@ -775,8 +766,10 @@ class _TappableIconButtonState extends State<_TappableIconButton>
       vsync: this,
       duration: const Duration(milliseconds: 100),
     );
-    _scale = Tween<double>(begin: 1.0, end: 0.88)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
+    _scale = Tween<double>(
+      begin: 1.0,
+      end: 0.88,
+    ).animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOut));
   }
 
   @override
