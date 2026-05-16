@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import '../theme/app_theme.dart';
 import '../widgets/premium_textfield.dart';
-import '../widgets/premium_button.dart';
 
 class AuthScreen extends StatefulWidget {
   const AuthScreen({super.key});
@@ -51,7 +50,7 @@ class _AuthScreenState extends State<AuthScreen>
     setState(() => _loading = true);
     try {
       if (_isLogin) {
-        await _auth.signInWithEmailPassword(
+        await _auth.signInWithEmailAndPassword(
           _emailCtrl.text.trim(),
           _passCtrl.text.trim(),
         );
@@ -99,7 +98,6 @@ class _AuthScreenState extends State<AuthScreen>
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = AppColors.bgFor(isDark);
-    final surface = AppColors.surfaceFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
 
@@ -153,41 +151,35 @@ class _AuthScreenState extends State<AuthScreen>
                     _isLogin
                         ? 'Sign in to track your expenses'
                         : 'Start tracking your spending today',
-                    style: TextStyle(
-                      color: textMuted,
-                      fontSize: 14,
-                    ),
+                    style: TextStyle(color: textMuted, fontSize: 14),
                   ),
 
                   const SizedBox(height: 36),
 
                   // Name field (register only)
-                  if (!_isLogin) ...
-                    [
-                      PremiumTextField(
-                        controller: _nameCtrl,
-                        label: 'Name',
-                        hint: 'Your full name',
-                        prefixIcon: Icons.person_outline_rounded,
-                        isDark: isDark,
-                        validator: (v) {
-                          if (v == null || v.trim().isEmpty) {
-                            return 'Please enter your name';
-                          }
-                          return null;
-                        },
-                      ),
-                      const SizedBox(height: 14),
-                    ],
+                  if (!_isLogin) ...[
+                    PremiumTextField(
+                      controller: _nameCtrl,
+                      label: 'Name',
+                      hint: 'Your full name',
+                      prefix: Icon(Icons.person_outline_rounded),
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Please enter your name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 14),
+                  ],
 
                   // Email
                   PremiumTextField(
                     controller: _emailCtrl,
                     label: 'Email',
                     hint: 'you@example.com',
-                    prefixIcon: Icons.email_outlined,
+                    prefix: Icon(Icons.email_outlined),
                     keyboardType: TextInputType.emailAddress,
-                    isDark: isDark,
                     validator: (v) {
                       if (v == null || v.trim().isEmpty) {
                         return 'Please enter your email';
@@ -203,10 +195,9 @@ class _AuthScreenState extends State<AuthScreen>
                     controller: _passCtrl,
                     label: 'Password',
                     hint: 'Minimum 6 characters',
-                    prefixIcon: Icons.lock_outline_rounded,
+                    prefix: Icon(Icons.lock_outline_rounded),
                     obscureText: _obscure,
-                    isDark: isDark,
-                    suffixIcon: IconButton(
+                    suffix: IconButton(
                       icon: Icon(
                         _obscure
                             ? Icons.visibility_off_outlined
