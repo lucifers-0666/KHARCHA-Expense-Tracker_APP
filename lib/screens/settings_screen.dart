@@ -32,21 +32,23 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final themeProvider = Provider.of<ThemeProvider>(context);
 
     // ── Use AppColors helper methods (single source of truth) ──────────
-    final bgColor     = AppColors.bgFor(isDark);
-    final cardColor   = AppColors.surfaceFor(isDark);
+    final bgColor = AppColors.bgFor(isDark);
+    final cardColor = AppColors.surfaceFor(isDark);
     final borderColor = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
-    final textMuted   = AppColors.textMutedFor(isDark);
-    final textFaint   = AppColors.textFaintFor(isDark);
+    final textMuted = AppColors.textMutedFor(isDark);
+    final textFaint = AppColors.textFaintFor(isDark);
     // accentSoft: light mode has dedicated token; dark mode uses surfaceOffset
-    final accentSoft  = isDark ? AppColors.surfaceOffsetDark : AppColors.accentSoft;
+    final accentSoft = isDark
+        ? AppColors.surfaceOffsetDark
+        : AppColors.accentSoft;
 
     final user = FirebaseAuth.instance.currentUser;
     final initial = user?.displayName?.isNotEmpty == true
         ? user!.displayName![0].toUpperCase()
         : user?.email?.isNotEmpty == true
-            ? user!.email![0].toUpperCase()
-            : 'K';
+        ? user!.email![0].toUpperCase()
+        : 'K';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -72,10 +74,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 decoration: BoxDecoration(
                   color: cardColor,
                   borderRadius: BorderRadius.circular(AppRadius.lg),
-                  border: Border.all(
-                    color: borderColor,
-                    width: 1,
-                  ),
+                  border: Border.all(color: borderColor, width: 1),
                   boxShadow: isDark
                       ? []
                       : [
@@ -127,10 +126,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           const SizedBox(height: 2),
                           Text(
                             user?.email ?? '',
-                            style: TextStyle(
-                              color: textMuted,
-                              fontSize: 13,
-                            ),
+                            style: TextStyle(color: textMuted, fontSize: 13),
                           ),
                         ],
                       ),
@@ -225,7 +221,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     onTap: () => Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => const SMSImportScreen(),
+                        builder: (_) => const SmsImportScreen(),
                       ),
                     ),
                   ),
@@ -263,10 +259,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Center(
                 child: Text(
                   'KHARCHA v1.0.0',
-                  style: TextStyle(
-                    color: textFaint,
-                    fontSize: 12,
-                  ),
+                  style: TextStyle(color: textFaint, fontSize: 12),
                 ),
               ),
               const SizedBox(height: AppSpacing.xl),
@@ -283,7 +276,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
       context: context,
       backgroundColor: Colors.transparent,
       builder: (ctx) {
-        final cardColor   = AppColors.surfaceFor(isDark);
+        final cardColor = AppColors.surfaceFor(isDark);
         final textPrimary = AppColors.textPrimaryFor(isDark);
         return Container(
           decoration: BoxDecoration(
@@ -314,33 +307,35 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: AppTextStyles.headline.copyWith(color: textPrimary),
               ),
               const SizedBox(height: AppSpacing.base),
-              ..._currencies.map((c) => ListTile(
-                    title: Text(
-                      c,
-                      style: TextStyle(
-                        color: _selectedCurrency == c
-                            ? AppColors.primary
-                            : textPrimary,
-                        fontWeight: _selectedCurrency == c
-                            ? FontWeight.w600
-                            : FontWeight.w400,
-                      ),
+              ..._currencies.map(
+                (c) => ListTile(
+                  title: Text(
+                    c,
+                    style: TextStyle(
+                      color: _selectedCurrency == c
+                          ? AppColors.primary
+                          : textPrimary,
+                      fontWeight: _selectedCurrency == c
+                          ? FontWeight.w600
+                          : FontWeight.w400,
                     ),
-                    trailing: _selectedCurrency == c
-                        ? const Icon(
-                            Icons.check_rounded,
-                            color: AppColors.primary,
-                            size: 18,
-                          )
-                        : null,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.sm),
-                    ),
-                    onTap: () {
-                      setState(() => _selectedCurrency = c);
-                      Navigator.pop(ctx);
-                    },
-                  )),
+                  ),
+                  trailing: _selectedCurrency == c
+                      ? const Icon(
+                          Icons.check_rounded,
+                          color: AppColors.primary,
+                          size: 18,
+                        )
+                      : null,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  onTap: () {
+                    setState(() => _selectedCurrency = c);
+                    Navigator.pop(ctx);
+                  },
+                ),
+              ),
               const SizedBox(height: AppSpacing.sm),
             ],
           ),
@@ -354,9 +349,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) {
-        final cardColor   = AppColors.surfaceFor(isDark);
+        final cardColor = AppColors.surfaceFor(isDark);
         final textPrimary = AppColors.textPrimaryFor(isDark);
-        final textMuted   = AppColors.textMutedFor(isDark);
+        final textMuted = AppColors.textMutedFor(isDark);
         return AlertDialog(
           backgroundColor: cardColor,
           shape: RoundedRectangleBorder(
@@ -419,9 +414,9 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
   // ── Clear All Data Dialog ────────────────────────────────────────────────
   void _showClearDialog(BuildContext context, bool isDark) {
-    final cardColor   = AppColors.surfaceFor(isDark);
+    final cardColor = AppColors.surfaceFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
-    final textMuted   = AppColors.textMutedFor(isDark);
+    final textMuted = AppColors.textMutedFor(isDark);
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -518,11 +513,7 @@ class _CardDivider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Divider(
-      height: 1,
-      indent: 56,
-      color: AppColors.borderFor(isDark),
-    );
+    return Divider(height: 1, indent: 56, color: AppColors.borderFor(isDark));
   }
 }
 
@@ -545,11 +536,7 @@ class _ToggleTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(
-        icon,
-        color: AppColors.textMutedFor(isDark),
-        size: 20,
-      ),
+      leading: Icon(icon, color: AppColors.textMutedFor(isDark), size: 20),
       title: Text(
         label,
         style: TextStyle(
@@ -561,13 +548,16 @@ class _ToggleTile extends StatelessWidget {
       trailing: Switch(
         value: value,
         onChanged: onChanged,
-        activeColor: Colors.white,
-        activeTrackColor: AppColors.primary,
-        inactiveThumbColor: AppColors.textMutedFor(isDark),
-        inactiveTrackColor: AppColors.borderFor(isDark),
+        thumbColor: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.selected)) return Colors.white;
+          return AppColors.textMutedFor(isDark);
+        }),
+        trackColor: WidgetStateProperty.resolveWith((s) {
+          if (s.contains(WidgetState.selected)) return AppColors.primary;
+          return AppColors.borderFor(isDark);
+        }),
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 2),
     );
   }
 }
@@ -626,8 +616,7 @@ class _TapTile extends StatelessWidget {
           ),
         ],
       ),
-      contentPadding:
-          const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
     );
   }
 }

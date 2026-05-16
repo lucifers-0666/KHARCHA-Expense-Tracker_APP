@@ -4,6 +4,7 @@ import '../models/expense.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
 import '../widgets/primary_button.dart';
+import '../widgets/premium_button.dart';
 
 void showQuickAddSheet(BuildContext context, {VoidCallback? onAdded}) {
   showModalBottomSheet(
@@ -178,10 +179,11 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
           Row(
             children: [
               Expanded(
-                child: PrimaryButton(
+                child: PremiumButton(
                   label: 'Cancel',
-                  variant: ButtonVariant.outlined,
+                  variant: ButtonVariant.secondary,
                   onPressed: () => Navigator.pop(context),
+                  fullWidth: true,
                 ),
               ),
               const SizedBox(width: AppSpacing.md),
@@ -189,7 +191,7 @@ class _QuickAddSheetState extends State<QuickAddSheet> {
                 flex: 2,
                 child: PrimaryButton(
                   label: 'Add Expense',
-                  isLoading: _loading,
+                  loading: _loading,
                   onPressed: _submit,
                 ),
               ),

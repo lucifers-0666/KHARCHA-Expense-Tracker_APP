@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:intl/intl.dart';
 import '../models/budget.dart';
 import '../services/firestore_services.dart';
 import '../theme/app_theme.dart';
@@ -18,11 +17,17 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
   final _limitCtrl = TextEditingController();
   final Map<String, TextEditingController> _catCtrls = {};
   bool _loading = false;
-  final _fmt = NumberFormat('#,##,###', 'en_IN');
+  // Number format removed — not used currently
 
   static const _categories = [
-    'Food', 'Transport', 'Shopping', 'Bills',
-    'Entertainment', 'Health', 'Education', 'Other',
+    'Food',
+    'Transport',
+    'Shopping',
+    'Bills',
+    'Entertainment',
+    'Health',
+    'Education',
+    'Other',
   ];
 
   @override
@@ -121,7 +126,11 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_rounded, color: textPrimary, size: 18),
+          icon: Icon(
+            Icons.arrow_back_ios_rounded,
+            color: textPrimary,
+            size: 18,
+          ),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
@@ -156,13 +165,15 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                     color: cardColor,
                     borderRadius: BorderRadius.circular(AppRadius.lg),
                     border: Border.all(color: borderColor),
-                    boxShadow: isDark ? [] : [
-                      BoxShadow(
-                        color: AppColors.shadow,
-                        blurRadius: 6,
-                        offset: const Offset(0, 1),
-                      ),
-                    ],
+                    boxShadow: isDark
+                        ? []
+                        : [
+                            BoxShadow(
+                              color: AppColors.shadow,
+                              blurRadius: 6,
+                              offset: const Offset(0, 1),
+                            ),
+                          ],
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -202,7 +213,9 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                               ),
                               decoration: InputDecoration(
                                 hintText: '0',
-                                hintStyle: TextStyle(color: AppColors.textFaintFor(isDark)),
+                                hintStyle: TextStyle(
+                                  color: AppColors.textFaintFor(isDark),
+                                ),
                                 border: InputBorder.none,
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
@@ -211,20 +224,24 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                           ),
                         ],
                       ),
-                      if (budget != null) ...
-                        [
-                          const SizedBox(height: 14),
-                          StreamBuilder<Map<String, double>>(
-                            stream: _service.getCategoryTotalsByMonth(DateTime.now()),
-                            builder: (ctx, snap) {
-                              final spent = snap.data?.values.fold(0.0, (a, b) => a + b) ?? 0.0;
-                              return BudgetProgressBar(
-                                  label: 'Budget',
-                                  spent: spent,
-                                  limit: budget.monthlyLimit);
-                            },
+                      if (budget != null) ...[
+                        const SizedBox(height: 14),
+                        StreamBuilder<Map<String, double>>(
+                          stream: _service.getCategoryTotalsByMonth(
+                            DateTime.now(),
                           ),
-                        ],
+                          builder: (ctx, snap) {
+                            final spent =
+                                snap.data?.values.fold(0.0, (a, b) => a + b) ??
+                                0.0;
+                            return BudgetProgressBar(
+                              label: 'Budget',
+                              spent: spent,
+                              limit: budget.monthlyLimit,
+                            );
+                          },
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -244,7 +261,10 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                   final catColor = AppColors.categoryColor(cat);
                   return Container(
                     margin: const EdgeInsets.only(bottom: 10),
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
                     decoration: BoxDecoration(
                       color: cardColor,
                       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -260,7 +280,8 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                             borderRadius: BorderRadius.circular(AppRadius.sm),
                           ),
                           child: Icon(
-                            AppColors.categoryIcons[cat] ?? Icons.category_rounded,
+                            AppColors.categoryIcons[cat] ??
+                                Icons.category_rounded,
                             color: catColor,
                             size: 16,
                           ),
@@ -285,7 +306,10 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                                 inputFormatters: [
                                   FilteringTextInputFormatter.digitsOnly,
                                 ],
-                                style: TextStyle(color: textPrimary, fontSize: 14),
+                                style: TextStyle(
+                                  color: textPrimary,
+                                  fontSize: 14,
+                                ),
                                 decoration: InputDecoration(
                                   hintText: 'No limit',
                                   hintStyle: TextStyle(
@@ -293,7 +317,10 @@ class _BudgetSetupScreenState extends State<BudgetSetupScreen> {
                                     fontSize: 13,
                                   ),
                                   prefixText: '₹ ',
-                                  prefixStyle: TextStyle(color: textMuted, fontSize: 13),
+                                  prefixStyle: TextStyle(
+                                    color: textMuted,
+                                    fontSize: 13,
+                                  ),
                                   border: InputBorder.none,
                                   isDense: true,
                                   contentPadding: EdgeInsets.zero,

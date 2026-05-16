@@ -20,8 +20,18 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
   int _touchedIndex = -1;
 
   static const _months = [
-    'Jan','Feb','Mar','Apr','May','Jun',
-    'Jul','Aug','Sep','Oct','Nov','Dec'
+    'Jan',
+    'Feb',
+    'Mar',
+    'Apr',
+    'May',
+    'Jun',
+    'Jul',
+    'Aug',
+    'Sep',
+    'Oct',
+    'Nov',
+    'Dec',
   ];
 
   @override
@@ -58,9 +68,12 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
               child: TabBarView(
                 controller: _tabCtrl,
                 children: [
-                  _ExpensesTab(service: _service, month: _month,
-                      touchedIndex: _touchedIndex,
-                      onTouch: (i) => setState(() => _touchedIndex = i)),
+                  _ExpensesTab(
+                    service: _service,
+                    month: _month,
+                    touchedIndex: _touchedIndex,
+                    onTouch: (i) => setState(() => _touchedIndex = i),
+                  ),
                   _TrendsTab(service: _service, month: _month),
                 ],
               ),
@@ -91,12 +104,17 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(20),
-              border: Border.all(color: AppColors.primary.withValues(alpha: 0.3)),
+              border: Border.all(
+                color: AppColors.primary.withValues(alpha: 0.3),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.insights_rounded,
-                    color: AppColors.primary, size: 14),
+                const Icon(
+                  Icons.insights_rounded,
+                  color: AppColors.primary,
+                  size: 14,
+                ),
                 const SizedBox(width: 6),
                 Text(
                   '${_months[_month.month - 1]} ${_month.year}',
@@ -172,8 +190,10 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
           dividerColor: Colors.transparent,
           labelColor: Colors.black,
           unselectedLabelColor: AppColors.textMuted,
-          labelStyle:
-              const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+          labelStyle: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
           tabs: const [
             Tab(text: 'Expenses'),
             Tab(text: 'Trends'),
@@ -205,12 +225,15 @@ class _ExpensesTab extends StatelessWidget {
       builder: (ctx, snap) {
         if (snap.connectionState == ConnectionState.waiting) {
           return const Center(
-              child: CircularProgressIndicator(
-                  strokeWidth: 2, color: AppColors.primary));
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: AppColors.primary,
+            ),
+          );
         }
         final data = snap.data ?? {};
         if (data.isEmpty) {
-          return const EmptyStateWidget(
+          return EmptyStateWidget(
             icon: Icons.pie_chart_outline_rounded,
             title: 'No data this month',
             subtitle: 'Add some expenses to see category breakdown',
@@ -246,9 +269,12 @@ class _ExpensesTab extends StatelessWidget {
                               pieTouchData: PieTouchData(
                                 touchCallback: (event, resp) {
                                   if (event is FlTapUpEvent) {
-                                    onTouch(resp?.touchedSection
-                                            ?.touchedSectionIndex ??
-                                        -1);
+                                    onTouch(
+                                      resp
+                                              ?.touchedSection
+                                              ?.touchedSectionIndex ??
+                                          -1,
+                                    );
                                   }
                                 },
                               ),
@@ -256,7 +282,7 @@ class _ExpensesTab extends StatelessWidget {
                                 final isTouched = e.key == touchedIndex;
                                 final color =
                                     AppColors.categoryColors[e.value.key] ??
-                                        AppColors.primary;
+                                    AppColors.primary;
                                 return PieChartSectionData(
                                   value: e.value.value,
                                   color: color,
@@ -269,10 +295,13 @@ class _ExpensesTab extends StatelessWidget {
                           Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              const Text('Total',
-                                  style: TextStyle(
-                                      color: AppColors.textMuted,
-                                      fontSize: 12)),
+                              const Text(
+                                'Total',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
                               const SizedBox(height: 2),
                               Text(
                                 '\u20b9${total.toStringAsFixed(0)}',
@@ -325,17 +354,18 @@ class _ExpensesTab extends StatelessWidget {
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Row(
                                       children: [
-                                        Text(cat,
-                                            style: const TextStyle(
-                                              color: AppColors.textPrimary,
-                                              fontSize: 13,
-                                              fontWeight: FontWeight.w600,
-                                            )),
+                                        Text(
+                                          cat,
+                                          style: const TextStyle(
+                                            color: AppColors.textPrimary,
+                                            fontSize: 13,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
                                         const Spacer(),
                                         Text(
                                           '\u20b9${amt.toStringAsFixed(0)}',
@@ -355,7 +385,8 @@ class _ExpensesTab extends StatelessWidget {
                                         backgroundColor: AppColors.border,
                                         valueColor:
                                             AlwaysStoppedAnimation<Color>(
-                                                color),
+                                              color,
+                                            ),
                                         minHeight: 4,
                                       ),
                                     ),
@@ -376,7 +407,10 @@ class _ExpensesTab extends StatelessWidget {
                         ),
                         if (entry.key < entries.length - 1)
                           const Divider(
-                              height: 1, indent: 64, color: AppColors.border),
+                            height: 1,
+                            indent: 64,
+                            color: AppColors.border,
+                          ),
                       ],
                     );
                   }).toList(),
@@ -408,8 +442,9 @@ class _TrendsTab extends StatelessWidget {
             final exp = expSnap.data ?? 0;
             final inc = incSnap.data ?? 0;
             final savings = inc - exp;
-            final savingsPct =
-                inc > 0 ? ((savings / inc) * 100).clamp(0.0, 100.0) : 0.0;
+            final savingsPct = inc > 0
+                ? ((savings / inc) * 100).clamp(0.0, 100.0)
+                : 0.0;
 
             return SingleChildScrollView(
               padding: const EdgeInsets.all(20),
@@ -453,12 +488,14 @@ class _TrendsTab extends StatelessWidget {
                       children: [
                         Row(
                           children: [
-                            const Text('Savings Rate',
-                                style: TextStyle(
-                                  color: AppColors.textMuted,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                )),
+                            const Text(
+                              'Savings Rate',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
                             const Spacer(),
                             Text(
                               '${savingsPct.toStringAsFixed(1)}%',
@@ -466,8 +503,8 @@ class _TrendsTab extends StatelessWidget {
                                 color: savingsPct >= 20
                                     ? AppColors.income
                                     : savingsPct >= 10
-                                        ? AppColors.warning
-                                        : AppColors.expense,
+                                    ? AppColors.warning
+                                    : AppColors.expense,
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
                               ),
@@ -476,8 +513,9 @@ class _TrendsTab extends StatelessWidget {
                         ),
                         const SizedBox(height: 12),
                         BudgetProgressBar(
+                          label: 'Month Overview',
                           spent: exp,
-                          total: inc > 0 ? inc : exp,
+                          limit: inc > 0 ? inc : exp,
                         ),
                         const SizedBox(height: 16),
                         // Bar chart — income vs expense
@@ -487,19 +525,18 @@ class _TrendsTab extends StatelessWidget {
                             BarChartData(
                               alignment: BarChartAlignment.spaceAround,
                               maxY: (inc > exp ? inc : exp) * 1.2,
-                              barTouchData:
-                                  BarTouchData(enabled: false),
+                              barTouchData: BarTouchData(enabled: false),
                               titlesData: FlTitlesData(
                                 show: true,
                                 leftTitles: const AxisTitles(
-                                    sideTitles:
-                                        SideTitles(showTitles: false)),
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
                                 rightTitles: const AxisTitles(
-                                    sideTitles:
-                                        SideTitles(showTitles: false)),
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
                                 topTitles: const AxisTitles(
-                                    sideTitles:
-                                        SideTitles(showTitles: false)),
+                                  sideTitles: SideTitles(showTitles: false),
+                                ),
                                 bottomTitles: AxisTitles(
                                   sideTitles: SideTitles(
                                     showTitles: true,
@@ -507,11 +544,10 @@ class _TrendsTab extends StatelessWidget {
                                       const labels = [
                                         'Income',
                                         'Expense',
-                                        'Savings'
+                                        'Savings',
                                       ];
                                       return Padding(
-                                        padding:
-                                            const EdgeInsets.only(top: 6),
+                                        padding: const EdgeInsets.only(top: 6),
                                         child: Text(
                                           labels[v.toInt()],
                                           style: const TextStyle(
@@ -529,9 +565,13 @@ class _TrendsTab extends StatelessWidget {
                               barGroups: [
                                 _bar(0, inc, AppColors.income),
                                 _bar(1, exp, AppColors.expense),
-                                _bar(2, savings.abs(), savings >= 0
-                                    ? AppColors.primary
-                                    : AppColors.warning),
+                                _bar(
+                                  2,
+                                  savings.abs(),
+                                  savings >= 0
+                                      ? AppColors.primary
+                                      : AppColors.warning,
+                                ),
                               ],
                             ),
                           ),
@@ -550,25 +590,29 @@ class _TrendsTab extends StatelessWidget {
                     ),
                     child: Row(
                       children: [
-                        _summaryItem('Net Balance',
-                            '\u20b9${savings.abs().toStringAsFixed(0)}',
-                            savings >= 0
-                                ? AppColors.income
-                                : AppColors.expense),
+                        _summaryItem(
+                          'Net Balance',
+                          '\u20b9${savings.abs().toStringAsFixed(0)}',
+                          savings >= 0 ? AppColors.income : AppColors.expense,
+                        ),
                         _dividerV(),
-                        _summaryItem('Savings',
-                            '${savingsPct.toStringAsFixed(0)}%',
-                            AppColors.primary),
+                        _summaryItem(
+                          'Savings',
+                          '${savingsPct.toStringAsFixed(0)}%',
+                          AppColors.primary,
+                        ),
                         _dividerV(),
-                        _summaryItem('Status',
-                            savingsPct >= 20
-                                ? 'Great'
-                                : savingsPct >= 10
-                                    ? 'Good'
-                                    : 'Watch out',
-                            savingsPct >= 20
-                                ? AppColors.income
-                                : AppColors.warning),
+                        _summaryItem(
+                          'Status',
+                          savingsPct >= 20
+                              ? 'Great'
+                              : savingsPct >= 10
+                              ? 'Good'
+                              : 'Watch out',
+                          savingsPct >= 20
+                              ? AppColors.income
+                              : AppColors.warning,
+                        ),
                       ],
                     ),
                   ),
@@ -589,8 +633,7 @@ class _TrendsTab extends StatelessWidget {
           toY: y,
           color: color,
           width: 36,
-          borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(8)),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(8)),
           backDrawRodData: BackgroundBarChartRodData(
             show: true,
             toY: y * 1.2,
@@ -605,23 +648,25 @@ class _TrendsTab extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Text(value,
-              style: TextStyle(
-                color: color,
-                fontSize: 15,
-                fontWeight: FontWeight.w700,
-              )),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
           const SizedBox(height: 4),
-          Text(label,
-              style: const TextStyle(
-                  color: AppColors.textMuted, fontSize: 11)),
+          Text(
+            label,
+            style: const TextStyle(color: AppColors.textMuted, fontSize: 11),
+          ),
         ],
       ),
     );
   }
 
   Widget _dividerV() {
-    return Container(
-        width: 1, height: 36, color: AppColors.border);
+    return Container(width: 1, height: 36, color: AppColors.border);
   }
 }
