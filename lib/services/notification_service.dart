@@ -36,6 +36,15 @@ class NotificationService {
     required String title,
     required String body,
   }) async {
+    await showNotification(id: id, title: title, body: body);
+  }
+
+  Future<void> showNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
     const androidDetails = AndroidNotificationDetails(
       'kharcha_recurring_reminders',
       'Recurring Reminders',
@@ -51,6 +60,7 @@ class NotificationService {
       title,
       body,
       const NotificationDetails(android: androidDetails, iOS: iosDetails),
+      payload: payload,
     );
   }
 }

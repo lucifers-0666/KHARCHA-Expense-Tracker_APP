@@ -1,5 +1,3 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
-
 class Emi {
   final String id;
   final String loanName;
@@ -27,13 +25,20 @@ class Emi {
 
   int get remainingMonths => (totalMonths - paidMonths).clamp(0, totalMonths);
   double get paidAmount => emiAmount * paidMonths;
-  double get remainingAmount => (totalAmount - paidAmount).clamp(0, totalAmount);
-  double get progressPercent => totalMonths > 0 ? (paidMonths / totalMonths).clamp(0.0, 1.0) : 0.0;
-  double get interestPaid => (paidAmount - (totalAmount / totalMonths * paidMonths)).clamp(0, double.infinity);
+  double get remainingAmount =>
+      (totalAmount - paidAmount).clamp(0, totalAmount);
+  double get progressPercent =>
+      totalMonths > 0 ? (paidMonths / totalMonths).clamp(0.0, 1.0) : 0.0;
+  double get interestPaid =>
+      (paidAmount - (totalAmount / totalMonths * paidMonths)).clamp(
+        0,
+        double.infinity,
+      );
   bool get isDueSoon {
     final daysUntilDue = nextDueDate.difference(DateTime.now()).inDays;
     return daysUntilDue >= 0 && daysUntilDue <= 5;
   }
+
   bool get isOverdue => nextDueDate.isBefore(DateTime.now());
 
   factory Emi.fromFirestore(Map<String, dynamic> data, String id) {
@@ -45,8 +50,12 @@ class Emi {
       totalMonths: (data['totalMonths'] as num?)?.toInt() ?? 0,
       paidMonths: (data['paidMonths'] as num?)?.toInt() ?? 0,
       interestRate: (data['interestRate'] as num?)?.toDouble() ?? 0,
-      startDate: data['startDate'] != null ? DateTime.parse(data['startDate']) : DateTime.now(),
-      nextDueDate: data['nextDueDate'] != null ? DateTime.parse(data['nextDueDate']) : DateTime.now(),
+      startDate: data['startDate'] != null
+          ? DateTime.parse(data['startDate'])
+          : DateTime.now(),
+      nextDueDate: data['nextDueDate'] != null
+          ? DateTime.parse(data['nextDueDate'])
+          : DateTime.now(),
       notes: data['notes'],
     );
   }
@@ -63,11 +72,7 @@ class Emi {
     if (notes != null) 'notes': notes,
   };
 
-  Emi copyWith({
-    int? paidMonths,
-    DateTime? nextDueDate,
-    String? notes,
-  }) => Emi(
+  Emi copyWith({int? paidMonths, DateTime? nextDueDate, String? notes}) => Emi(
     id: id,
     loanName: loanName,
     totalAmount: totalAmount,

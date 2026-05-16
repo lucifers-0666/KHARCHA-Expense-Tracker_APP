@@ -16,29 +16,35 @@ class SettingsScreen extends StatefulWidget {
 
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
-  String _selectedCurrency   = 'INR (₹)';
+  String _selectedCurrency = 'INR (₹)';
 
   final List<String> _currencies = [
-    'INR (₹)', 'USD (\$)', 'EUR (€)', 'GBP (£)', 'JPY (¥)',
+    'INR (₹)',
+    'USD (\$)',
+    'EUR (€)',
+    'GBP (£)',
+    'JPY (¥)',
   ];
 
   @override
   Widget build(BuildContext context) {
-    final isDark         = Theme.of(context).brightness == Brightness.dark;
-    final themeProvider  = Provider.of<ThemeProvider>(context);
-    final bgColor        = AppColors.bgFor(isDark);
-    final cardColor      = AppColors.surfaceFor(isDark);
-    final borderColor    = AppColors.borderFor(isDark);
-    final textPrimary    = AppColors.textPrimaryFor(isDark);
-    final textMuted      = AppColors.textMutedFor(isDark);
-    final textFaint      = AppColors.textFaintFor(isDark);
-    final accentSoft     = isDark ? AppColors.surfaceOffsetDark : AppColors.accentSoft;
-    final user           = FirebaseAuth.instance.currentUser;
-    final initial        = user?.displayName?.isNotEmpty == true
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final themeProvider = Provider.of<ThemeProvider>(context);
+    final bgColor = AppColors.bgFor(isDark);
+    final cardColor = AppColors.surfaceFor(isDark);
+    final borderColor = AppColors.borderFor(isDark);
+    final textPrimary = AppColors.textPrimaryFor(isDark);
+    final textMuted = AppColors.textMutedFor(isDark);
+    final textFaint = AppColors.textFaintFor(isDark);
+    final accentSoft = isDark
+        ? AppColors.surfaceOffsetDark
+        : AppColors.accentSoft;
+    final user = FirebaseAuth.instance.currentUser;
+    final initial = user?.displayName?.isNotEmpty == true
         ? user!.displayName![0].toUpperCase()
         : user?.email?.isNotEmpty == true
-            ? user!.email![0].toUpperCase()
-            : 'K';
+        ? user!.email![0].toUpperCase()
+        : 'K';
 
     return Scaffold(
       backgroundColor: bgColor,
@@ -112,8 +118,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     isDark: isDark,
                     textPrimary: textPrimary,
                     textMuted: textMuted,
-                    onTap: () => _showCurrencyPicker(context, isDark,
-                        textPrimary, textMuted, cardColor, borderColor),
+                    onTap: () => _showCurrencyPicker(
+                      context,
+                      isDark,
+                      textPrimary,
+                      textMuted,
+                      cardColor,
+                      borderColor,
+                    ),
                   ),
                 ],
               ),
@@ -160,7 +172,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     textPrimary: textPrimary,
                     textMuted: textMuted,
                     onTap: () => _showClearDialog(
-                        context, isDark, textPrimary, textMuted, cardColor),
+                      context,
+                      isDark,
+                      textPrimary,
+                      textMuted,
+                      cardColor,
+                    ),
                   ),
                 ],
               ),
@@ -183,7 +200,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     textPrimary: textPrimary,
                     textMuted: textMuted,
                     onTap: () => _confirmSignOut(
-                        context, isDark, textPrimary, textMuted, cardColor),
+                      context,
+                      isDark,
+                      textPrimary,
+                      textMuted,
+                      cardColor,
+                    ),
                   ),
                 ],
               ),
@@ -215,7 +237,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     required User? user,
     required String initial,
   }) {
-    final name  = user?.displayName ?? 'KHARCHA User';
+    final name = user?.displayName ?? 'KHARCHA User';
     final email = user?.email ?? '';
 
     return Container(
@@ -321,9 +343,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showModalBottomSheet(
       context: context,
       backgroundColor: cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: AppRadius.sheetRadius,
-      ),
+      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheetRadius),
       builder: (_) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 20),
         child: Column(
@@ -350,10 +370,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             ..._currencies.map(
               (c) => ListTile(
                 dense: true,
-                title: Text(c, style: TextStyle(color: textPrimary, fontSize: 14)),
+                title: Text(
+                  c,
+                  style: TextStyle(color: textPrimary, fontSize: 14),
+                ),
                 trailing: _selectedCurrency == c
-                    ? Icon(Icons.check_rounded,
-                        color: AppColors.primary, size: 18)
+                    ? Icon(
+                        Icons.check_rounded,
+                        color: AppColors.primary,
+                        size: 18,
+                      )
                     : null,
                 onTap: () {
                   setState(() => _selectedCurrency = c);
@@ -382,8 +408,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        title: Text('Clear All Data',
-            style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(
+          'Clear All Data',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+        ),
         content: Text(
           'This will permanently delete all your expenses and budgets. This action cannot be undone.',
           style: TextStyle(color: textMuted, fontSize: 14),
@@ -391,14 +419,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: TextStyle(color: textMuted, fontWeight: FontWeight.w500)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: textMuted, fontWeight: FontWeight.w500),
+            ),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Delete',
-                style: TextStyle(
-                    color: AppColors.danger, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -420,8 +454,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        title: Text('Sign Out',
-            style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700)),
+        title: Text(
+          'Sign Out',
+          style: TextStyle(color: textPrimary, fontWeight: FontWeight.w700),
+        ),
         content: Text(
           'Are you sure you want to sign out?',
           style: TextStyle(color: textMuted, fontSize: 14),
@@ -429,8 +465,10 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text('Cancel',
-                style: TextStyle(color: textMuted, fontWeight: FontWeight.w500)),
+            child: Text(
+              'Cancel',
+              style: TextStyle(color: textMuted, fontWeight: FontWeight.w500),
+            ),
           ),
           TextButton(
             onPressed: () async {
@@ -444,9 +482,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 );
               }
             },
-            child: const Text('Sign Out',
-                style: TextStyle(
-                    color: AppColors.danger, fontWeight: FontWeight.w600)),
+            child: const Text(
+              'Sign Out',
+              style: TextStyle(
+                color: AppColors.danger,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
         ],
       ),
@@ -569,7 +611,7 @@ class _ToggleTile extends StatelessWidget {
           Switch.adaptive(
             value: value,
             onChanged: onChanged,
-            activeColor: AppColors.primary,
+            activeThumbColor: AppColors.primary,
             activeTrackColor: AppColors.accentSoft,
           ),
         ],
@@ -630,7 +672,7 @@ class _TapTileState extends State<_TapTile>
   @override
   Widget build(BuildContext context) {
     final labelColor = widget.labelColor ?? widget.textPrimary;
-    final iconColor  = widget.labelColor ?? AppColors.primary;
+    final iconColor = widget.labelColor ?? AppColors.primary;
 
     return AnimatedBuilder(
       animation: _bgAnim,
@@ -662,10 +704,7 @@ class _TapTileState extends State<_TapTile>
               if (widget.value != null)
                 Text(
                   widget.value!,
-                  style: TextStyle(
-                    color: widget.textMuted,
-                    fontSize: 13,
-                  ),
+                  style: TextStyle(color: widget.textMuted, fontSize: 13),
                 )
               else
                 Icon(

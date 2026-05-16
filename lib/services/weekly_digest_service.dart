@@ -12,8 +12,8 @@ void registerWeeklyDigest() {
     _kDigestTask,
     frequency: const Duration(days: 7),
     initialDelay: _nextSundayDelay(),
-    constraints: Constraints(networkType: NetworkType.not_required),
-    existingWorkPolicy: ExistingWorkPolicy.replace,
+    constraints: Constraints(networkType: NetworkType.connected),
+    existingWorkPolicy: ExistingPeriodicWorkPolicy.update,
   );
 }
 
@@ -22,9 +22,11 @@ Duration _nextSundayDelay() {
   // Days until next Sunday (weekday 7)
   final daysUntilSunday = (7 - now.weekday) % 7;
   final nextSunday = DateTime(
-    now.year, now.month,
+    now.year,
+    now.month,
     now.day + (daysUntilSunday == 0 ? 7 : daysUntilSunday),
-    9, 0, // 9 AM
+    9,
+    0, // 9 AM
   );
   return nextSunday.difference(now);
 }
@@ -34,13 +36,15 @@ Future<void> executeWeeklyDigest() async {
   try {
     final now = DateTime.now();
     final weekStart = now.subtract(const Duration(days: 7));
-    final expenses =
-        await FirestoreServices().fetchExpensesForDateRange(weekStart, now);
+    final expenses = await FirestoreServices().fetchExpensesForDateRange(
+      weekStart,
+      now,
+    );
 
     if (expenses.isEmpty) return;
 
     final digest = _buildDigest(expenses, now);
-    await NotificationService().showNotification(
+    await NotificationService.instance.showNotification(
       id: 300,
       title: '📊 Your Weekly KHARCHA Digest',
       body: digest,

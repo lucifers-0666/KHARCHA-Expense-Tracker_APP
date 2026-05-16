@@ -6,18 +6,26 @@ class UpiParser {
 
   // GPay, PhonePe, Paytm, BHIM patterns
   static final List<RegExp> _amountPatterns = [
-    RegExp(r'(?:Rs\.?|INR|₹)\s*([0-9,]+(?:\.[0-9]{1,2})?)', caseSensitive: false),
-    RegExp(r'([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:Rs\.?|INR|₹)', caseSensitive: false),
+    RegExp(
+      r'(?:Rs\.?|INR|₹)\s*([0-9,]+(?:\.[0-9]{1,2})?)',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'([0-9,]+(?:\.[0-9]{1,2})?)\s*(?:Rs\.?|INR|₹)',
+      caseSensitive: false,
+    ),
   ];
 
   static final List<RegExp> _merchantPatterns = [
-    RegExp(r'(?:to|paid to|sent to|at)\s+([A-Za-z0-9 &\.\-]+?)(?:\s+(?:via|on|for|ref|upi)|\.|$)', caseSensitive: false),
-    RegExp(r'(?:at|from)\s+([A-Za-z0-9 &\.\-]+?)(?:\s+(?:dated|on|ref)|\.|$)', caseSensitive: false),
+    RegExp(
+      r'(?:to|paid to|sent to|at)\s+([A-Za-z0-9 &\.\-]+?)(?:\s+(?:via|on|for|ref|upi)|\.|$)',
+      caseSensitive: false,
+    ),
+    RegExp(
+      r'(?:at|from)\s+([A-Za-z0-9 &\.\-]+?)(?:\s+(?:dated|on|ref)|\.|$)',
+      caseSensitive: false,
+    ),
     RegExp(r'to VPA\s+([A-Za-z0-9@\.]+)', caseSensitive: false),
-  ];
-
-  static final List<RegExp> _debitPatterns = [
-    RegExp(r'(?:debited|paid|sent|deducted|transferred)', caseSensitive: false),
   ];
 
   static final List<RegExp> _creditPatterns = [
@@ -25,8 +33,16 @@ class UpiParser {
   ];
 
   static final List<String> _upiSenders = [
-    'gpay', 'googlepay', 'phonepe', 'paytm', 'bhim',
-    'upi', 'amazonpay', 'mobikwik', 'freecharge', 'airtelbank',
+    'gpay',
+    'googlepay',
+    'phonepe',
+    'paytm',
+    'bhim',
+    'upi',
+    'amazonpay',
+    'mobikwik',
+    'freecharge',
+    'airtelbank',
   ];
 
   /// Returns null if message is not a UPI transaction
@@ -37,8 +53,8 @@ class UpiParser {
     final isUpi = sender != null
         ? _upiSenders.any((s) => sender.toLowerCase().contains(s))
         : _upiSenders.any((s) => lower.contains(s)) ||
-          lower.contains('upi') ||
-          lower.contains('vpa');
+              lower.contains('upi') ||
+              lower.contains('vpa');
 
     if (!isUpi) return null;
 
@@ -65,17 +81,23 @@ class UpiParser {
     }
 
     // Transaction type
-    final isDebit = _debitPatterns.any((p) => p.hasMatch(message));
     final isCredit = _creditPatterns.any((p) => p.hasMatch(message));
     final type = isCredit ? TransactionType.credit : TransactionType.debit;
 
     // Classify category
     final classification = merchant != null
         ? _classifier.classify(merchant)
-        : ClassifyResult(category: 'Other', confidence: 0.0, isUserOverride: false);
+        : ClassifyResult(
+            category: 'Other',
+            confidence: 0.0,
+            isUserOverride: false,
+          );
 
     // Extract UPI ref
-    final refMatch = RegExp(r'(?:ref|txn|utr)[:\s#]*([0-9A-Za-z]+)', caseSensitive: false).firstMatch(message);
+    final refMatch = RegExp(
+      r'(?:ref|txn|utr)[:\s#]*([0-9A-Za-z]+)',
+      caseSensitive: false,
+    ).firstMatch(message);
     final refId = refMatch?.group(1);
 
     return UpiTransaction(
