@@ -141,8 +141,9 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen>
                           fmt: _fmt,
                           onDelete: () =>
                               _service.deleteSubscription(sorted[i].id),
-                          onToggle: () => _service.toggleSubscription(
-                              sorted[i].id, !sorted[i].isActive),
+                          onToggle: () =>
+                              _service.toggleSubscriptionActive(
+                                  sorted[i].id, !sorted[i].isActive),
                         ),
                       ),
                       childCount: sorted.length,
@@ -341,13 +342,15 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen>
                                 horizontal: 14, vertical: 8),
                             decoration: BoxDecoration(
                               color: category == c
-                                  ? AppColors.warning.withValues(alpha: 0.15)
+                                  ? AppColors.warning
+                                      .withValues(alpha: 0.15)
                                   : AppColors.surfaceOffsetFor(isDark),
                               borderRadius:
                                   BorderRadius.circular(AppRadius.full),
                               border: Border.all(
                                 color: category == c
-                                    ? AppColors.warning.withValues(alpha: 0.50)
+                                    ? AppColors.warning
+                                        .withValues(alpha: 0.50)
                                     : AppColors.borderFor(isDark),
                                 width: 0.8,
                               ),
@@ -445,8 +448,7 @@ class _StatPill extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding:
-            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: AppColors.surfaceOffsetFor(isDark).withValues(alpha: 0.50),
           borderRadius: BorderRadius.circular(AppRadius.md),
@@ -511,8 +513,8 @@ class _SubTile extends StatelessWidget {
           color: AppColors.danger.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        child: const Icon(Icons.delete_outline_rounded,
-            color: AppColors.danger),
+        child:
+            const Icon(Icons.delete_outline_rounded, color: AppColors.danger),
       ),
       onDismissed: (_) => onDelete(),
       child: AnimatedOpacity(
@@ -619,9 +621,8 @@ class _SubTile extends StatelessWidget {
                       child: Text(
                         sub.isActive ? 'Active' : 'Paused',
                         style: TextStyle(
-                          color: sub.isActive
-                              ? AppColors.success
-                              : textMuted,
+                          color:
+                              sub.isActive ? AppColors.success : textMuted,
                           fontSize: 10,
                           fontWeight: FontWeight.w600,
                         ),
