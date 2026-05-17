@@ -50,9 +50,26 @@ class PayLaterScreen extends StatefulWidget {
   State<PayLaterScreen> createState() => _PayLaterScreenState();
 }
 
-class _PayLaterScreenState extends State<PayLaterScreen> {
+class _PayLaterScreenState extends State<PayLaterScreen>
+    with SingleTickerProviderStateMixin {
   final _service = FirestoreServices();
   final _fmt = NumberFormat('#,##,###');
+  late AnimationController _animCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _animCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 500),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _animCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -68,34 +85,46 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
       appBar: AppBar(
         backgroundColor: bg,
         elevation: 0,
+        surfaceTintColor: Colors.transparent,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: textPrimary,
-            size: 20,
-          ),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Pay Later',
-          style: AppTextStyles.heading.copyWith(
+          style: TextStyle(
             color: textPrimary,
             fontSize: 18,
+            fontWeight: FontWeight.w700,
+            letterSpacing: -0.3,
           ),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.add_rounded, color: AppColors.primary),
-            onPressed: () => _showAddSheet(
-              context,
-              isDark,
-              card,
-              border,
-              textPrimary,
-              textMuted,
+          GestureDetector(
+            onTap: () => _showAddSheet(context, isDark, card, border,
+                textPrimary, textMuted),
+            child: Container(
+              margin: const EdgeInsets.only(right: 16),
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+                border: Border.all(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    width: 0.8),
+              ),
+              child: const Icon(Icons.add_rounded,
+                  color: AppColors.primary, size: 20),
             ),
           ),
         ],
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1),
+          child: Container(
+              height: 1, color: border.withValues(alpha: 0.5)),
+        ),
       ),
       body: StreamBuilder<List<Map<String, dynamic>>>(
         stream: _service.getPayLaterEntries(),
@@ -103,9 +132,7 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
           if (snap.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 2,
-              ),
+                  color: AppColors.primary, strokeWidth: 2),
             );
           }
           final raw = snap.data ?? [];
@@ -121,63 +148,78 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
               title: 'No pending payments',
               subtitle: 'Track IOUs and upcoming bills here',
               buttonLabel: 'Add Entry',
-              onButton: () => _showAddSheet(
-                context,
-                isDark,
-                card,
-                border,
-                textPrimary,
-                textMuted,
-              ),
+              onButton: () => _showAddSheet(context, isDark, card, border,
+                  textPrimary, textMuted),
             );
           }
-          return ListView(
-            padding: const EdgeInsets.all(20),
-            children: [
-              if (unpaid.isNotEmpty) ...[
-                Text(
-                  'PENDING',
-                  style: TextStyle(
-                    color: textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...unpaid.map(
-                  (e) => _PayTile(
-                    entry: e,
-                    isDark: isDark,
+
+          // ── Summary bar ──
+          final totalUnpaid =
+              unpaid.fold(0.0, (sum, e) => sum + e.amount);
+          final overdue = unpaid
+              .where((e) =>
+                  e.dueDate.difference(DateTime.now()).inDays < 0)
+              .length;
+
+          return FadeTransition(
+            opacity: _animCtrl,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _SummaryBanner(
+                    totalUnpaid: totalUnpaid,
+                    overdueCount: overdue,
+                    pendingCount: unpaid.length,
                     fmt: _fmt,
-                    onMark: () => _service.markPayLaterPaid(e.id),
-                    onDelete: () => _service.deletePayLaterEntry(e.id),
-                  ),
-                ),
-                const SizedBox(height: 16),
-              ],
-              if (paid.isNotEmpty) ...[
-                Text(
-                  'PAID',
-                  style: TextStyle(
-                    color: textMuted,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                    letterSpacing: 0.8,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                ...paid.map(
-                  (e) => _PayTile(
-                    entry: e,
                     isDark: isDark,
-                    fmt: _fmt,
-                    onMark: () {},
-                    onDelete: () => _service.deletePayLaterEntry(e.id),
                   ),
                 ),
+                if (unpaid.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _SectionLabel(
+                        label: 'PENDING',
+                        color: AppColors.danger,
+                        textMuted: textMuted),
+                  ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => _PayTile(
+                      entry: unpaid[i],
+                      isDark: isDark,
+                      fmt: _fmt,
+                      index: i,
+                      onMark: () =>
+                          _service.markPayLaterPaid(unpaid[i].id),
+                      onDelete: () =>
+                          _service.deletePayLaterEntry(unpaid[i].id),
+                    ),
+                    childCount: unpaid.length,
+                  ),
+                ),
+                if (paid.isNotEmpty)
+                  SliverToBoxAdapter(
+                    child: _SectionLabel(
+                        label: 'PAID',
+                        color: AppColors.success,
+                        textMuted: textMuted),
+                  ),
+                SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, i) => _PayTile(
+                      entry: paid[i],
+                      isDark: isDark,
+                      fmt: _fmt,
+                      index: i,
+                      onMark: () {},
+                      onDelete: () =>
+                          _service.deletePayLaterEntry(paid[i].id),
+                    ),
+                    childCount: paid.length,
+                  ),
+                ),
+                const SliverPadding(padding: EdgeInsets.only(bottom: 40)),
               ],
-            ],
+            ),
           );
         },
       ),
@@ -201,39 +243,57 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
       context: context,
       isScrollControlled: true,
       backgroundColor: card,
-      shape: const RoundedRectangleBorder(borderRadius: AppRadius.sheetRadius),
+      shape: const RoundedRectangleBorder(
+          borderRadius: AppRadius.sheetRadius),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => Padding(
           padding: EdgeInsets.fromLTRB(
             20,
             20,
             20,
-            MediaQuery.of(ctx).viewInsets.bottom + 20,
+            MediaQuery.of(ctx).viewInsets.bottom + 24,
           ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // Handle
               Center(
                 child: Container(
                   width: 36,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 18),
                   decoration: BoxDecoration(
                     color: AppColors.borderFor(isDark),
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
               ),
-              Text(
-                'Add Pay Later',
-                style: TextStyle(
-                  color: textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+              // Title row
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color:
+                          AppColors.danger.withValues(alpha: 0.10),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(Icons.payment_rounded,
+                        color: AppColors.danger, size: 18),
+                  ),
+                  const SizedBox(width: 10),
+                  Text(
+                    'Add Pay Later',
+                    style: TextStyle(
+                      color: textPrimary,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 20),
               PremiumTextField(
                 controller: titleCtrl,
                 label: 'Title',
@@ -250,54 +310,87 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
               PremiumTextField(
                 controller: noteCtrl,
                 label: 'Note (optional)',
-                hint: '',
+                hint: 'Any additional info',
               ),
               const SizedBox(height: 12),
+              // Due date picker
               GestureDetector(
                 onTap: () async {
                   final picked = await showDatePicker(
                     context: ctx,
                     initialDate: dueDate,
                     firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 3650)),
+                    builder: (c, child) => Theme(
+                      data: Theme.of(c).copyWith(
+                        colorScheme: ColorScheme.dark(
+                          primary: AppColors.primary,
+                          surface: AppColors.surface2,
+                        ),
+                      ),
+                      child: child!,
+                    ),
                   );
                   if (picked != null) setSt(() => dueDate = picked);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
-                  ),
+                      horizontal: 14, vertical: 14),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceOffsetFor(isDark),
-                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    borderRadius:
+                        BorderRadius.circular(AppRadius.md),
                     border: Border.all(
-                      color: AppColors.borderFor(isDark),
-                      width: 0.8,
-                    ),
+                        color: AppColors.borderFor(isDark),
+                        width: 0.8),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: AppColors.primary,
-                        size: 18,
+                      Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary
+                              .withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: const Icon(
+                          Icons.calendar_today_rounded,
+                          color: AppColors.primary,
+                          size: 15,
+                        ),
                       ),
                       const SizedBox(width: 10),
-                      Text(
-                        'Due: ${DateFormat('d MMM yyyy').format(dueDate)}',
-                        style: TextStyle(color: textMuted, fontSize: 14),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text('Due date',
+                              style: TextStyle(
+                                  color: textMuted, fontSize: 11)),
+                          Text(
+                            DateFormat('d MMM yyyy').format(dueDate),
+                            style: TextStyle(
+                              color: textPrimary,
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
                       ),
+                      const Spacer(),
+                      Icon(Icons.chevron_right_rounded,
+                          color: textMuted, size: 18),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
               PrimaryButton(
-                label: 'Save',
+                label: 'Save Entry',
                 onPressed: () async {
                   final title = titleCtrl.text.trim();
-                  final amt = double.tryParse(amtCtrl.text) ?? 0;
+                  final amt =
+                      double.tryParse(amtCtrl.text) ?? 0;
                   if (title.isEmpty || amt <= 0) return;
                   final entry = PayLaterEntry(
                     id: '',
@@ -308,7 +401,8 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
                         ? noteCtrl.text.trim()
                         : null,
                   );
-                  await _service.addPayLaterEntry(entry.toMap());
+                  await _service
+                      .addPayLaterEntry(entry.toMap());
                   if (ctx.mounted) Navigator.pop(ctx);
                 },
               ),
@@ -320,10 +414,162 @@ class _PayLaterScreenState extends State<PayLaterScreen> {
   }
 }
 
+// ── Summary banner ────────────────────────────────────────────────────────
+class _SummaryBanner extends StatelessWidget {
+  final double totalUnpaid;
+  final int overdueCount;
+  final int pendingCount;
+  final NumberFormat fmt;
+  final bool isDark;
+
+  const _SummaryBanner({
+    required this.totalUnpaid,
+    required this.overdueCount,
+    required this.pendingCount,
+    required this.fmt,
+    required this.isDark,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 20, 20, 8),
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.danger.withValues(alpha: 0.12),
+            AppColors.danger.withValues(alpha: 0.04),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+            color: AppColors.danger.withValues(alpha: 0.22), width: 1),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'TOTAL PENDING',
+                  style: TextStyle(
+                    color: AppColors.danger.withValues(alpha: 0.7),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    letterSpacing: 1.0,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '₹${fmt.format(totalUnpaid.toInt())}',
+                  style: const TextStyle(
+                    color: AppColors.danger,
+                    fontSize: 26,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              _StatChip(
+                label: '$pendingCount pending',
+                color: AppColors.warning,
+              ),
+              if (overdueCount > 0) ...[
+                const SizedBox(height: 6),
+                _StatChip(
+                  label: '$overdueCount overdue',
+                  color: AppColors.danger,
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatChip extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _StatChip({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding:
+          const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
+        border:
+            Border.all(color: color.withValues(alpha: 0.3), width: 0.8),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(
+            color: color, fontSize: 11, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+}
+
+// ── Section label ─────────────────────────────────────────────────────────
+class _SectionLabel extends StatelessWidget {
+  final String label;
+  final Color color;
+  final Color textMuted;
+  const _SectionLabel(
+      {required this.label,
+      required this.color,
+      required this.textMuted});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding:
+          const EdgeInsets.fromLTRB(20, 16, 20, 8),
+      child: Row(
+        children: [
+          Container(
+            width: 6,
+            height: 6,
+            decoration: BoxDecoration(
+              color: color,
+              shape: BoxShape.circle,
+            ),
+          ),
+          const SizedBox(width: 7),
+          Text(
+            label,
+            style: TextStyle(
+              color: textMuted,
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.0,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Pay tile ──────────────────────────────────────────────────────────────
 class _PayTile extends StatelessWidget {
   final PayLaterEntry entry;
   final bool isDark;
   final NumberFormat fmt;
+  final int index;
   final VoidCallback onMark;
   final VoidCallback onDelete;
 
@@ -331,6 +577,7 @@ class _PayTile extends StatelessWidget {
     required this.entry,
     required this.isDark,
     required this.fmt,
+    required this.index,
     required this.onMark,
     required this.onDelete,
   });
@@ -341,111 +588,194 @@ class _PayTile extends StatelessWidget {
     final border = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
-    final daysLeft = entry.dueDate.difference(DateTime.now()).inDays;
+    final daysLeft =
+        entry.dueDate.difference(DateTime.now()).inDays;
+    final isOverdue = !entry.isPaid && daysLeft < 0;
+    final isDueToday = !entry.isPaid && daysLeft == 0;
 
-    return Dismissible(
-      key: Key(entry.id),
-      direction: DismissDirection.endToStart,
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: AppColors.danger.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: const Icon(
-          Icons.delete_outline_rounded,
-          color: AppColors.danger,
-        ),
+    Color statusColor = entry.isPaid
+        ? AppColors.success
+        : isOverdue
+            ? AppColors.danger
+            : isDueToday
+                ? AppColors.warning
+                : textMuted;
+
+    String statusText = entry.isPaid
+        ? 'Paid ✓'
+        : isOverdue
+            ? '${-daysLeft}d overdue'
+            : isDueToday
+                ? 'Due today!'
+                : 'Due in ${daysLeft}d';
+
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 300 + index * 60),
+      curve: Curves.easeOut,
+      builder: (_, v, child) => Opacity(
+        opacity: v,
+        child:
+            Transform.translate(offset: Offset(0, 12 * (1 - v)), child: child),
       ),
-      onDismissed: (_) => onDelete(),
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(
-            color: entry.isPaid
-                ? AppColors.success.withValues(alpha: 0.30)
-                : border,
-            width: 0.8,
+      child: Dismissible(
+        key: Key(entry.id),
+        direction: DismissDirection.endToStart,
+        background: Container(
+          alignment: Alignment.centerRight,
+          padding: const EdgeInsets.only(right: 24),
+          margin:
+              const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+          decoration: BoxDecoration(
+            color: AppColors.danger.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.delete_outline_rounded,
+                  color: AppColors.danger, size: 22),
+              const SizedBox(height: 2),
+              Text('Delete',
+                  style: TextStyle(
+                      color: AppColors.danger,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w600)),
+            ],
           ),
         ),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: entry.isPaid ? null : onMark,
-              child: Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: entry.isPaid
-                      ? AppColors.success.withValues(alpha: 0.15)
-                      : Colors.transparent,
-                  border: Border.all(
-                    color: entry.isPaid
-                        ? AppColors.success
-                        : AppColors.borderFor(isDark),
-                    width: 1.5,
-                  ),
-                ),
-                child: entry.isPaid
-                    ? const Icon(
-                        Icons.check_rounded,
-                        color: AppColors.success,
-                        size: 14,
-                      )
-                    : null,
-              ),
+        onDismissed: (_) => onDelete(),
+        child: Container(
+          margin: const EdgeInsets.symmetric(
+              horizontal: 20, vertical: 5),
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: entry.isPaid
+                  ? AppColors.success.withValues(alpha: 0.25)
+                  : isOverdue
+                      ? AppColors.danger.withValues(alpha: 0.25)
+                      : border,
+              width: 0.8,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Row(
+            children: [
+              // Checkbox
+              GestureDetector(
+                onTap: entry.isPaid ? null : onMark,
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 200),
+                  width: 26,
+                  height: 26,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: entry.isPaid
+                        ? AppColors.success.withValues(alpha: 0.15)
+                        : Colors.transparent,
+                    border: Border.all(
+                      color: entry.isPaid
+                          ? AppColors.success
+                          : isOverdue
+                              ? AppColors.danger
+                              : AppColors.borderFor(isDark),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: entry.isPaid
+                      ? const Icon(Icons.check_rounded,
+                          color: AppColors.success, size: 14)
+                      : null,
+                ),
+              ),
+              const SizedBox(width: 12),
+              // Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      entry.title,
+                      style: TextStyle(
+                        color: textPrimary,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        decoration: entry.isPaid
+                            ? TextDecoration.lineThrough
+                            : null,
+                        decorationColor:
+                            textMuted.withValues(alpha: 0.5),
+                      ),
+                    ),
+                    const SizedBox(height: 2),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.schedule_rounded,
+                          size: 11,
+                          color: statusColor,
+                        ),
+                        const SizedBox(width: 3),
+                        Text(
+                          statusText,
+                          style: TextStyle(
+                            color: statusColor,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        if (entry.note != null) ...[
+                          const SizedBox(width: 8),
+                          Flexible(
+                            child: Text(
+                              '· ${entry.note}',
+                              style: TextStyle(
+                                color: textMuted,
+                                fontSize: 11,
+                              ),
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 8),
+              // Amount
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    entry.title,
+                    '₹${fmt.format(entry.amount.toInt())}',
                     style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
+                      color: entry.isPaid
+                          ? textMuted
+                          : isOverdue
+                              ? AppColors.danger
+                              : textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w800,
                       decoration: entry.isPaid
                           ? TextDecoration.lineThrough
                           : null,
+                      decorationColor:
+                          textMuted.withValues(alpha: 0.5),
                     ),
                   ),
                   Text(
-                    entry.isPaid
-                        ? 'Paid'
-                        : daysLeft == 0
-                        ? 'Due today'
-                        : daysLeft < 0
-                        ? '${-daysLeft} days overdue'
-                        : 'Due in $daysLeft days',
+                    DateFormat('d MMM').format(entry.dueDate),
                     style: TextStyle(
-                      color: entry.isPaid
-                          ? AppColors.success
-                          : daysLeft <= 0
-                          ? AppColors.danger
-                          : textMuted,
-                      fontSize: 11,
-                    ),
+                        color: textMuted.withValues(alpha: 0.6),
+                        fontSize: 10),
                   ),
                 ],
               ),
-            ),
-            Text(
-              '₹${fmt.format(entry.amount.toInt())}',
-              style: TextStyle(
-                color: entry.isPaid ? textMuted : AppColors.danger,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                decoration: entry.isPaid ? TextDecoration.lineThrough : null,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
