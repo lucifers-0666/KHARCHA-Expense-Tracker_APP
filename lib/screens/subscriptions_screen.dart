@@ -14,18 +14,34 @@ class SubscriptionsScreen extends StatefulWidget {
   State<SubscriptionsScreen> createState() => _SubscriptionsScreenState();
 }
 
-class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
+class _SubscriptionsScreenState extends State<SubscriptionsScreen>
+    with SingleTickerProviderStateMixin {
   final _service = FirestoreServices();
   final _fmt = NumberFormat('#,##,###');
-
   final List<String> _cycles = ['Monthly', 'Quarterly', 'Yearly'];
+  late final AnimationController _fadeCtrl;
+  late final Animation<double> _fadeAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _fadeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 480),
+    )..forward();
+    _fadeAnim = CurvedAnimation(parent: _fadeCtrl, curve: Curves.easeOut);
+  }
+
+  @override
+  void dispose() {
+    _fadeCtrl.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = AppColors.bgFor(isDark);
-    final card = AppColors.surfaceFor(isDark);
-    final border = AppColors.borderFor(isDark);
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
 
@@ -35,30 +51,28 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         backgroundColor: bg,
         elevation: 0,
         leading: IconButton(
-          icon: Icon(
-            Icons.arrow_back_ios_new_rounded,
-            color: textPrimary,
-            size: 20,
-          ),
+          icon: Icon(Icons.arrow_back_ios_new_rounded,
+              color: textPrimary, size: 20),
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
           'Subscriptions',
-          style: AppTextStyles.heading.copyWith(
-            color: textPrimary,
-            fontSize: 18,
-          ),
+          style: AppTextStyles.heading.copyWith(color: textPrimary, fontSize: 18),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.add_rounded, color: AppColors.primary),
-            onPressed: () => _showAddSheet(
-              context,
-              isDark,
-              card,
-              border,
-              textPrimary,
-              textMuted,
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            child: TextButton.icon(
+              onPressed: () => _showAddSheet(context, isDark),
+              icon: const Icon(Icons.add_rounded,
+                  color: AppColors.primary, size: 18),
+              label: const Text(
+                'Add',
+                style: TextStyle(
+                    color: AppColors.primary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600),
+              ),
             ),
           ),
         ],
@@ -67,12 +81,7 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
         stream: _service.getSubscriptions(),
         builder: (ctx, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return const Center(
-              child: CircularProgressIndicator(
-                color: AppColors.primary,
-                strokeWidth: 2,
-              ),
-            );
+            return _buildShimmer(isDark);
           }
           final subs = snap.data ?? [];
           if (subs.isEmpty) {
@@ -81,57 +90,184 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
               title: 'No subscriptions tracked',
               subtitle: 'Add Netflix, Spotify, gym etc.',
               buttonLabel: 'Add Subscription',
-              onButton: () => _showAddSheet(
-                context,
-                isDark,
-                card,
-                border,
-                textPrimary,
-                textMuted,
-              ),
+              onButton: () => _showAddSheet(context, isDark),
             );
           }
-          final totalMonthly = subs.fold<double>(0, (s, sub) {
-            if (sub.category == 'Monthly') return s + sub.monthlyAmount;
-            if (sub.category == 'Yearly') return s + sub.monthlyAmount / 12;
-            if (sub.category == 'Quarterly') return s + sub.monthlyAmount / 3;
-            return s;
-          });
-          return Column(
-            children: [
-              _SubSummaryCard(monthly: totalMonthly, isDark: isDark, fmt: _fmt),
-              Expanded(
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-                  itemCount: subs.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 10),
-                  itemBuilder: (_, i) => _SubTile(
-                    sub: subs[i],
+
+          // compute totals
+          double monthlyTotal = 0;
+          double yearlyTotal = 0;
+          int activeCount = 0;
+          for (final sub in subs) {
+            if (!sub.isActive) continue;
+            activeCount++;
+            if (sub.category == 'Monthly') {
+              monthlyTotal += sub.monthlyAmount;
+              yearlyTotal += sub.monthlyAmount * 12;
+            } else if (sub.category == 'Quarterly') {
+              monthlyTotal += sub.monthlyAmount / 3;
+              yearlyTotal += sub.monthlyAmount * 4;
+            } else if (sub.category == 'Yearly') {
+              monthlyTotal += sub.monthlyAmount / 12;
+              yearlyTotal += sub.monthlyAmount;
+            }
+          }
+
+          // sort by due date
+          final sorted = [...subs]
+            ..sort((a, b) => a.nextRenewal.compareTo(b.nextRenewal));
+
+          return FadeTransition(
+            opacity: _fadeAnim,
+            child: CustomScrollView(
+              slivers: [
+                SliverToBoxAdapter(
+                  child: _buildSummaryBanner(
                     isDark: isDark,
-                    fmt: _fmt,
-                    onDelete: () => _service.deleteSubscription(subs[i].id),
+                    monthly: monthlyTotal,
+                    yearly: yearlyTotal,
+                    activeCount: activeCount,
                   ),
                 ),
-              ),
-            ],
+                SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => Padding(
+                        padding: const EdgeInsets.only(bottom: 10),
+                        child: _SubTile(
+                          sub: sorted[i],
+                          isDark: isDark,
+                          fmt: _fmt,
+                          onDelete: () =>
+                              _service.deleteSubscription(sorted[i].id),
+                          onToggle: () => _service.toggleSubscription(
+                              sorted[i].id, !sorted[i].isActive),
+                        ),
+                      ),
+                      childCount: sorted.length,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           );
         },
       ),
     );
   }
 
-  void _showAddSheet(
-    BuildContext context,
-    bool isDark,
-    Color card,
-    Color border,
-    Color textPrimary,
-    Color textMuted,
-  ) {
+  Widget _buildSummaryBanner({
+    required bool isDark,
+    required double monthly,
+    required double yearly,
+    required int activeCount,
+  }) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(20, 8, 20, 20),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.warning.withValues(alpha: 0.18),
+            AppColors.warning.withValues(alpha: 0.06),
+          ],
+        ),
+        borderRadius: BorderRadius.circular(AppRadius.xl),
+        border: Border.all(
+            color: AppColors.warning.withValues(alpha: 0.25), width: 0.8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                child: const Icon(Icons.subscriptions_outlined,
+                    color: AppColors.warning, size: 18),
+              ),
+              const SizedBox(width: 10),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Monthly Burn',
+                    style: TextStyle(
+                        color: AppColors.textMutedFor(isDark),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w500),
+                  ),
+                  Text(
+                    '₹${_fmt.format(monthly.toInt())} / mo',
+                    style: const TextStyle(
+                        color: AppColors.warning,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              _StatPill(
+                label: 'Yearly Cost',
+                value: '₹${_fmt.format(yearly.toInt())}',
+                isDark: isDark,
+              ),
+              const SizedBox(width: 10),
+              _StatPill(
+                label: 'Active',
+                value: '$activeCount subs',
+                isDark: isDark,
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildShimmer(bool isDark) {
+    final color = AppColors.surfaceFor(isDark);
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: [
+        Container(
+            height: 130,
+            decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(AppRadius.xl))),
+        const SizedBox(height: 20),
+        ...List.generate(
+          4,
+          (_) => Container(
+            margin: const EdgeInsets.only(bottom: 10),
+            height: 72,
+            decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(AppRadius.lg)),
+          ),
+        ),
+      ],
+    );
+  }
+
+  void _showAddSheet(BuildContext context, bool isDark) {
     final nameCtrl = TextEditingController();
     final amtCtrl = TextEditingController();
     String category = 'Monthly';
     DateTime nextDue = DateTime.now().add(const Duration(days: 30));
+    final card = AppColors.surfaceFor(isDark);
 
     showModalBottomSheet(
       context: context,
@@ -141,20 +277,17 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
       builder: (_) => StatefulBuilder(
         builder: (ctx, setSt) => Padding(
           padding: EdgeInsets.fromLTRB(
-            20,
-            20,
-            20,
-            MediaQuery.of(ctx).viewInsets.bottom + 20,
-          ),
+              20, 20, 20, MediaQuery.of(ctx).viewInsets.bottom + 24),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              // handle
               Center(
                 child: Container(
                   width: 36,
                   height: 4,
-                  margin: const EdgeInsets.only(bottom: 16),
+                  margin: const EdgeInsets.only(bottom: 18),
                   decoration: BoxDecoration(
                     color: AppColors.borderFor(isDark),
                     borderRadius: BorderRadius.circular(2),
@@ -162,19 +295,23 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                 ),
               ),
               Text(
-                'Add Subscription',
+                'New Subscription',
                 style: TextStyle(
-                  color: textPrimary,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                    color: AppColors.textPrimaryFor(isDark),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w700),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 4),
+              Text(
+                'Track your recurring bills in one place',
+                style: TextStyle(
+                    color: AppColors.textMutedFor(isDark), fontSize: 12),
+              ),
+              const SizedBox(height: 18),
               PremiumTextField(
-                controller: nameCtrl,
-                label: 'Service Name',
-                hint: 'e.g. Netflix',
-              ),
+                  controller: nameCtrl,
+                  label: 'Service Name',
+                  hint: 'e.g. Netflix, Spotify'),
               const SizedBox(height: 12),
               PremiumTextField(
                 controller: amtCtrl,
@@ -183,20 +320,51 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                 keyboardType: TextInputType.number,
               ),
               const SizedBox(height: 12),
-              Wrap(
-                spacing: 8,
+              Text(
+                'Billing Cycle',
+                style: TextStyle(
+                    color: AppColors.textMutedFor(isDark),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500),
+              ),
+              const SizedBox(height: 8),
+              Row(
                 children: _cycles
                     .map(
-                      (c) => ChoiceChip(
-                        label: Text(c),
-                        selected: category == c,
-                        onSelected: (_) => setSt(() => category = c),
-                        selectedColor: AppColors.primary.withValues(
-                          alpha: 0.20,
-                        ),
-                        labelStyle: TextStyle(
-                          color: category == c ? AppColors.primary : textMuted,
-                          fontSize: 12,
+                      (c) => Padding(
+                        padding: const EdgeInsets.only(right: 8),
+                        child: GestureDetector(
+                          onTap: () => setSt(() => category = c),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 200),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: category == c
+                                  ? AppColors.warning.withValues(alpha: 0.15)
+                                  : AppColors.surfaceOffsetFor(isDark),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.full),
+                              border: Border.all(
+                                color: category == c
+                                    ? AppColors.warning.withValues(alpha: 0.50)
+                                    : AppColors.borderFor(isDark),
+                                width: 0.8,
+                              ),
+                            ),
+                            child: Text(
+                              c,
+                              style: TextStyle(
+                                color: category == c
+                                    ? AppColors.warning
+                                    : AppColors.textMutedFor(isDark),
+                                fontSize: 12,
+                                fontWeight: category == c
+                                    ? FontWeight.w600
+                                    : FontWeight.w400,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
                     )
@@ -209,40 +377,36 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
                     context: ctx,
                     initialDate: nextDue,
                     firstDate: DateTime.now(),
-                    lastDate: DateTime.now().add(const Duration(days: 3650)),
+                    lastDate:
+                        DateTime.now().add(const Duration(days: 3650)),
                   );
                   if (picked != null) setSt(() => nextDue = picked);
                 },
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 14,
-                  ),
+                      horizontal: 14, vertical: 14),
                   decoration: BoxDecoration(
                     color: AppColors.surfaceOffsetFor(isDark),
                     borderRadius: BorderRadius.circular(AppRadius.md),
                     border: Border.all(
-                      color: AppColors.borderFor(isDark),
-                      width: 0.8,
-                    ),
+                        color: AppColors.borderFor(isDark), width: 0.8),
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.calendar_today_outlined,
-                        color: AppColors.primary,
-                        size: 18,
-                      ),
+                      const Icon(Icons.calendar_today_outlined,
+                          color: AppColors.warning, size: 18),
                       const SizedBox(width: 10),
                       Text(
                         'Next Due: ${DateFormat('d MMM yyyy').format(nextDue)}',
-                        style: TextStyle(color: textMuted, fontSize: 14),
+                        style: TextStyle(
+                            color: AppColors.textMutedFor(isDark),
+                            fontSize: 14),
                       ),
                     ],
                   ),
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 22),
               PrimaryButton(
                 label: 'Save Subscription',
                 onPressed: () async {
@@ -269,74 +433,62 @@ class _SubscriptionsScreenState extends State<SubscriptionsScreen> {
   }
 }
 
-class _SubSummaryCard extends StatelessWidget {
-  final double monthly;
+// ─── Stat Pill ───────────────────────────────────────────────────────────────
+class _StatPill extends StatelessWidget {
+  final String label;
+  final String value;
   final bool isDark;
-  final NumberFormat fmt;
-  const _SubSummaryCard({
-    required this.monthly,
-    required this.isDark,
-    required this.fmt,
-  });
+  const _StatPill(
+      {required this.label, required this.value, required this.isDark});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.fromLTRB(20, 0, 20, 4),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(
-          color: AppColors.warning.withValues(alpha: 0.20),
-          width: 0.8,
+    return Expanded(
+      child: Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceOffsetFor(isDark).withValues(alpha: 0.50),
+          borderRadius: BorderRadius.circular(AppRadius.md),
+          border: Border.all(
+              color: AppColors.borderFor(isDark).withValues(alpha: 0.60),
+              width: 0.8),
         ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.subscriptions_outlined,
-            color: AppColors.warning,
-            size: 22,
-          ),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Monthly Subscriptions',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label,
                 style: TextStyle(
-                  color: AppColors.textMutedFor(isDark),
-                  fontSize: 11,
-                ),
-              ),
-              Text(
-                '₹${fmt.format(monthly.toInt())} / month',
-                style: const TextStyle(
-                  color: AppColors.warning,
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-        ],
+                    color: AppColors.textMutedFor(isDark),
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500)),
+            const SizedBox(height: 2),
+            Text(value,
+                style: TextStyle(
+                    color: AppColors.textPrimaryFor(isDark),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700)),
+          ],
+        ),
       ),
     );
   }
 }
 
+// ─── Sub Tile ─────────────────────────────────────────────────────────────────
 class _SubTile extends StatelessWidget {
   final SubscriptionModel sub;
   final bool isDark;
   final NumberFormat fmt;
   final VoidCallback onDelete;
+  final VoidCallback onToggle;
 
   const _SubTile({
     required this.sub,
     required this.isDark,
     required this.fmt,
     required this.onDelete,
+    required this.onToggle,
   });
 
   @override
@@ -346,6 +498,8 @@ class _SubTile extends StatelessWidget {
     final textPrimary = AppColors.textPrimaryFor(isDark);
     final textMuted = AppColors.textMutedFor(isDark);
     final daysLeft = sub.nextRenewal.difference(DateTime.now()).inDays;
+    final isDue = daysLeft <= 3;
+    final isInactive = !sub.isActive;
 
     return Dismissible(
       key: Key(sub.id),
@@ -357,66 +511,127 @@ class _SubTile extends StatelessWidget {
           color: AppColors.danger.withValues(alpha: 0.12),
           borderRadius: BorderRadius.circular(AppRadius.lg),
         ),
-        child: const Icon(
-          Icons.delete_outline_rounded,
-          color: AppColors.danger,
-        ),
+        child: const Icon(Icons.delete_outline_rounded,
+            color: AppColors.danger),
       ),
       onDismissed: (_) => onDelete(),
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: card,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          border: Border.all(color: border, width: 0.8),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(AppRadius.sm),
-              ),
-              child: const Icon(
-                Icons.subscriptions_outlined,
-                color: AppColors.warning,
-                size: 18,
-              ),
+      child: AnimatedOpacity(
+        opacity: isInactive ? 0.50 : 1.0,
+        duration: const Duration(milliseconds: 250),
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(
+              color: isDue
+                  ? AppColors.danger.withValues(alpha: 0.35)
+                  : border,
+              width: isDue ? 1.0 : 0.8,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Row(
+            children: [
+              // icon
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(Icons.subscriptions_outlined,
+                    color: AppColors.warning, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      sub.name,
+                      style: TextStyle(
+                          color: textPrimary,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 3),
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withValues(alpha: 0.10),
+                            borderRadius:
+                                BorderRadius.circular(AppRadius.full),
+                          ),
+                          child: Text(
+                            sub.category,
+                            style: const TextStyle(
+                                color: AppColors.warning,
+                                fontSize: 10,
+                                fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          isDue
+                              ? 'Due in $daysLeft days!'
+                              : 'Renews in $daysLeft days',
+                          style: TextStyle(
+                            color: isDue ? AppColors.danger : textMuted,
+                            fontSize: 11,
+                            fontWeight: isDue
+                                ? FontWeight.w600
+                                : FontWeight.w400,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    sub.name,
-                    style: TextStyle(
-                      color: textPrimary,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
+                    '₹${fmt.format(sub.monthlyAmount.toInt())}',
+                    style: const TextStyle(
+                        color: AppColors.warning,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w800),
                   ),
-                  Text(
-                    '${sub.category} • due in $daysLeft days',
-                    style: TextStyle(
-                      color: daysLeft <= 3 ? AppColors.danger : textMuted,
-                      fontSize: 11,
+                  const SizedBox(height: 4),
+                  GestureDetector(
+                    onTap: onToggle,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: sub.isActive
+                            ? AppColors.success.withValues(alpha: 0.12)
+                            : AppColors.borderFor(isDark)
+                                .withValues(alpha: 0.30),
+                        borderRadius:
+                            BorderRadius.circular(AppRadius.full),
+                      ),
+                      child: Text(
+                        sub.isActive ? 'Active' : 'Paused',
+                        style: TextStyle(
+                          color: sub.isActive
+                              ? AppColors.success
+                              : textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],
               ),
-            ),
-            Text(
-              '₹${fmt.format(sub.monthlyAmount.toInt())}',
-              style: const TextStyle(
-                color: AppColors.warning,
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
